@@ -1,0 +1,194 @@
+# ====================================================================================
+# RENDER ENVIRONMENT VARIABLES TEMPLATE
+# ====================================================================================
+# Copy these to Render Dashboard → Service → Environment
+# Replace all placeholder values with your actual credentials
+# ====================================================================================
+
+# ===========================
+# DATABASE (Required)
+# ===========================
+# Use "Internal Database URL" from your Render PostgreSQL database
+DATABASE_URL=postgresql://username:password@dpg-xxxxx.oregon-postgres.render.com/dbname
+
+# ===========================
+# APPLICATION (Required)
+# ===========================
+PORT=4000
+NODE_ENV=production
+# Use your actual Render backend URL
+PUBLIC_BASE_URL=https://your-app-server.onrender.com
+
+# ===========================
+# AUTHENTICATION (Required)
+# ===========================
+# Generate a secure random string (min 32 characters)
+# Example: openssl rand -base64 32
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-change-this-now
+
+# ===========================
+# TWILIO SMS (Recommended)
+# ===========================
+# Sign up at https://www.twilio.com
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
+TWILIO_FROM_NUMBER=+15551234567
+
+# ===========================
+# BONZO SMS (Alternative to Twilio)
+# ===========================
+# Sign up at https://getbonzo.com
+BONZO_API_BASE_URL=https://app.getbonzo.com/api
+BONZO_API_KEY=your_bonzo_api_key_here
+BONZO_FROM_NUMBER=+15551234567
+BONZO_ON_BEHALF_OF=your_email@example.com
+BONZO_SEND_AS=me
+BONZO_SEND_PATH=/v3/prospects/create-or-update-and-message
+BONZO_AUTH_HEADER=Authorization
+BONZO_AUTH_SCHEME=Bearer
+
+# ===========================
+# SMS PROVIDER SELECTION
+# ===========================
+# Options: "twilio" or "bonzo"
+SMS_PROVIDER=twilio
+
+# ===========================
+# GOOGLE OAUTH & GMAIL (Optional)
+# ===========================
+# Create OAuth credentials at https://console.cloud.google.com
+# 1. Create new project
+# 2. Enable Gmail API
+# 3. Create OAuth 2.0 credentials
+# 4. Add authorized redirect URI: https://your-app-server.onrender.com/api/auth/google/callback
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your_client_secret_here
+GOOGLE_REDIRECT_URI=https://your-app-server.onrender.com/api/auth/google/callback
+
+# ===========================
+# GOOGLE GEMINI AI (Optional)
+# ===========================
+# Get API key at https://makersuite.google.com/app/apikey
+GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# ===========================
+# ELEVENLABS TEXT-TO-SPEECH (Optional)
+# ===========================
+# Sign up at https://elevenlabs.io
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
+ELEVENLABS_MODEL_ID=eleven_flash_v2_5
+
+# ===========================
+# SLYBROADCAST VOICEMAIL (Optional)
+# ===========================
+# Sign up at https://www.slybroadcast.com
+SLYBROADCAST_API_BASE_URL=https://www.mobile-sphere.com/gateway/vmb.php
+SLYBROADCAST_USERNAME=your_email@example.com
+SLYBROADCAST_PASSWORD=your_slybroadcast_password
+SLYBROADCAST_CALLER_ID=+15551234567
+
+# ===========================
+# SMTP EMAIL (Optional)
+# ===========================
+# For Gmail: Use app-specific password
+# Generate at https://myaccount.google.com/apppasswords
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_specific_password_here
+SMTP_SECURE=true
+
+# ===========================
+# VOICEMAIL PROVIDER SELECTION (Optional)
+# ===========================
+# Options: "slybroadcast" (default)
+VOICEMAIL_PROVIDER=slybroadcast
+
+# ===========================
+# APOLLO.IO INTEGRATION (Optional)
+# ===========================
+# Sign up at https://apollo.io and get API key from Settings → Integrations
+APOLLO_API_KEY=your_apollo_api_key_here
+
+# ====================================================================================
+# INSTRUCTIONS FOR RENDER DEPLOYMENT
+# ====================================================================================
+#
+# 1. CREATE POSTGRESQL DATABASE
+#    - Go to Render Dashboard → New → PostgreSQL
+#    - Name: your-app-db
+#    - Copy "Internal Database URL" to DATABASE_URL above
+#
+# 2. CREATE BACKEND WEB SERVICE
+#    - Go to Render Dashboard → New → Web Service
+#    - Connect GitHub repository
+#    - Configure:
+#      * Name: your-app-server
+#      * Root Directory: apps/server
+#      * Build Command: pnpm install && pnpm build
+#      * Start Command: pnpm start
+#    - Add all environment variables from this file
+#    - Deploy
+#
+# 3. CREATE FRONTEND STATIC SITE
+#    - Go to Render Dashboard → New → Static Site
+#    - Connect GitHub repository
+#    - Configure:
+#      * Name: your-app-web
+#      * Build Command: cd apps/web && pnpm install && pnpm build
+#      * Publish Directory: apps/web/dist
+#    - Add environment variable:
+#      * VITE_API_URL=https://your-app-server.onrender.com
+#    - Deploy
+#
+# 4. UPDATE PUBLIC_BASE_URL
+#    - After backend deploys, copy its URL
+#    - Update PUBLIC_BASE_URL in backend environment variables
+#    - Restart backend service
+#
+# 5. TEST DEPLOYMENT
+#    - Backend health: https://your-app-server.onrender.com/health
+#    - Frontend: https://your-app-web.onrender.com
+#
+# ====================================================================================
+# SECURITY NOTES
+# ====================================================================================
+#
+# ⚠️  NEVER commit this file with real credentials to Git
+# ✅  Use Render's environment variable dashboard
+# ✅  Rotate secrets regularly
+# ✅  Use app-specific passwords for email
+# ✅  Enable 2FA on all third-party services
+# ✅  Restrict API keys to minimum required permissions
+#
+# ====================================================================================
+
+# ====================================================================================
+# OPTIONAL FEATURES & THEIR REQUIRED VARIABLES
+# ====================================================================================
+#
+# SMS Messaging:
+#   - TWILIO_* OR BONZO_* variables
+#   - Set SMS_PROVIDER accordingly
+#
+# AI Response Generation:
+#   - GEMINI_API_KEY
+#
+# Voicemail Drops:
+#   - ELEVENLABS_API_KEY (for TTS)
+#   - SLYBROADCAST_* (for delivery)
+#
+# Gmail Integration:
+#   - GOOGLE_CLIENT_ID
+#   - GOOGLE_CLIENT_SECRET
+#   - GOOGLE_REDIRECT_URI
+#
+# SMTP Email:
+#   - SMTP_* variables
+#
+# Apollo.io Search:
+#   - APOLLO_API_KEY
+#
+# ====================================================================================
+

@@ -1,0 +1,97 @@
+# Render Blueprint for Paycile Marketing Automation Platform
+# This file enables one-click deployment to Render
+# Learn more: https://render.com/docs/blueprint-spec
+
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: paycile-automation-db
+    plan: starter
+    region: oregon
+    databaseName: paycile_automation
+    databaseUser: paycile_user
+    ipAllowList: []
+
+  # Backend API Server
+  - type: web
+    name: paycile-automation-server
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: cd apps/server && pnpm install && pnpm build
+    startCommand: cd apps/server && pnpm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: paycile-automation-db
+          property: connectionString
+      - key: PUBLIC_BASE_URL
+        fromService:
+          type: web
+          name: paycile-automation-server
+          property: host
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        value: 21m00Tcm4TlvDq8ikWAM
+      - key: ELEVENLABS_MODEL_ID
+        value: eleven_flash_v2_5
+      - key: SLYBROADCAST_USERNAME
+        sync: false
+      - key: SLYBROADCAST_PASSWORD
+        sync: false
+      - key: SLYBROADCAST_CALLER_ID
+        sync: false
+      - key: SLYBROADCAST_API_BASE_URL
+        value: https://www.mobile-sphere.com/gateway/vmb.php
+      - key: SMS_PROVIDER
+        value: twilio
+      - key: VOICEMAIL_PROVIDER
+        value: slybroadcast
+
+  # Frontend Static Site
+  - type: web
+    name: paycile-automation-web
+    runtime: static
+    region: oregon
+    buildCommand: cd apps/web && pnpm install && pnpm build
+    staticPublishPath: apps/web/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: paycile-automation-server
+          property: host
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=3600
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+

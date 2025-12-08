@@ -1,0 +1,193 @@
+Subject: Microsoft OAuth Setup Required for stanley@paycile.com Email Integration
+
+Hi,
+
+To enable secure email integration for stanley@paycile.com in the Paycile platform, we need to set up Microsoft OAuth authentication. This will allow the platform to send and receive emails on behalf of stanley@paycile.com.
+
+Below are the step-by-step instructions for your Microsoft 365 administrator to complete this setup. The process takes approximately 10-15 minutes.
+
+================================================================================
+STEP 1: CREATE AZURE AD APP REGISTRATION
+================================================================================
+
+1. Go to: https://portal.azure.com
+2. Sign in with your Microsoft 365 admin account
+3. Navigate to: "Azure Active Directory" (left sidebar)
+4. Click: "App registrations" (left menu)
+5. Click: "+ New registration" (top menu)
+
+Configure the new registration:
+   - Name: Paycile Platform - OAuth Integration
+   - Supported account types: Select "Accounts in this organizational directory only (Single tenant)"
+   - Redirect URI: Leave blank for now (we'll add this in Step 3)
+   - Click "Register"
+
+
+================================================================================
+STEP 2: COPY APPLICATION IDS (SAVE THESE)
+================================================================================
+
+After registration, you'll see the "Overview" page. Copy and save these values:
+
+   Application (client) ID: ___________________________________
+   Directory (tenant) ID:   ___________________________________
+
+(You'll need to send these to us later)
+
+
+================================================================================
+STEP 3: ADD REDIRECT URIS (CALLBACK URLs)
+================================================================================
+
+1. Still on the app page, click "Authentication" (left menu)
+2. Under "Platform configurations", click "+ Add a platform"
+3. Select "Web"
+4. Add this Redirect URI:
+   
+   https://adtv-events-server-7nfo.onrender.com/api/auth/microsoft/callback
+
+5. Also add this one for development/testing:
+   
+   http://localhost:4000/api/auth/microsoft/callback
+
+6. Under "Implicit grant and hybrid flows":
+   - Check: ☑ ID tokens (used for implicit and hybrid flows)
+
+7. Click "Save"
+
+
+================================================================================
+STEP 4: ADD API PERMISSIONS
+================================================================================
+
+1. Click "API permissions" (left menu)
+2. Click "+ Add a permission"
+3. Select "Microsoft Graph"
+4. Select "Delegated permissions"
+5. Search for and ADD each of these permissions:
+
+   EMAIL PERMISSIONS:
+   ☑ Mail.Read
+   ☑ Mail.ReadWrite
+   ☑ Mail.Send
+   ☑ Mail.ReadBasic
+
+   USER PROFILE PERMISSIONS:
+   ☑ User.Read
+   ☑ User.ReadBasic.All
+   ☑ email
+   ☑ openid
+   ☑ profile
+   ☑ offline_access
+
+   (Optional - only if you need Teams integration):
+   ☑ Chat.ReadWrite
+   ☑ Team.ReadBasic.All
+   ☑ ChannelMessage.Read.All
+
+6. Click "Add permissions"
+
+
+================================================================================
+STEP 5: GRANT ADMIN CONSENT (CRITICAL STEP)
+================================================================================
+
+1. Still on the "API permissions" page
+2. Click the button: "Grant admin consent for [Your Organization Name]"
+3. Click "Yes" to confirm
+4. You should see green checkmarks appear next to all permissions
+
+
+================================================================================
+STEP 6: CREATE CLIENT SECRET
+================================================================================
+
+1. Click "Certificates & secrets" (left menu)
+2. Under "Client secrets", click "+ New client secret"
+3. Description: Paycile Platform Integration
+4. Expires: Select "24 months" (or your preference)
+5. Click "Add"
+
+⚠️ IMPORTANT: Copy the "Value" immediately and save it securely!
+   This secret will NOT be shown again after you leave this page.
+
+   Client Secret Value: ___________________________________
+
+
+================================================================================
+STEP 7: SEND US THE CREDENTIALS
+================================================================================
+
+Please reply to this email with the following three values you saved:
+
+1. Application (client) ID: ___________________________________
+2. Directory (tenant) ID:   ___________________________________
+3. Client Secret Value:     ___________________________________
+
+⚠️ SECURITY NOTE: These are sensitive credentials. Please send them securely.
+
+
+================================================================================
+WHAT HAPPENS NEXT
+================================================================================
+
+Once we receive your credentials, we will:
+1. Configure the OAuth integration in the Paycile platform (takes 5 minutes)
+2. Deploy the updates to production (takes 2-3 minutes)
+3. Test the email connection with stanley@paycile.com (takes 2 minutes)
+4. Confirm that emails can be sent and received through the platform
+5. Notify you when everything is live and working
+
+
+================================================================================
+BENEFITS OF OAUTH VS SMTP
+================================================================================
+
+This OAuth integration is more secure than traditional SMTP because:
+- ✅ No passwords stored in the platform
+- ✅ Tokens can be revoked at any time from Azure portal
+- ✅ Better deliverability and compliance with Microsoft security policies
+- ✅ Supports multi-factor authentication (MFA)
+- ✅ Full audit trail in Microsoft 365 admin center
+
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+If you encounter any issues during setup:
+
+1. "Don't have permissions" error:
+   - You need Global Administrator or Application Administrator role in Microsoft 365
+
+2. "Grant admin consent" button is grayed out:
+   - Contact your Global Administrator to grant consent
+
+3. Can't find "App registrations":
+   - Make sure you're in Azure Active Directory section, not Microsoft 365 admin center
+
+4. Need help:
+   - Microsoft documentation: https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app
+   - Or reply to this email and we can schedule a quick screen-share to walk through it
+
+
+================================================================================
+QUICK REFERENCE - URLS YOU'LL NEED
+================================================================================
+
+Azure Portal (main setup):
+https://portal.azure.com
+
+Your OAuth Callback URL (for Step 3):
+https://adtv-events-server-7nfo.onrender.com/api/auth/microsoft/callback
+
+Microsoft App Registration Docs:
+https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app
+
+
+================================================================================
+
+Please let me know if you have any questions or need assistance with any of these steps.
+
+Thanks!
+

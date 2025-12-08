@@ -1,0 +1,223 @@
+Node ID,Node Type,Node Name,Position X,Position Y,Template ID,Email Subject,Email Body,SMS Text,Voicemail Script,Config JSON,Edge From,Edge To,Edge Condition
+N000,start,Import: Insurance CFO List,100,500,,,,,,"{}",N000,N001,"{}"
+N001,filter,Filter: Insurance Industry Only,300,500,,,,,,"{ ""criteria"": ""industry=insurance"" }",N001,N002,"{}"
+N002,filter,Filter: Title = CFO/VP Finance/Finance Director,500,500,,,,,,"{ ""criteria"": ""title_contains=CFO,VP Finance,Finance Director"" }",N002,N003,"{}"
+N003,tag,Tag: CFO-Insurance-Vertical,700,500,,,,,,"{ ""tag"": ""cfo-insurance"" }",N003,N004,"{}"
+N004,stage,STAGE: Day 1 - Initial Outreach,900,500,,,,,,"{}",N004,N005,"{}"
+N004,stage,STAGE: Day 1 - Initial Outreach,900,500,,,,,,"{}",N004,N010,"{}"
+N005,email_send,Send: Initial CFO Email (96 Days),1100,400,cfo_ins_email_01_intro,"{{contact.first_name}}, save 96 days per year on period-end close","Hi {{contact.first_name}},
+
+I'll be direct: Your finance team is spending 96+ days per year on manual payment reconciliation. That's nearly 4 months of productive time lost to matching transactions and hunting down discrepancies.
+
+Most insurance CFOs I speak with are shocked when they calculate the actual time cost:
+• 8-12 hours per week matching carrier payments
+• 3-5 days at month-end reconciling across entities  
+• Countless hours investigating exceptions and errors
+
+**What if you could automate all of it?**
+
+Paycile gives you real-time cash visibility across all carriers, entities, and accounts—without the manual work. Our customers save 96+ days annually and close their books in days, not weeks.
+
+I'd like to show you how in a quick 30-minute executive demo.
+
+**Book a time here:** {{landing_page_url}}
+
+Or reply to this email and I'll send you times that work.
+
+Best regards,
+Jim Fitzgerald
+CFO Solutions - Paycile
+jim@paycile.com",,"","{ ""template_id"": ""cfo_ins_email_01_intro"", ""landing_page"": ""/landing/cfo-insurance"" }",N005,N006,"{}"
+N006,wait,Wait: 2 Hours,1300,400,,,,,,"{ ""duration"": ""PT2H"" }",N006,N007,"{}"
+N007,decision,Check: Email Opened?,1500,400,,,,,,"{ ""condition"": ""email_opened"" }",N007,N008,"{ ""email_opened"": true }"
+N007,decision,Check: Email Opened?,1500,400,,,,,,"{ ""condition"": ""email_opened"" }",N007,N009,"{ ""email_opened"": false }"
+N008,tag,Tag: Email-Engaged,1700,300,,,,,,"{ ""tag"": ""email-engaged"", ""score"": 10 }",N008,N013,"{}"
+N009,tag,Tag: Email-Not-Opened,1700,500,,,,,,"{ ""tag"": ""email-not-opened"" }",N009,N031,"{}"
+N010,linkedin_connect,LinkedIn: Send Connection Request,1100,600,,,,,,"{ ""message"": ""Hi {{contact.first_name}}, I help insurance CFOs automate payment reconciliation. Would love to connect!"" }",N010,N011,"{}"
+N011,wait,Wait: 4 Hours,1300,600,,,,,,"{ ""duration"": ""PT4H"" }",N011,N012,"{}"
+N012,decision,Check: LinkedIn Accepted?,1500,600,,,,,,"{ ""condition"": ""linkedin_accepted"" }",N012,N021,"{ ""linkedin_accepted"": true }"
+N012,decision,Check: LinkedIn Accepted?,1500,600,,,,,,"{ ""condition"": ""linkedin_accepted"" }",N012,N031,"{ ""linkedin_accepted"": false }"
+N013,stage,STAGE: High Engagement Path,1900,250,,,,,,"{}",N013,N014,"{}"
+N014,wait,Wait: 3 Hours,2100,250,,,,,,"{ ""duration"": ""PT3H"" }",N014,N015,"{}"
+N015,decision,Check: Link Clicked?,2300,250,,,,,,"{ ""condition"": ""link_clicked"" }",N015,N016,"{ ""link_clicked"": true }"
+N015,decision,Check: Link Clicked?,2300,250,,,,,,"{ ""condition"": ""link_clicked"" }",N015,N021,"{ ""link_clicked"": false }"
+N016,tag,Tag: HOT-LEAD,2500,150,,,,,,"{ ""tag"": ""hot-lead"", ""score"": 100 }",N016,N017,"{}"
+N017,sms_send,Send: SMS Intro,2700,150,cfo_ins_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. Quick question - how many days does your team spend on payment reconciliation each month? Most insurance CFOs are shocked when they calculate it. I can show you how to automate 90% of it. Worth a quick call? Reply YES for times.",,"{ ""template_id"": ""cfo_ins_sms_01_intro"" }",N017,N018,"{}"
+N018,wait,Wait: 30 Minutes,2900,150,,,,,,"{ ""duration"": ""PT30M"" }",N018,N019,"{}"
+N019,decision,Check: SMS Reply?,3100,150,,,,,,"{ ""condition"": ""sms_reply"" }",N019,N020,"{ ""sms_reply"": true }"
+N020,task,TASK: BDR Call - Hot Lead,3300,50,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",N020,N061,"{}"
+N021,stage,STAGE: Medium Engagement,2500,350,,,,,,"{}",N021,N022,"{}"
+N022,wait,Wait: 6 Hours,2700,350,,,,,,"{ ""duration"": ""PT6H"" }",N022,N023,"{}"
+N023,linkedin_message,LinkedIn: Send Message,2900,350,,,,,,"{ ""message"": ""Thanks for connecting! I help insurance CFOs save 96 days/year on reconciliation. Worth a quick call?"" }",N023,N024,"{}"
+N024,wait,Wait: 12 Hours,3100,350,,,,,,"{ ""duration"": ""PT12H"" }",N024,N025,"{}"
+N025,decision,Check: LinkedIn Reply?,3300,350,,,,,,"{ ""condition"": ""linkedin_reply"" }",N025,N026,"{ ""linkedin_reply"": true }"
+N025,decision,Check: LinkedIn Reply?,3300,350,,,,,,"{ ""condition"": ""linkedin_reply"" }",N025,N028,"{ ""linkedin_reply"": false }"
+N026,tag,Tag: Warm-Lead,3500,300,,,,,,"{ ""tag"": ""warm-lead"", ""score"": 50 }",N026,N027,"{}"
+N027,task,TASK: BDR Follow-up Call,3700,300,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""normal"" }",N027,N061,"{}"
+N028,email_send,Send: Value Prop Email,3500,400,cfo_ins_email_02_value,Real-time cash visibility across all your insurance entities,"{{contact.first_name}},
+
+Following up on my previous note about automating your payment reconciliation.
+
+Here's what makes insurance reconciliation uniquely challenging:
+• Multiple carriers with different payment formats
+• Complex commission structures and premium allocations
+• Managing companies, reinsurers, and direct payments
+• Consolidation across subsidiaries and entities
+
+**Your team is manually managing all of this.**
+
+Paycile was built specifically for this complexity. We automatically:
+✓ Match payments from any carrier format
+✓ Handle commission structures and allocations  
+✓ Reconcile across all entities in real-time
+✓ Provide audit-ready documentation instantly
+
+The result? **100% payment accuracy and 96 days saved per year.**
+
+See it in action: {{landing_page_url}}
+
+Ready to discuss how this works for your operation?
+
+Jim Fitzgerald
+CFO Solutions - Paycile",,"","{ ""template_id"": ""cfo_ins_email_02_value"" }",N028,N029,"{}"
+N029,wait,Wait: 1 Day,3700,400,,,,,,"{ ""duration"": ""P1D"" }",N029,N030,"{}"
+N030,decision,Check: Email Response?,3900,400,,,,,,"{ ""condition"": ""email_reply"" }",N030,N061,"{ ""email_reply"": true }"
+N030,decision,Check: Email Response?,3900,400,,,,,,"{ ""condition"": ""email_reply"" }",N030,N031,"{ ""email_reply"": false }"
+N031,stage,STAGE: Day 3 - Re-engagement,1900,550,,,,,,"{}",N031,N032,"{}"
+N032,wait,Wait: Until Day 3,2100,550,,,,,,"{ ""duration"": ""P2D"" }",N032,N033,"{}"
+N033,sms_send,Send: SMS Value Prop,2300,550,cfo_ins_sms_02_value,,,"{{contact.first_name}}, following up on payment reconciliation automation. Our insurance clients save 96+ days/year and get real-time cash visibility across all carriers. 30-min demo? {{landing_page_url}}",,"{ ""template_id"": ""cfo_ins_sms_02_value"" }",N033,N034,"{}"
+N034,wait,Wait: 2 Hours,2500,550,,,,,,"{ ""duration"": ""PT2H"" }",N034,N035,"{}"
+N035,decision,Check: SMS Response?,2700,550,,,,,,"{ ""condition"": ""sms_reply"" }",N035,N061,"{ ""sms_reply"": true }"
+N035,decision,Check: SMS Response?,2700,550,,,,,,"{ ""condition"": ""sms_reply"" }",N035,N036,"{ ""sms_reply"": false }"
+N036,voicemail_drop,Drop: Voicemail Intro,2900,650,cfo_ins_vm_01_intro,,,,"Hi {{contact.first_name}}, this is Jim Fitzgerald with Paycile. I specialize in helping insurance CFOs eliminate manual payment reconciliation. Our clients save 96 days per year and get real-time cash visibility across all their insurance carriers and entities. I'd love to show you how in a quick 30-minute demo. Visit paycile.com/landing/cfo-insurance to book a time, or call me back at 555-0123. Thanks!","{ ""template_id"": ""cfo_ins_vm_01_intro"" }",N036,N037,"{}"
+N037,wait,Wait: 4 Hours,3100,650,,,,,,"{ ""duration"": ""PT4H"" }",N037,N038,"{}"
+N038,decision,Check: Voicemail Callback?,3300,650,,,,,,"{ ""condition"": ""inbound_call"" }",N038,N061,"{ ""inbound_call"": true }"
+N038,decision,Check: Voicemail Callback?,3300,650,,,,,,"{ ""condition"": ""inbound_call"" }",N038,N039,"{ ""inbound_call"": false }"
+N039,email_send,Send: Case Study Email,2900,500,cfo_ins_email_03_case_study,How this insurance CFO cut close time from 3 weeks to 4 days,"{{contact.first_name}},
+
+Thought you'd find this relevant:
+
+One of our insurance clients (multi-state, $500M+ in premium) was spending 3 weeks on month-end close. Their team of 6 was buried in spreadsheets, manually matching carrier payments across 12 entities.
+
+**After implementing Paycile:**
+• Close cycle: 3 weeks → 4 days
+• Reconciliation errors: 12-15/month → 0
+• Finance team size: Same 6 people, now doing strategic work
+• Cash visibility: Month-end reporting → Real-time dashboard
+
+The CFO told me: ""I finally have time to be a strategic advisor instead of a transaction processor.""
+
+**Could your team use an extra 96 days per year?**
+
+I'd be happy to walk you through exactly how we did it.
+
+Book 30 minutes: {{landing_page_url}}
+
+Jim Fitzgerald
+CFO Solutions - Paycile",,"","{ ""template_id"": ""cfo_ins_email_03_case_study"" }",N039,N040,"{}"
+N040,wait,Wait: 1 Day,3100,500,,,,,,"{ ""duration"": ""P1D"" }",N040,N041,"{}"
+N041,stage,STAGE: Day 5 - Engagement Scoring,100,900,,,,,,"{}",N041,N042,"{}"
+N042,scoring,Calculate: Engagement Score,300,900,,,,,,"{ ""rules"": [{ ""action"": ""email_opened"", ""points"": 10 }, { ""action"": ""link_clicked"", ""points"": 25 }, { ""action"": ""email_reply"", ""points"": 50 }, { ""action"": ""sms_reply"", ""points"": 50 }, { ""action"": ""linkedin_accepted"", ""points"": 15 }, { ""action"": ""linkedin_reply"", ""points"": 30 }] }",N042,N043,"{}"
+N043,decision,Decision: Score >= 75?,500,900,,,,,,"{ ""condition"": ""score_gte_75"" }",N043,N044,"{ ""score_gte_75"": true }"
+N043,decision,Decision: Score >= 75?,500,900,,,,,,"{ ""condition"": ""score_gte_75"" }",N043,N046,"{ ""score_gte_75"": false }"
+N044,tag,Tag: VERY-HOT,700,800,,,,,,"{ ""tag"": ""very-hot"", ""score"": 100 }",N044,N045,"{}"
+N045,task,TASK: Immediate BDR Outreach,900,800,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"", ""note"": ""High engagement - call ASAP"" }",N045,N061,"{}"
+N046,decision,Decision: Score 40-74?,700,900,,,,,,"{ ""condition"": ""score_40_to_74"" }",N046,N047,"{ ""score_40_to_74"": true }"
+N046,decision,Decision: Score 40-74?,700,900,,,,,,"{ ""condition"": ""score_40_to_74"" }",N046,N049,"{ ""score_40_to_74"": false }"
+N047,tag,Tag: Warm,900,900,,,,,,"{ ""tag"": ""warm"", ""score"": 50 }",N047,N048,"{}"
+N048,email_send,Send: Demo Follow-up,1100,900,cfo_ins_email_04_demo_follow,Following up - automating your payment reconciliation,"{{contact.first_name}},
+
+I wanted to follow up one more time about automating your payment reconciliation process.
+
+I know you're busy (that's exactly why this matters), so I'll keep this brief:
+
+**The question isn't whether to automate—it's when.**
+
+Every month you delay is another:
+• 8 days of manual reconciliation work
+• Risk of errors in financial reporting  
+• Delayed close impacting board reporting
+• Strategic decisions based on outdated cash position
+
+I've set aside a few times this week for executive demos. 30 minutes to show you:
+1. How we automate multi-carrier reconciliation
+2. Real-time cash visibility across all entities
+3. The exact ROI for your operation
+
+**Pick a time:** {{landing_page_url}}
+
+Or if this isn't a priority right now, just let me know and I won't follow up further.
+
+Best,
+Jim Fitzgerald
+Paycile",,"","{ ""template_id"": ""cfo_ins_email_04_demo_follow"" }",N048,N051,"{}"
+N049,decision,Decision: Score < 40?,700,1000,,,,,,"{ ""condition"": ""score_lt_40"" }",N049,N050,"{}"
+N050,tag,Tag: Cold,900,1000,,,,,,"{ ""tag"": ""cold"" }",N050,N086,"{}"
+N051,stage,STAGE: Day 7 - Final Push,1300,900,,,,,,"{}",N051,N052,"{}"
+N052,wait,Wait: Until Day 7,1500,900,,,,,,"{ ""duration"": ""P2D"" }",N052,N053,"{}"
+N053,sms_send,Send: SMS Urgency,1700,900,cfo_ins_sms_03_urgency,,,"Hi {{contact.first_name}}, month-end close coming up. Imagine closing in 4 days instead of 3 weeks. That's what automated reconciliation does. Quick demo this week? Book here: {{landing_page_url}}",,"{ ""template_id"": ""cfo_ins_sms_03_urgency"" }",N053,N054,"{}"
+N054,wait,Wait: 3 Hours,1900,900,,,,,,"{ ""duration"": ""PT3H"" }",N054,N055,"{}"
+N055,voicemail_drop,Drop: VM Value Prop,2100,900,cfo_ins_vm_02_value,,,,"Hi {{contact.first_name}}, Jim Fitzgerald from Paycile following up. I wanted to share a quick stat: The average insurance CFO spends 96 days per year on manual reconciliation. We automate that entire process, giving you real-time visibility and perfect accuracy. Insurance-specific demo takes just 30 minutes. Book at paycile.com/landing/cfo-insurance. Thanks!","{ ""template_id"": ""cfo_ins_vm_02_value"" }",N055,N056,"{}"
+N056,wait,Wait: 4 Hours,2300,900,,,,,,"{ ""duration"": ""PT4H"" }",N056,N057,"{}"
+N057,email_send,Send: Objection Handler Email,2500,900,cfo_ins_email_05_objection,Concerned about implementation complexity?,"{{contact.first_name}},
+
+The most common objection I hear from insurance CFOs:
+
+*""This sounds great, but we can't afford the disruption of implementing new systems during close season.""*
+
+I get it. Your team is already maxed out.
+
+Here's what you should know:
+• **Implementation:** 30-45 days, not 6-12 months
+• **Disruption:** We run parallel to your existing process until you're confident
+• **Training:** Your team is up and running in 2-3 days
+• **ROI:** Most clients see positive ROI in the first month
+
+One CFO recently told me: *""The cost of NOT implementing was higher than implementing. We were losing $40K/month in productivity.""*
+
+Worth a 30-minute conversation to see if it's right for you?
+
+**Schedule here:** {{landing_page_url}}
+
+Jim Fitzgerald
+Paycile",,"","{ ""template_id"": ""cfo_ins_email_05_objection"" }",N057,N058,"{}"
+N058,wait,Wait: 2 Days,2700,900,,,,,,"{ ""duration"": ""P2D"" }",N058,N059,"{}"
+N059,decision,Check: Any Engagement?,2900,900,,,,,,"{ ""condition"": ""any_activity"" }",N059,N060,"{ ""any_activity"": true }"
+N059,decision,Check: Any Engagement?,2900,900,,,,,,"{ ""condition"": ""any_activity"" }",N059,N086,"{ ""any_activity"": false }"
+N060,task,TASK: BDR Last Attempt Call,3100,850,,,,,,"{ ""assign_to"": ""BDR"" }",N060,N061,"{}"
+N061,stage,STAGE: Positive Response Received,3500,150,,,,,,"{}",N061,N062,"{}"
+N062,tag,Tag: DEMO-REQUESTED,3700,150,,,,,,"{ ""tag"": ""demo-requested"" }",N062,N063,"{}"
+N063,task,TASK: Schedule Demo,3900,150,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"", ""note"": ""Schedule CFO demo ASAP"" }",N063,N064,"{}"
+N064,wait,Wait: 1 Hour,4100,150,,,,,,"{ ""duration"": ""PT1H"" }",N064,N065,"{}"
+N065,email_send,Send: Demo Confirmation,4300,150,demo_confirmation,Your Paycile Demo - {{demo_date}},"Thanks for booking! Demo details...",,"","{ ""template_id"": ""demo_confirmation"", ""subject"": ""Your Paycile Demo - {{demo_date}}"" }",N065,N066,"{}"
+N066,wait,Wait: Until 1 Day Before Demo,4500,150,,,,,,"{ ""duration"": ""until_demo_minus_1d"" }",N066,N067,"{}"
+N067,sms_send,Send: Demo Reminder SMS,4700,150,demo_reminder,,,"Hi {{contact.first_name}}, reminder: Your Paycile demo is tomorrow at {{demo_time}}. Looking forward to it!",,"{ ""template_id"": ""demo_reminder"", ""text"": ""Hi {{contact.first_name}}, reminder: Your Paycile demo is tomorrow at {{demo_time}}. Looking forward to it!"" }",N067,N068,"{}"
+N068,wait,Wait: Until Demo Time,4900,150,,,,,,"{ ""duration"": ""until_demo_time"" }",N068,N069,"{}"
+N069,task,TASK: Demo Conducted,5100,150,,,,,,"{ ""assign_to"": ""Sales"", ""note"": ""Mark demo as completed"" }",N069,N070,"{}"
+N070,decision,Check: Demo Attended?,5300,150,,,,,,"{ ""condition"": ""demo_attended"" }",N070,N071,"{ ""demo_attended"": true }"
+N070,decision,Check: Demo Attended?,5300,150,,,,,,"{ ""condition"": ""demo_attended"" }",N070,N081,"{ ""demo_attended"": false }"
+N071,stage,STAGE: Post-Demo Follow-up,5500,100,,,,,,"{}",N071,N072,"{}"
+N072,wait,Wait: 2 Hours After Demo,5700,100,,,,,,"{ ""duration"": ""PT2H"" }",N072,N073,"{}"
+N073,email_send,Send: Thank You + Next Steps,5900,100,demo_thank_you,Thanks for your time today {{contact.first_name}},"Great connecting today...",,"","{ ""template_id"": ""demo_thank_you"", ""subject"": ""Thanks for your time today {{contact.first_name}}"" }",N073,N074,"{}"
+N074,wait,Wait: 1 Day,6100,100,,,,,,"{ ""duration"": ""P1D"" }",N074,N075,"{}"
+N075,task,TASK: Send Proposal,6300,100,,,,,,"{ ""assign_to"": ""Sales"", ""note"": ""Send custom proposal"" }",N075,N076,"{}"
+N076,wait,Wait: 2 Days,6500,100,,,,,,"{ ""duration"": ""P2D"" }",N076,N077,"{}"
+N077,decision,Check: Proposal Response?,6700,100,,,,,,"{ ""condition"": ""proposal_response"" }",N077,N080,"{ ""proposal_response"": true }"
+N077,decision,Check: Proposal Response?,6700,100,,,,,,"{ ""condition"": ""proposal_response"" }",N077,N078,"{ ""proposal_response"": false }"
+N078,email_send,Send: Proposal Follow-up,6900,150,proposal_follow_up,Following up on proposal,"Questions on the proposal?",,"","{ ""template_id"": ""proposal_follow_up"" }",N078,N079,"{}"
+N079,task,TASK: Sales Call,7100,150,,,,,,"{ ""assign_to"": ""Sales"" }",N079,N080,"{}"
+N080,goal,GOAL: Opportunity Created,7300,50,,,,,,"{}",,,
+N081,stage,STAGE: Demo No-Show Recovery,5500,250,,,,,,"{}",N081,N082,"{}"
+N082,email_send,Send: Sorry We Missed You,5700,250,demo_no_show,We missed you at today's demo,"No worries - want to reschedule?",,"","{ ""template_id"": ""demo_no_show"", ""subject"": ""We missed you at today's demo"" }",N082,N083,"{}"
+N083,sms_send,Send: Reschedule SMS,5900,250,,,,"Hi {{contact.first_name}}, we missed you at the demo. Want to reschedule? {{landing_page_url}}",,"{ ""text"": ""Hi {{contact.first_name}}, we missed you at the demo. Want to reschedule? {{landing_page_url}}"" }",N083,N084,"{}"
+N084,wait,Wait: 2 Days,6100,250,,,,,,"{ ""duration"": ""P2D"" }",N084,N085,"{}"
+N085,decision,Check: Rescheduled?,6300,250,,,,,,"{ ""condition"": ""demo_rescheduled"" }",N085,N066,"{ ""demo_rescheduled"": true }"
+N085,decision,Check: Rescheduled?,6300,250,,,,,,"{ ""condition"": ""demo_rescheduled"" }",N085,N086,"{ ""demo_rescheduled"": false }"
+N086,stage,STAGE: Long-term Nurture,3100,1000,,,,,,"{}",N086,N087,"{}"
+N087,wait,Wait: 30 Days,3300,1000,,,,,,"{ ""duration"": ""P30D"" }",N087,N088,"{}"
+N088,email_send,Send: Re-engagement Email,3500,1000,reengagement_30d,Still struggling with manual reconciliation?,"Following up on multi-entity automation...",,"","{ ""template_id"": ""reengagement_30d"", ""subject"": ""Still struggling with manual reconciliation?"" }",N088,N089,"{}"
+N089,decision,Check: Re-engaged?,3700,1000,,,,,,"{ ""condition"": ""email_opened"" }",N089,N004,"{ ""email_opened"": true }"
+N089,decision,Check: Re-engaged?,3700,1000,,,,,,"{ ""condition"": ""email_opened"" }",N089,N090,"{ ""email_opened"": false }"
+N090,exit,EXIT: End Campaign,3900,1050,,,,,,"{}",,,
+
+

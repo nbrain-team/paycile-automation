@@ -1,0 +1,245 @@
+================================================================================
+📦 COMPLETE FILE LIST TO COPY FOR NEW CURSOR PROJECT
+================================================================================
+
+Copy ALL of these to your new project directory:
+
+================================================================================
+✅ ESSENTIAL APPLICATION FILES (Must Copy)
+================================================================================
+
+📁 apps/
+   📁 server/                                    # Backend application
+      📁 src/
+         📄 index.ts                             # Main server file
+         📁 services/
+            📄 bonzoApi.ts
+            📄 elevenLabs.ts
+            📄 mediaStore.ts
+            📄 smsProvider.ts
+            📄 voicemailProvider.ts
+      📁 prisma/
+         📄 schema.prisma                        # Database schema
+         📁 migrations/                          # All migration folders
+      📄 package.json
+      📄 tsconfig.json
+      
+   📁 web/                                       # Frontend application
+      📁 src/
+         📁 components/
+            📄 CreateCampaignModal.tsx
+            📄 CreateLiveCampaignModal.tsx
+            📄 CreateFunnelTemplateModal.tsx
+            📄 FunnelTableView.tsx
+         📁 pages/
+            📄 Dashboard.tsx
+            📄 Campaigns.tsx
+            📄 CampaignsLive.tsx
+            📄 CampaignDetail.tsx
+            📄 CampaignBuilder.tsx
+            📄 Templates.tsx
+            📄 TemplatesFunnel.tsx
+            📄 TemplateBuilder.tsx
+            📄 Inbox.tsx
+            📄 Leads.tsx
+            📄 AnalyticsMaster.tsx
+            📄 MediaLibrary.tsx
+            📄 Calendar.tsx
+            📄 Realtors.tsx
+            📄 Settings.tsx
+         📁 shared/
+            📄 AppLayout.tsx
+            📄 Toasts.tsx
+         📁 store/
+            📄 useStore.ts
+         📁 lib/
+            📄 api.ts
+         📁 seed/
+            📄 campaignSeed.ts
+         📄 main.tsx
+         📄 styles.css
+      📄 package.json
+      📄 vite.config.ts
+      📄 tailwind.config.ts
+      📄 tsconfig.json
+      📄 postcss.config.js
+      📄 index.html
+
+📄 static.json                                   # Frontend routing config
+📄 templates.csv                                 # Sample content templates
+
+================================================================================
+✅ DOCUMENTATION FILES (Highly Recommended)
+================================================================================
+
+📄 START_HERE_NEW_PROJECT.md                    # 👈 START HERE!
+📄 MIGRATION_README.md                           # Package overview
+📄 NEW_PROJECT_SETUP.md                          # Detailed setup guide
+📄 DEPLOYMENT_CHECKLIST.md                       # Render deployment
+📄 CURSOR_START_PROMPT.md                        # Cursor AI prompts
+📄 PACKAGE_MANIFEST.md                           # File explanations
+📄 RENDER_ENV_TEMPLATE.txt                       # Environment variables
+📄 ADTV_PLATFORM_TECHNICAL_DOCUMENTATION.md     # Complete tech docs
+
+================================================================================
+✅ DEPLOYMENT FILES (For Render)
+================================================================================
+
+📄 render.yaml                                   # Render Blueprint
+📄 COPY_THESE_FILES.txt                         # This file
+
+================================================================================
+🚫 DO NOT COPY THESE
+================================================================================
+
+❌ node_modules/                                 # Will install fresh
+❌ dist/                                         # Will build fresh
+❌ .env                                          # Create from template
+❌ *.log                                         # Log files
+❌ .DS_Store                                     # macOS metadata
+❌ prisma/dev.db                                 # SQLite database
+❌ pnpm-lock.yaml                               # Will regenerate
+❌ boston.csv                                    # Sample data
+❌ bonzo.txt                                     # Original notes
+❌ NEW-ADTV-Homes.com*.csv                      # Sample data
+❌ *.mp3                                         # Sample audio
+❌ *.png                                         # Screenshots
+❌ upload.json, upload.out                       # Temp files
+
+================================================================================
+📋 QUICK COPY COMMAND
+================================================================================
+
+# Navigate to your new project
+mkdir my-new-project
+cd my-new-project
+
+# Copy all essential files
+cp -r /path/to/adtv-event-automation/apps ./
+cp /path/to/adtv-event-automation/static.json ./
+cp /path/to/adtv-event-automation/templates.csv ./
+cp /path/to/adtv-event-automation/*.md ./
+cp /path/to/adtv-event-automation/render.yaml ./
+cp /path/to/adtv-event-automation/RENDER_ENV_TEMPLATE.txt ./
+cp /path/to/adtv-event-automation/COPY_THESE_FILES.txt ./
+
+# Initialize git
+git init
+cat > .gitignore << 'EOF'
+node_modules/
+.env
+dist/
+*.log
+.DS_Store
+EOF
+
+# You're ready!
+# Next: Read START_HERE_NEW_PROJECT.md
+
+================================================================================
+✅ VERIFICATION CHECKLIST
+================================================================================
+
+After copying, verify you have:
+
+Structure:
+   ☐ apps/server/ directory exists
+   ☐ apps/web/ directory exists
+   ☐ All package.json files present
+   ☐ Prisma schema exists
+   ☐ All TypeScript files intact
+
+Configuration:
+   ☐ static.json at root
+   ☐ render.yaml at root
+   ☐ All .config.ts files present
+
+Documentation:
+   ☐ START_HERE_NEW_PROJECT.md
+   ☐ NEW_PROJECT_SETUP.md
+   ☐ DEPLOYMENT_CHECKLIST.md
+   ☐ CURSOR_START_PROMPT.md
+   ☐ RENDER_ENV_TEMPLATE.txt
+
+Git:
+   ☐ .gitignore created
+   ☐ Git initialized
+   ☐ No node_modules/ present
+   ☐ No .env present (you'll create it)
+
+================================================================================
+🎯 NEXT STEPS
+================================================================================
+
+1. ✅ Files copied (you just did this!)
+
+2. 📖 Read START_HERE_NEW_PROJECT.md
+   → This gives you the overview and paths forward
+
+3. 🤖 Open Cursor AI
+   → Copy the prompt from CURSOR_START_PROMPT.md
+   → Paste it into Cursor
+   → Let Cursor guide you through setup
+
+4. 🚀 Follow Cursor's Instructions
+   → Create .env file
+   → Install dependencies
+   → Setup database
+   → Start dev servers
+
+5. 🎉 Build Something Amazing!
+
+================================================================================
+📊 WHAT YOU'RE GETTING
+================================================================================
+
+Application Code:        ~15,000 lines
+Documentation:           ~5,000 lines
+Total Files:             ~70 files
+Technologies:            10+ integrated
+API Endpoints:           60+
+Database Tables:         14
+React Components:        30+
+
+Features:
+   ✅ Multi-channel messaging (SMS, Email, Voicemail)
+   ✅ Visual workflow builder
+   ✅ AI response generation
+   ✅ Real-time analytics
+   ✅ Campaign management
+   ✅ Contact database
+   ✅ Authentication system
+   ✅ And much more!
+
+================================================================================
+💡 PRO TIP
+================================================================================
+
+Use Cursor AI from the start!
+
+Don't try to figure everything out alone. The prompts in CURSOR_START_PROMPT.md
+are specifically designed to help you get started quickly and correctly.
+
+Cursor AI will:
+   ✓ Guide you through setup step-by-step
+   ✓ Explain what each configuration does
+   ✓ Help you troubleshoot issues
+   ✓ Answer questions as you go
+   ✓ Customize the platform for your needs
+
+================================================================================
+🎊 YOU'RE ALL SET!
+================================================================================
+
+You now have a complete, production-ready platform as your foundation.
+
+Next step: Open START_HERE_NEW_PROJECT.md
+
+Happy coding! 🚀
+
+================================================================================
+Package Version: 1.0
+Created: November 11, 2025
+Foundation: ADTV Event Automation Platform
+================================================================================
+

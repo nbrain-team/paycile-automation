@@ -1,0 +1,537 @@
+ADTV/nBrain 15m Testing Huddle - December 01
+VIEW RECORDING - 36 mins (No highlights): https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ
+
+---
+  ACTION ITEM: Set up Carol: add to FB group; grant nBrain access; confirm pay; start 2-day shadow w/ Gui - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=0.0
+
+0:00 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  How long do you think you'll take to train her? So we just need to get her set up on the Facebook group and then start the training process?
+  SCREEN SHARING: Danny started screen sharing - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=8.849743
+
+0:08 - Andrew Kloc
+  She needs access. And then, yeah, I would imagine she just sits in on meeting with Gui, maybe like for the first day or two.
+
+0:21 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Okay, okay.
+
+0:22 - Andrew Kloc
+  And then we can send her off on her own and then she can just slack Gui.
+
+0:26 - Gui Souza
+  I don't think there's going to be much training. I, what I was thinking is like the first two days she can be a shadow on my calls and then the following two days I will be the shadow on her calls and then she will be alone.
+
+0:38 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Yeah. Perfect. Okay. Okay. And then, um, and then we need, she'll need the app access. So end brain app access.  And then I just want to make sure that.
+
+0:53 - Andrew Kloc
+  Let me, let me, go through a list of everything that we need. And then, um, um, um, um, you.  Yeah, we'll have to figure out pricing. I haven't really figured out how much to pay her. She has like a minimum that she wants, but yeah.  All right. I'll work on that today. What's up, Danny?
+
+1:15 - Danny DeMichele (OpticWise)
+  What up? Nothing. Happy Thanksgiving.
+
+1:19 - Andrew Kloc
+  Yeah, it was good. How was yours?
+
+1:21 - Danny DeMichele (OpticWise)
+  Good. It was great, but too long. I'm not used to it. I literally took four days off.
+
+1:30 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  It's never too long.
+
+1:33 - Andrew Kloc
+  I could have used one more day.
+
+1:35 - Danny DeMichele (OpticWise)
+  Yeah. The thing is, like, I believe in vacations and breaks, but it just makes my brain hurt getting back into it.
+  ACTION ITEM: Schedule bug-handling walkthrough for ADTV team (next 2 wks) - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=108.9999  It's like, it's hard to, yeah. So this first half of the day, it'll be like a hangover, I guess, basically.
+
+1:53 - Andrew Kloc
+  Warm up.
+
+1:54 - Danny DeMichele (OpticWise)
+  But cool. So there's... There's... There's... One is, so I have a new, a pretty cool setup, and when, I don't know who on your side will be, because Dan mentioned we'll be changing our agreement between AdTV and us, and so we might want to work, I don't know what that is exactly yet, but regardless, know you guys, Gui is going to be working on Kerser, and we have a really cool, a good new setup for air, for this bug handling, and I want to show you guys how to do that in the next couple of weeks.  It'll just give you guys a little bit more autonomy on this, and this is basically the setup, so I'll kind of walk you guys through it.  Basically, it's an easy way of taking, of saying, I took Gui's email, put it in, it goes through and finds, basically, it does a test against all of it, and then creates an action item list.  And I think it'll help from us getting repetitive issues, the way it's going to log the errors in. Some of them are errors, some of them are not, but we'll walk through them.  This looks a lot better, by the way, in Cursor than it does on a Google Doc, but it's easier to show you on a Google Doc.  But the one thing that before, I mentioned this to you, Guy, last call. So we've been having issues with viewership ads, because we can't figure out what they are.  And this is the issue. So engagement ads, very specific. There's an API, literally an engagement tag. Same with reach.  There's a reach tag. With viewership, it's only for when videos come in, is there something called video views tag.  And so this is like a, this is like the API documentation. And so, basically, what it means is, if we want viewership, it'll only work with videos, when there's a video in the, in the copy, when there's not a video in the copy, there won't be, there is no, call it quote unquote viewership.  So, there's, there's two things that we could do. One is, we could just turn it off for non-video posts, and it's only works to video posts, or we create a backup, and we just create some kind of targeting ourselves, that we, we believe is, is good for views.
+  ACTION ITEM: Share viewership API doc w/ Debbie, Andrew, Gui - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=274.9999  So, and in here, I'll, I'll, I'll this document with you, because then you can kind of, it's basically the inner workings of the API.  So, one is, does that make sense to you? The, that, what I'm.
+
+5:05 - Gui Souza
+  I understood that you're saying that you cannot generate views in a post without a video. I didn't understand the second part.
+
+5:13 - Danny DeMichele (OpticWise)
+  Yeah, so the second, so the question is, how do we want to handle it when a video, so if a video comes in, it's very simple, it'll create a video views campaign.
+  ACTION ITEM: Re-enable viewership for video posts; set non-video to Reach+Engagement - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=315.9999  How do we want to handle posts that come through that are not videos? Reach. Okay, so then basically what's going to happen is, any non-video posts will only have two variants.  Any video posts will have three variants.
+
+5:37 - Gui Souza
+  Yeah.
+
+5:38 - Andrew Kloc
+  Okay. What is the second variant for non-video posts?
+
+5:41 - Gui Souza
+  Is it engagement? Yeah.
+
+5:43 - Andrew Kloc
+  Engagement.
+
+5:43 - Gui Souza
+  Okay, perfect.
+
+5:44 - Danny DeMichele (OpticWise)
+  So engagement will be static every time. Viewership will only be when a video converts over.
+
+5:53 - Gui Souza
+  Yeah. In the past, we had talking about ad traffic, the regular one. in direction. They were using three different campaigns.  We have engagement for suspects that are like people that are engaging on my posts. Then we had engagement for fans that is like trying to bring new followers that already have the habit to like make comments.  And we also had, I think it was reach for suspects. And then they stopped doing this. They just keep doing like the regular thing that is like fans, suspects, and reach.  So I was like, okay, yeah, uh, we can do the same here and eventually we can improve.
+
+6:38 - Andrew Kloc
+  Well, to me, this, this is, this is going to be better because what we lack is likes and comments on our non-video posts.  Really what the ad traffic team is doing is everything is optimized for a video post when those do really well.  But that's only only a- . I Small portion of what our clients are actually posting and for you and I that's going to help a lot with why did why am I not getting any likes on on this video on this photo or on these like still images so yeah then you could push them and say like because we can't take advantage of Facebook's video viewership yeah I mean it's there's no views on a image right that's just not a metric that gets measured but if we can get you a hundred likes yeah yeah or start taking advantage of more of the videos that we're creating for you right so is that how it's set up today or do you have to change it or no it's actually it we were already set up for viewership and we just kept having these issues so I turned it off and because I didn't know that that was the issue was that if it it wasn't
+
+8:00 - Danny DeMichele (OpticWise)
+  Converting non-video, because it was unable to. So I'm just going to turn it back on.
+
+8:06 - Gui Souza
+  Question. Did you receive the access for the business portfolio? Debbie, did you approve?
+
+8:16 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Yes. Again. There were two.
+
+8:21 - Gui Souza
+  Okay.
+
+8:23 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Where would I find it? And oddly, Bill Hillestead also requested to be removed, which was odd.
+
+8:28 - Gui Souza
+  Uh, Danny, you just need to log on your Facebook and with that email that you gave me.
+
+8:39 - Danny DeMichele (OpticWise)
+  Yeah.
+
+8:40 - Gui Souza
+  And then you can go to this link here. I put in the zoom chat for you.
+
+8:46 - Danny DeMichele (OpticWise)
+  Okay. Let's see here.
+
+8:59 - Gui Souza
+  Let's see here. Thank So now on the top left, click on your picture there, there you go, should appear here, so I don't think you are inside yet, go back, one more time, there you go.  Now click on partners, is, yeah, click on crag, no, no, okay, so you gave access to crag, but you don't have access to crag, maybe, yeah, like for me, it's showing invited, can you log out to Facebook?
+
+9:56 - Danny DeMichele (OpticWise)
+  Yeah.
+
+9:59 - Gui Souza
+  Yeah. Click on Login. I want to see what is the email that you're using there. I'm not seeing anything change.  Did you share just the window or the full screen?
+
+10:24 - Danny DeMichele (OpticWise)
+  Oh, no, little pop-up happened.
+
+10:27 - Gui Souza
+  Yeah. What is the email that you have there?
+
+10:29 - Danny DeMichele (OpticWise)
+  Is the in-brain one? Oh, you know what? That's, I bet you that's the issue because maybe in-brain is just an alias email.
+
+10:37 - Gui Souza
+  No, like if you have an account on Facebook with that email, that would not be a problem.
+
+10:42 - Danny DeMichele (OpticWise)
+  Okay, let's see here.
+
+10:44 - Gui Souza
+  The question is like, are you log on Facebook with that email?
+
+10:48 - Danny DeMichele (OpticWise)
+  Let me see. Maybe, maybe I didn't add it to that. Maybe. Let me go here. Oh, I think I know the issue.
+
+11:12 - Gui Souza
+  I use a personal email.
+
+11:14 - Danny DeMichele (OpticWise)
+  That's why I'm asking. Yeah, I, um, I have this. thank you thank thank you
+
+12:06 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Is it there? Absolutely. And let's complete that last part of the scope of work.
+
+12:13 - Danny DeMichele (OpticWise)
+  What was that?
+
+12:15 - Andrew Kloc
+  Someone's assistant.
+
+12:40 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Okay, I have to go figure out what's going on with that, but I will, do I need to do something else?
+
+12:46 - Gui Souza
+  Uh, if Danny needs me to put a different Facebook account, then I will need your help.
+
+12:52 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  If not, uh... Okay, let me look at that one that we approved, Facebook.
+
+13:00 - Gui Souza
+  Yeah, it's showing as invited for me. You didn't receive an email from Meta, Danny?
+
+13:14 - Danny DeMichele (OpticWise)
+  Yeah, I'm looking right now at it. I think it's here it is. All right, I think I got it.  Confirming. I think you're good, Debbie.
+
+13:59 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Okay. Okay.
+
+14:00 - Danny DeMichele (OpticWise)
+  If you have to go.
+
+14:01 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Oh, no, no, if I need to do anything else.
+
+14:05 - Gui Souza
+  But if I need you, I can just call you on Slack.
+
+14:07 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Don't worry. Oh, I don't have to go anywhere. I just, I was trying to help if I could help.
+
+14:14 - Danny DeMichele (OpticWise)
+  Let's see here. There we go. Oh, two-factor. Where's my phone?
+
+14:28 - Gui Souza
+  Yeah.
+
+14:29 - Danny DeMichele (OpticWise)
+  Welcome to my life.
+
+14:30 - Gui Souza
+  Hold on. Every time that you open an ad account, you will receive a text.
+
+14:34 - Danny DeMichele (OpticWise)
+  I have to grab my phone. I'll be right back.
+
+14:37 - Gui Souza
+  Okay. I have phone. I'll back. be back. right back. I'll I'll right I'll right back. I'll Thank
+
+16:03 - Danny DeMichele (OpticWise)
+  I think these are, are these them right here? Yeah.
+
+16:07 - Gui Souza
+  Yeah. So, can you click out of this vision?
+
+16:14 - Danny DeMichele (OpticWise)
+  Out of what?
+
+16:15 - Gui Souza
+  Yeah. So just go to active campaigns, click on the zero active campaigns there. Okay. Try to go to that link that I sent you before.
+
+16:29 - Danny DeMichele (OpticWise)
+  Okay.
+
+16:35 - Gui Souza
+  There you go. Now click on Craig. Now you have the access. So if you go to ad accounts, for example, and let's search for Susan.  I think it's with double S there. Click on the ad account. I'm not. I'm I'm I'm I'm I'm Now you have to click on, open the ads manager.  So now you can see everything that I can see. The reason why you can see this one is because I already gave you access, but go back to the previous page.  Now you have to go to the other tab. If you need to get access to yourself, you can just click on assign people and assign you.  Okay, so I might see this, but I'm not assigned yet down here? Yeah, so if you don't see yourself assigned to that account, you have the power to assign yourself.
+
+17:41 - Danny DeMichele (OpticWise)
+  Okay, gotcha.
+
+17:43 - Gui Souza
+  You can go to search Alex.
+
+17:49 - Danny DeMichele (OpticWise)
+  What a dumb step.
+
+17:51 - Gui Souza
+  So Gianetti, the second one. I onboarded him on Friday. Like this one, you don't have. You access, so click on assign people, and you have to search you, and full control, and assign, yeah, I agree, it's dumb, like.  That's such a stupid step. Now you have to refresh the page and search again.
+
+18:23 - Danny DeMichele (OpticWise)
+  Okay.
+
+18:28 - Gui Souza
+  There you go. Now click on Open Ads Manager.
+
+18:34 - Danny DeMichele (OpticWise)
+  Yeah, this is great, because basically what I'm doing now is... So, this is a host that I onboarded on Friday, and you can see that he doesn't have any campaigns created.  Okay. So campaigns are not being created in the onboarding, it sounds like. No. Okay.
+
+18:51 - Gui Souza
+  Now you can go back to the platform to see, like, what is the account that is connected there, like, this kind of thing.  But you already have all the access that I have.
+
+19:00 - Danny DeMichele (OpticWise)
+  Yeah. So let's actually look at this right now. So this is what's cool. And I guess, like I said, once we do this dive together, I'm going to have a cursor.  I'm connecting an NCP connection with cursor and the ad account. So it'll be able to double check itself now all the way through versus like a limited test.  So let's see what campaign he's connected to. Yeah. So let's, so it must be this one.
+
+19:40 - Gui Souza
+  Let's see. Uh, I can check for you. I have this information. Uh, in his case was 2627. Uh, and the end of the number is 5402.
+
+19:56 - Danny DeMichele (OpticWise)
+  Yeah. So it's this one here. So this should build them right now.
+
+20:00 - Gui Souza
+  Let's see if they build. That's the thing. Like, after you selected, last week was not creating the campaigns.
+
+20:05 - Danny DeMichele (OpticWise)
+  I don't remember if we fixed that. Yeah, it should be. Let's see. Basically, when you select it, you just wait for it to refresh the page.
+
+20:25 - Gui Souza
+  How many things we should be doing at the same time? Like, can I give you another name?
+
+20:30 - Danny DeMichele (OpticWise)
+  This will take, like, it'll be, like, 30 seconds. Let's just do this one. I just want to make sure that, because I think this is going to have to be a step every single time in your onboarding.
+  ACTION ITEM: Clean up duplicate campaigns/ad sets; pause active duplicates; delete empty duplicates - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1234.9999
+
+20:43 - Gui Souza
+  I don't mind, like, selecting the right.
+
+20:45 - Danny DeMichele (OpticWise)
+  So it created them there. Yeah, but they are being created in duplicity, right? Yeah. Okay, so the duplication.
+
+20:52 - Gui Souza
+  You know, actually created two Kickstarters? Yeah, two. Yeah, of each.
+
+20:58 - Danny DeMichele (OpticWise)
+  Yeah, two of each.
+
+21:00 - Gui Souza
+  It would only use one, it would only use one, but I don't know what, I'll get rid of the other four.
+
+21:04 - Danny DeMichele (OpticWise)
+  Yeah. So every time you onboard, my guess is you're going to have to go in and switch the ad account.
+
+21:10 - Gui Souza
+  That's okay. Go back to the business portfolio tab. No, this one. Go to Alex Quaid.
+
+21:18 - Danny DeMichele (OpticWise)
+  There. It's already there.
+
+21:23 - Gui Souza
+  So go to ads manager. Now here, let me see. Click on Kickstarter. I think. Yeah, this one. So you can see that we have two ad sets.  I don't know why. And I saw other hosts with the same problem. Like, I don't know why we are creating two ad sets for this campaign.
+
+21:55 - Danny DeMichele (OpticWise)
+  Yeah, obviously it shouldn't.
+
+21:56 - Gui Souza
+  And the results are different, like in one of. Then we have 50,000, and the other one we have like 43,000.
+
+22:04 - Danny DeMichele (OpticWise)
+  Yeah, so now what I'm going to do is I'll have it test through and basically have it go and look at every single company.  Well, I'll the duplicity build.
+
+22:15 - Gui Souza
+  Okay.
+  ACTION ITEM: Launch #ADTV fix: keep non-Kickstarter ads running post-Kickstarter - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1335.9999
+
+22:16 - Danny DeMichele (OpticWise)
+  But now, I think now that it could see all the way through, it'll be easy to solve this. So I'll do a, I'll have it clean, go through, find any duplicates.  Okay. Yeah, so I'll do that.
+
+22:26 - Gui Souza
+  Uh, one last thing, I think the biggest bug that we have today is the problem where, uh, in the moment that I use the hashtag ADTV, everything else is turned off.
+
+22:39 - Danny DeMichele (OpticWise)
+  Correct. Yeah.
+
+22:40 - Gui Souza
+  So I'll launch that. I did, we, I have it done. I just didn't want to launch it before Thanksgiving because I didn't know if it was going to screw things up.  That was smart.
+
+22:48 - Danny DeMichele (OpticWise)
+  I agree with that.
+
+22:50 - Gui Souza
+  Yeah.
+
+22:53 - Danny DeMichele (OpticWise)
+  yeah, so that's the one where, um, uh, all ads are built, including a Kickstarter. So, the you here. We're We're  Kickstarter stops, but the other ads keep going after the Kickstarter. Yeah.
+
+23:05 - Gui Souza
+  So my question is about the report that I sent to you.
+
+23:09 - Danny DeMichele (OpticWise)
+  Do you like that format? Do you want me to give it? It's Yeah, it's perfect because then what I'm doing is literally dumping that into Cursor, not to do edits.  It's going to first, now it'll actually be able to go through to Facebook and it's creating basically a task list based on that.  Because some of them aren't build things. Some of them are like the Alex one, where it was just a different ad account that had to be selected.  So it helps discern the difference between an error in the system. Maybe it's a one-off with a client.
+
+23:45 - Gui Souza
+  Yeah, so that's a perfect setup. I have another situation for you. I know that we have just five minutes.
+
+23:51 - Danny DeMichele (OpticWise)
+  Can you go back to the business portfolio?
+  ACTION ITEM: Troubleshoot Shelly Potvin ad account visibility; ensure disabled accounts appear in report - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1432.9999
+
+23:54 - Gui Souza
+  Yes. Search for Shelly with two owls. Yes. Yes. No E. There you go. So this is a host, all her ad accounts are disabled.  This is the kind of behavior that I want to see in that table with problems, so I can act proactively, and I don't have to check one by one, so I can reach out.  So if you go back, like, her name is not there. No, in the top of the page.
+
+24:26 - Danny DeMichele (OpticWise)
+  Yeah, no, in the red one. Is that Potvin?
+
+24:29 - Gui Souza
+  Yeah, this one, Potvin. Maybe we can use her as a reference?
+
+24:36 - Danny DeMichele (OpticWise)
+  I don't know. Yeah, I just want to see what, if the ad account selected is the one that has an error.  I want to see if it's a...
+
+24:49 - Gui Souza
+  Okay. Let me see if I have, what is the right number to use? Because on her case, she has, I think, three ad accounts.  Um... Um... Um... Um... Um... Um... Um... Um... Okay, yeah I have it, I will put in...
+
+25:43 - Danny DeMichele (OpticWise)
+  No ad, so there's no ad accounts found, I mean that should have definitely showed up in the top. Um, I'm wondering why she doesn't have...  ... ... ... Yeah, this is a weird one. Let me, I'll, I'll, I'll figure, I'll troubleshoot what's going on with this one.
+
+26:07 - Gui Souza
+  have, I have situations like this all the time, so don't worry.
+
+26:11 - Danny DeMichele (OpticWise)
+  Yeah. Hopefully that will what I want to do is, how does it, not just this one-off, like how does it handle it moving forward when there's these sort of weird new things that we hadn't anticipated before type things.  But I'll, I'll get to the bottom of this one. And it might just be, there's going to be things that we have to kind of solve along the way because we couldn't anticipate the, the, the issue.  Most of them, I don't think are going to be difficult, but it'll still require some updating.
+  ACTION ITEM: Send updated report to Danny AM Dec 2 - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1603.9999
+
+26:45 - Gui Souza
+  Okay. About the report, I can do it again later. I just need to know when you finish doing the update so I can check if everything is okay.
+
+26:54 - Danny DeMichele (OpticWise)
+  Or if you prefer, I can do it tomorrow morning before our meeting. Yeah, do it tomorrow morning. I'm going to be spinning.  Today, to get through the items that we've talked about today, I'll have the pretty much everything that we've talked about, the Kickstarter stuff, the ads that will run.
+
+27:13 - Gui Souza
+  There is another thing that I want to show you. Click on the total monthly budget there. Just try to delete everything.  Yeah, I was typing, trying to put 150, and I almost put it, like, 9,000.
+
+27:44 - Danny DeMichele (OpticWise)
+  It's just, you know, you just... Yeah, I know. It's dumb. It's It's just, you have to be smarter than the system.
+
+27:50 - Gui Souza
+  It's like a test for you, Guy.
+
+27:52 - Danny DeMichele (OpticWise)
+  Yeah, I know.
+
+27:55 - Gui Souza
+  My concern is, like, I will have other people doing it. This very soon, and I want to make harder for human error in this situation that is like, I don't want anybody in the company to be allowed to put as a budget for a host, like a thousand bucks, because that would be a huge problem.
+  ACTION ITEM: Implement $500 monthly budget cap for non-admin users; test w/ Jess - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1684.9999
+
+28:15 - Danny DeMichele (OpticWise)
+  Did you say that there was a max that you wanted to put in? Yes.
+
+28:20 - Gui Souza
+  What's the max? 500.
+
+28:22 - Danny DeMichele (OpticWise)
+  500, okay. So I'll fix the box, whatever the heck the box thing is. Perfect. So are we going to have user permissioning, like you can do anything, and then everybody else can only go to 500, or just keep it all at 500?
+
+28:33 - Gui Souza
+  I don't know.
+
+28:35 - Andrew Kloc
+  That's an answer to question. The out user. I mean, we have other people who are going to be in here, like the marketing team, and while I trust that they won't, but...
+
+28:46 - Danny DeMichele (OpticWise)
+  Give me someone that I can add as what the new user would be, and then I could do some testing against you guys versus...  You guys were talking about someone before I got on that might be using the system.
+
+28:59 - Gui Souza
+  Good night. Good night. you. Yeah.
+
+29:01 - Danny DeMichele (OpticWise)
+  What's that person's name?
+
+29:02 - Andrew Kloc
+  Her name's Carol. But she already has an email, right? But let's hold off on that because she's not on the team yet.  We have two on our marketing team, Becca and not Lori. What's her name? Jess. Debbie, do you know, is it Jess or Jessica at ADTV?
+
+29:25 - Gui Souza
+  It is Jess.
+
+29:26 - Andrew Kloc
+  Jess Quinlan. At ADTV.
+
+29:29 - Danny DeMichele (OpticWise)
+  So J-E-S-S?
+
+29:31 - Gui Souza
+  I can check that in a second.
+
+29:33 - Andrew Kloc
+  Yeah, J.
+
+29:37 - Gui Souza
+  So her email is just Jess and Becca.
+
+29:42 - Danny DeMichele (OpticWise)
+  Okay, so I'll do, I'll create, I'll test a user. Any other user things, like, that's going to be different?  I mean, we're to use Adam later. I'll do a test with the Jess at ADTV Media on a $500 budget cap.  Yeah. Versus you guys can go as high as you want.
+
+30:02 - Gui Souza
+  That's the thing. I don't know. I don't think so. If I remember anything else, I would send you.
+
+30:09 - Danny DeMichele (OpticWise)
+  Okay.
+
+30:10 - Gui Souza
+  Like, the interest, are we planning to use that?
+
+30:14 - Andrew Kloc
+  The what?
+
+30:16 - Gui Souza
+  Interests. I don't know. Yeah, like, as a special category for real estate, we don't need that. Okay. But if we are planning to move traffic to other industries, then we may need that.
+  ACTION ITEM: Fix report-link sharing; shorten long-string links - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1835.9999
+
+30:32 - Andrew Kloc
+  Yeah, just keep it. Don't delete anything. Don't delete campaigns. We need the ability to give reporting to the clients.  And then we also need, oh, share report links.
+
+30:50 - Danny DeMichele (OpticWise)
+  Yeah, so, let's see how this is working. I'm not sure if I've tested this yet. it. No. So I'll work on whatever this is.
+  ACTION ITEM: Test Chris Zbelly CSV upload to InBrain Portal - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1862.9999  But also, I'm going to change this long- string. It'll just be a username or account Facebook.
+
+31:11 - Gui Souza
+  I have another thing. I just forwarded to you a CSV file that a host sent to me. And ideally, we should be able to go to InBrain Portal and upload that information there to go to Facebook.
+  ACTION ITEM: Test Cursor end-to-end self-testing w/ ad platform - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1893.9999  We never test before, but now we have a real data to use. It's Chris Zbelly. Yeah.
+
+31:37 - Danny DeMichele (OpticWise)
+  I'll test that. So I'll work on all these things today. I think we should have most of them knocked out.  And I'm also going to test the new cursor self-testing all the way through to the AdCamp ad platform. And then tomorrow we'll have a good, I think, good, solid session.
+
+31:58 - Andrew Kloc
+  Okay. As far as, like, the multiple ad sets, if they have metrics, don't delete them, just turn them off so that we can keep that data.
+
+32:14 - Gui Souza
+  That's a good rule for everything, never delete it.
+
+32:20 - Danny DeMichele (OpticWise)
+  Yeah, we, yeah, that, the, that was a, that was a human error. Um, the platform doesn't have any delete, um, uh, it only has, I think, pause and archive.  Um, that was a, that was human, um, error. But yes, I'll make sure that this cleanup, the same thing happens.  And Danny, I think duplicate, if there are duplicate campaign and ad sets that have never had ads in them, we will delete those so they're not sitting in there in view.
+  ACTION ITEM: Document Cursor rules/roles; add to project folder - WATCH: https://fathom.video/share/CMAYMjquhehJtc4H977oLMa-Qs42w4qQ?timestamp=1963.9999
+
+32:52 - Andrew Kloc
+  Okay.
+
+32:53 - Gui Souza
+  Okay.
+
+32:54 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  And Danny, just put in cursor roles to see if you can review and add that to the project folder to.  See if we can manage some of the costs.
+
+33:02 - Danny DeMichele (OpticWise)
+  Yeah, absolutely.
+
+33:03 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Yeah. It might have some impact on you, so you might want to look at them or you'll see what the impact is.  know, there's some validations that it's going to ask you for before it performs large actions that could cost lots of money.
+
+33:16 - Danny DeMichele (OpticWise)
+  Yeah, no problem. I'm kind of like a drunken sailor on the cursor stuff, you know, sort of.
+
+33:22 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Well, says, AI said, oh, it's not uncommon for high-level developers to utilize that much, you know, whatever word it said, but.
+
+33:34 - Gui Souza
+  I was having a conversation this weekend, like, how can I put it two AIs to code at the same time?  And the table had like a explosion because everybody has a different opinion about it.
+
+33:45 - Danny DeMichele (OpticWise)
+  Yeah, know, it's funny, like in cursor, I use one model versus their rotating model option because of the, it really does, like, it's supposed to pass the history to the, you know, when you switch the model.  To the next one, because there are so many things that I do that could use a cheaper model. But when you're toggling through, it just doesn't trap the history that well.
+
+34:10 - Gui Souza
+  Yeah.
+
+34:11 - Danny DeMichele (OpticWise)
+  Especially when you're in troubleshooting. In fact, I'd say the first half of me developing this, I would point some of the problems that I was having on my side to it rotating models, you know, for different tasks.  Like, so I never have that selected. I don't know. I don't know, Andrew, or you guys have been using it.  Do you guys... Do you guys use the rotating models or a static model?
+
+34:33 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  I use the rotating.
+
+34:34 - Danny DeMichele (OpticWise)
+  I think Andrew used the static.
+
+34:36 - Gui Souza
+  Yeah.
+
+34:37 - Danny DeMichele (OpticWise)
+  I use static. Yeah. For a lot of things, if it's not, like, crazy troubleshooting stuff, I think static is fine.  And then you definitely get the... It does a good job of grabbing the model needed versus the most expensive or whatever.  And I'm using 4.5, which is not as expensive as... For a long time, I was using 4.1. I do.  I think one month with you guys, I had like a $6,000 cursor bill on 4.1 early on, in one month.  And so I'm using 4.5, which seems to be a nice blend, smart enough.
+
+35:16 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  But yeah, the rotating models on the deep Well, that might be one limitation you'll have with the cursor rules, because it does, it does, one of the rules is to look for the most cost-effective model for what you're trying to accomplish.
+
+35:29 - Danny DeMichele (OpticWise)
+  So yeah, we might have to do some revising there. Yeah, like, I mean, as long as it's not auto-changing them, like it's, it's, it's telling us ahead of time, because there's certain ones when you're in the depth of something that changing, it's a pain in butt.
+
+35:43 - Debbie Tetz (American Dream Network | Carlsbad CA)
+  Yeah, I mean, it'll always let you do whatever you want. It's just prompting you now to say, hey, do you realize that what you're asking it to do is going to take up?
+
+35:51 - Danny DeMichele (OpticWise)
+  Yeah, that's fine. Yeah, that's not an issue. Yeah. That's actually probably good. I might use that myself for anything.  Thank you. Anyways. Okay, cool. Well, we'll talk to you guys tomorrow.
+
+36:07 - Andrew Kloc
+  All right. All right.

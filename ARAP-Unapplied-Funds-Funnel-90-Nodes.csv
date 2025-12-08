@@ -1,0 +1,204 @@
+Node ID,Node Type,Node Name,Position X,Position Y,Template ID,Email Subject,Email Body,SMS Text,Voicemail Script,Config JSON,Edge From,Edge To,Edge Condition
+A000,start,Import: AR/AP Target List,100,500,,,,,,"{}",A000,A001,"{}"
+A001,filter,Filter: AR/AP Specialists,300,500,,,,,,"{ ""criteria"": ""title_contains=AR,AP,Accounts Receivable,Accounts Payable,Collections"" }",A001,A002,"{}"
+A002,filter,Filter: Revenue > $10M,500,500,,,,,,"{ ""criteria"": ""revenue_gte_10m"" }",A002,A003,"{}"
+A003,tag,Tag: ARAP-Unapplied-Target,700,500,,,,,,"{ ""tag"": ""arap-target"" }",A003,A004,"{}"
+A004,stage,STAGE: Day 1 - Value Intro,900,500,,,,,,"{}",A004,A005,"{}"
+A005,email_send,Send: $250K Unapplied Funds Email,1100,400,arap_email_01_intro,"{{contact.first_name}}, you likely have $250K+ in unapplied funds","Hi {{contact.first_name}},
+
+Quick question: How much cash is sitting in your unapplied funds account right now?
+
+Most AR/AP managers I talk to don't actually know. They know it's ""a lot,"" but they're too buried in daily payment matching to investigate.
+
+**On average, our customers discover $250K-$500K in unapplied funds** they didn't know they had. That's cash that came in but was never applied to invoices or customer accounts.
+
+It's sitting there. Not working for you. Just... sitting.
+
+**Paycile finds it and matches it automatically.**
+
+We automatically:
+• Match payments to invoices (even with incomplete references)
+• Identify and recover unapplied funds
+• Handle partial payments, overpayments, and complex scenarios
+• Provide complete audit trails for everything
+
+One AR manager recovered $380K in the first month. Another found $520K that had been sitting for over a year.
+
+**Want to see how much you're sitting on?**
+
+Book a free assessment: {{landing_page_url}}
+
+We'll show you exactly where your unapplied funds are and how to recover them.
+
+Best,
+Jim Fitzgerald
+AR/AP Solutions - Paycile",,"","{ ""template_id"": ""arap_email_01_intro"", ""landing_page"": ""/landing/arap"" }",A005,A006,"{}"
+A006,wait,Wait: 1 Hour,1300,400,,,,,,"{ ""duration"": ""PT1H"" }",A006,A007,"{}"
+A007,decision,Check: Email Opened?,1500,400,,,,,,"{ ""condition"": ""email_opened"" }",A007,A008,"{ ""email_opened"": true }"
+A007,decision,Check: Email Opened?,1500,400,,,,,,"{ ""condition"": ""email_opened"" }",A007,A025,"{ ""email_opened"": false }"
+A008,tag,Tag: Email-Opened,1700,300,,,,,,"{ ""tag"": ""opened"", ""score"": 10 }",A008,A009,"{}"
+A009,decision,Check: Landing Page Visited?,1900,300,,,,,,"{ ""condition"": ""landing_page_visit"" }",A009,A010,"{ ""landing_page_visit"": true }"
+A009,decision,Check: Landing Page Visited?,1900,300,,,,,,"{ ""condition"": ""landing_page_visit"" }",A009,A015,"{ ""landing_page_visit"": false }"
+A010,tag,Tag: HIGH-INTENT,2100,200,,,,,,"{ ""tag"": ""high-intent"", ""score"": 60 }",A010,A011,"{}"
+A011,sms_send,Send: SMS Quick Follow-up,2300,200,arap_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. Quick question - how much cash in unapplied funds right now? Most companies have $250K+ they don't know about. Free assessment? {{landing_page_url}}",,"{ ""template_id"": ""arap_sms_01_intro"" }",A011,A012,"{}"
+A012,wait,Wait: 30 Minutes,2500,200,,,,,,"{ ""duration"": ""PT30M"" }",A012,A013,"{}"
+A013,decision,Check: SMS Reply?,2700,200,,,,,,"{ ""condition"": ""sms_reply"" }",A013,A014,"{ ""sms_reply"": true }"
+A014,task,TASK: URGENT - Call Hot Lead,2900,100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"", ""note"": ""Wants unapplied funds assessment"" }",A014,A061,"{}"
+A015,stage,STAGE: Medium Interest Path,2100,400,,,,,,"{}",A015,A016,"{}"
+A016,wait,Wait: 4 Hours,2300,400,,,,,,"{ ""duration"": ""PT4H"" }",A016,A017,"{}"
+A017,email_send,Send: Payment Matching Focus,2500,400,arap_email_02_matching,Spending hours matching payments to invoices?,"{{contact.first_name}},
+
+Following up on payment automation for your AR/AP process.
+
+Here's what I hear from most AR/AP specialists:
+• ""Customer put wrong invoice number on payment""
+• ""We get ACH files with no reference data""  
+• ""Matching partial payments takes forever""
+• ""We have hundreds of unapplied payments we need to research""
+
+**Your team is spending 20-30 hours per week on this.**
+
+Paycile's AI automatically matches payments to invoices with 98% accuracy, even when:
+• Invoice numbers are wrong or missing
+• Payments are partial or overpayments  
+• References are incomplete or incorrect
+• Multiple invoices are paid in one transaction
+
+**The 2% we can't auto-match?** We flag them with suggested matches so your team resolves them in minutes, not hours.
+
+See it work on your actual payment data: {{landing_page_url}}
+
+Jim Fitzgerald
+Paycile",,"","{ ""template_id"": ""arap_email_02_matching"" }",A017,A018,"{}"
+A018,wait,Wait: 2 Hours,2700,400,,,,,,"{ ""duration"": ""PT2H"" }",A018,A019,"{}"
+A019,decision,Check: Opened/Clicked?,2900,400,,,,,,"{ ""condition"": ""email_activity"" }",A019,A020,"{ ""email_activity"": true }"
+A019,decision,Check: Opened/Clicked?,2900,400,,,,,,"{ ""condition"": ""email_activity"" }",A019,A031,"{ ""email_activity"": false }"
+A020,sms_send,Send: SMS Matching Stats,3100,350,arap_sms_02_matching,,,"{{contact.first_name}}, spending 20-30 hrs/week matching payments? We automate 98% of it with AI. See it work on your data. Demo: {{landing_page_url}}",,"{ ""template_id"": ""arap_sms_02_matching"" }",A020,A021,"{}"
+A021,wait,Wait: 3 Hours,3300,350,,,,,,"{ ""duration"": ""PT3H"" }",A021,A022,"{}"
+A022,voicemail_drop,Drop: VM Intro,3500,350,arap_vm_01_intro,,,,"Hi {{contact.first_name}}, Jim Fitzgerald with Paycile. I specialize in helping AR and AP teams recover unapplied funds and automate payment matching. Most companies have $250,000 or more in unapplied funds they don't even know about. We find it and match it automatically. Book a free assessment at paycile.com/landing/arap or call me at 555-0123. Thanks!","{ ""template_id"": ""arap_vm_01_intro"" }",A022,A023,"{}"
+A023,wait,Wait: 1 Day,3700,350,,,,,,"{ ""duration"": ""P1D"" }",A023,A024,"{}"
+A024,decision,Check: Any Response?,3900,350,,,,,,"{ ""condition"": ""any_activity"" }",A024,A061,"{ ""any_activity"": true }"
+A024,decision,Check: Any Response?,3900,350,,,,,,"{ ""condition"": ""any_activity"" }",A024,A031,"{ ""any_activity"": false }"
+A025,stage,STAGE: Not Engaged - SMS Push,1700,500,,,,,,"{}",A025,A026,"{}"
+A026,wait,Wait: 6 Hours,1900,500,,,,,,"{ ""duration"": ""PT6H"" }",A026,A027,"{}"
+A027,sms_send,Send: SMS Direct Ask,2100,500,arap_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. Quick question - how much cash in unapplied funds right now? Most companies have $250K+ they don't know about. Free assessment? {{landing_page_url}}",,"{ ""template_id"": ""arap_sms_01_intro"" }",A027,A028,"{}"
+A028,wait,Wait: 2 Hours,2300,500,,,,,,"{ ""duration"": ""PT2H"" }",A028,A029,"{}"
+A029,decision,Check: SMS Response?,2500,500,,,,,,"{ ""condition"": ""sms_reply"" }",A029,A061,"{ ""sms_reply"": true }"
+A029,decision,Check: SMS Response?,2500,500,,,,,,"{ ""condition"": ""sms_reply"" }",A029,A030,"{ ""sms_reply"": false }"
+A030,voicemail_drop,Drop: VM Assessment Offer,2700,550,arap_vm_01_intro,,,,"Hi {{contact.first_name}}, Jim Fitzgerald with Paycile. I specialize in helping AR and AP teams recover unapplied funds and automate payment matching. Most companies have $250,000 or more in unapplied funds they don't even know about. We find it and match it automatically. Book a free assessment at paycile.com/landing/arap or call me at 555-0123. Thanks!","{ ""template_id"": ""arap_vm_01_intro"" }",A030,A031,"{}"
+A031,stage,STAGE: Day 3 - $380K Recovery Story,100,1000,,,,,,"{}",A031,A032,"{}"
+A032,wait,Wait: Until Day 3,300,1000,,,,,,"{ ""duration"": ""P2D"" }",A032,A033,"{}"
+A033,email_send,Send: $380K Case Study,500,1000,arap_email_03_recovery,"Case study: $380K recovered from unapplied funds","{{contact.first_name}},
+
+Quick story that might sound familiar:
+
+AR Manager at a mid-size distributor had $1.2M in their unapplied cash account. They knew they needed to research it, but they were too busy keeping up with daily payments.
+
+**After implementing Paycile:**
+• Week 1: System matched $380K to open invoices automatically
+• Week 2: Another $290K matched to customer accounts
+• Week 3: Final $410K matched (some going back 18 months)
+• Week 4: Unapplied balance = $120K (all flagged as legitimate overpayments/credits)
+
+Total recovered and applied: **$1.08M in cash** that was just sitting there.
+
+The AR Manager: *""This paid for itself 50x over in the first month.""*
+
+**How much are you sitting on?**
+
+Free assessment: {{landing_page_url}}
+
+We'll show you exactly where your unapplied funds are.
+
+Jim Fitzgerald
+Paycile",,"","{ ""template_id"": ""arap_email_03_recovery"" }",A033,A034,"{}"
+A034,wait,Wait: 3 Hours,700,1000,,,,,,"{ ""duration"": ""PT3H"" }",A034,A035,"{}"
+A035,decision,Check: Email Opened?,900,1000,,,,,,"{ ""condition"": ""email_opened"" }",A035,A036,"{ ""email_opened"": true }"
+A035,decision,Check: Email Opened?,900,1000,,,,,,"{ ""condition"": ""email_opened"" }",A035,A040,"{ ""email_opened"": false }"
+A036,sms_send,Send: SMS Recovery Story,1100,950,arap_sms_03_recovery,,,"Hi {{contact.first_name}}, one client recovered $380K in unapplied funds in month 1. Want to see how much you're sitting on? Free assessment: {{landing_page_url}}",,"{ ""template_id"": ""arap_sms_03_recovery"" }",A036,A037,"{}"
+A037,wait,Wait: 90 Minutes,1300,950,,,,,,"{ ""duration"": ""PT90M"" }",A037,A038,"{}"
+A038,decision,Check: Response?,1500,950,,,,,,"{ ""condition"": ""sms_reply"" }",A038,A039,"{ ""sms_reply"": true }"
+A039,task,TASK: Schedule Assessment,1700,900,,,,,,"{ ""assign_to"": ""BDR"" }",A039,A061,"{}"
+A040,voicemail_drop,Drop: VM Matching Focus,1100,1050,arap_vm_02_matching,,,,"Hi {{contact.first_name}}, this is Jim from Paycile. I wanted to share how we help AR AP teams automate payment matching. Our AI matches 98 percent of payments automatically, even when invoice numbers are wrong or missing. Takes 20 to 30 hours per week down to 2 to 3 hours. Quick demo at paycile.com/landing/arap. Thanks!","{ ""template_id"": ""arap_vm_02_matching"" }",A040,A041,"{}"
+A041,stage,STAGE: Day 5 - DSO Reduction,1700,1000,,,,,,"{}",A041,A042,"{}"
+A042,wait,Wait: Until Day 5,1900,1000,,,,,,"{ ""duration"": ""P2D"" }",A042,A043,"{}"
+A043,email_send,Send: DSO Improvement Email,2100,1000,arap_email_04_dso,Reduce DSO by 15-20 days,"{{contact.first_name}},
+
+Here's an interesting side effect of automated payment matching:
+
+**Your DSO drops by 15-20 days.**
+
+Why? Because you're no longer leaving payments unapplied for days or weeks while your team researches them. Every payment gets matched and applied same-day (often same-hour).
+
+This means:
+• Cash is recognized faster
+• AR aging is accurate in real-time
+• You know true receivables position
+• Collections focuses on actual open balances
+
+One AP manager told me: *""We stopped chasing customers who had already paid. That alone saved us 10 hours per week.""*
+
+Plus you recover all those unapplied funds sitting in suspense.
+
+Want to see your potential DSO improvement?
+
+**Book assessment:** {{landing_page_url}}
+
+Jim Fitzgerald
+Paycile",,"","{ ""template_id"": ""arap_email_04_dso"" }",A043,A044,"{}"
+A044,wait,Wait: 4 Hours,2300,1000,,,,,,"{ ""duration"": ""PT4H"" }",A044,A045,"{}"
+A045,decision,Check: Email Activity?,2500,1000,,,,,,"{ ""condition"": ""email_opened"" }",A045,A046,"{ ""email_opened"": true }"
+A045,decision,Check: Email Activity?,2500,1000,,,,,,"{ ""condition"": ""email_opened"" }",A045,A050,"{ ""email_opened"": false }"
+A046,sms_send,Send: SMS DSO Stats,2700,950,,,,"{{contact.first_name}}, automated matching reduces DSO by 15-20 days. Plus recover unapplied funds. Worth a look? {{landing_page_url}}",,"{ ""text"": ""{{contact.first_name}}, automated matching reduces DSO by 15-20 days. Plus recover unapplied funds. Worth a look? {{landing_page_url}}"" }",A046,A047,"{}"
+A047,wait,Wait: 2 Hours,2900,950,,,,,,"{ ""duration"": ""PT2H"" }",A047,A048,"{}"
+A048,decision,Check: Response?,3100,950,,,,,,"{ ""condition"": ""any_response"" }",A048,A049,"{ ""any_response"": true }"
+A048,decision,Check: Response?,3100,950,,,,,,"{ ""condition"": ""any_response"" }",A048,A050,"{ ""any_response"": false }"
+A049,task,TASK: BDR Follow-up,3300,900,,,,,,"{ ""assign_to"": ""BDR"" }",A049,A061,"{}"
+A050,linkedin_connect,LinkedIn: Connect,2700,1050,,,,,,"{ ""message"": ""Hi {{contact.first_name}}, help AR/AP teams recover unapplied funds. Connect?"" }",A050,A051,"{}"
+A051,stage,STAGE: Day 7 - Engagement Check,3500,1000,,,,,,"{}",A051,A052,"{}"
+A052,scoring,Calculate: Engagement Score,3700,1000,,,,,,"{ ""rules"": [{ ""action"": ""email_opened"", ""points"": 10 }, { ""action"": ""landing_page_visit"", ""points"": 40 }, { ""action"": ""link_clicked"", ""points"": 25 }, { ""action"": ""email_reply"", ""points"": 100 }, { ""action"": ""sms_reply"", ""points"": 100 }, { ""action"": ""phone_call"", ""points"": 150 }] }",A052,A053,"{}"
+A053,decision,Route: Score >= 100?,3900,1000,,,,,,"{ ""condition"": ""score_gte_100"" }",A053,A054,"{ ""score_gte_100"": true }"
+A053,decision,Route: Score >= 100?,3900,1000,,,,,,"{ ""condition"": ""score_gte_100"" }",A053,A056,"{ ""score_gte_100"": false }"
+A054,tag,Tag: HOT-LEAD,4100,900,,,,,,"{ ""tag"": ""hot"", ""score"": 100 }",A054,A055,"{}"
+A055,task,TASK: Priority Assessment,4300,900,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",A055,A061,"{}"
+A056,decision,Route: Score 40-99?,4100,1000,,,,,,"{ ""condition"": ""score_40_to_99"" }",A056,A057,"{ ""score_40_to_99"": true }"
+A056,decision,Route: Score 40-99?,4100,1000,,,,,,"{ ""condition"": ""score_40_to_99"" }",A056,A059,"{ ""score_40_to_99"": false }"
+A057,tag,Tag: WARM,4300,1000,,,,,,"{ ""tag"": ""warm"", ""score"": 50 }",A057,A058,"{}"
+A058,sms_send,Send: Final SMS Offer,4500,1000,,,,"Last chance {{contact.first_name}} - free assessment to find your unapplied funds. 30 mins: {{landing_page_url}}",,"{ ""text"": ""Last chance {{contact.first_name}} - free assessment to find your unapplied funds. 30 mins: {{landing_page_url}}"" }",A058,A086,"{}"
+A059,decision,Route: Score < 40?,4100,1100,,,,,,"{ ""condition"": ""score_lt_40"" }",A059,A060,"{}"
+A060,tag,Tag: COLD,4300,1100,,,,,,"{ ""tag"": ""cold"" }",A060,A086,"{}"
+A061,stage,STAGE: Assessment Requested,3100,150,,,,,,"{}",A061,A062,"{}"
+A062,tag,Tag: ASSESSMENT-BOOKED,3300,150,,,,,,"{ ""tag"": ""assessment-booked"" }",A062,A063,"{}"
+A063,email_send,Send: Assessment Confirmation,3500,150,,Your Free Unapplied Funds Assessment,"Thanks for booking...",,"","{ ""subject"": ""Your Free Unapplied Funds Assessment"", ""body"": ""Thanks for booking..."" }",A063,A064,"{}"
+A064,task,TASK: Prepare Assessment,3700,150,,,,,,"{ ""assign_to"": ""Analyst"", ""note"": ""Pull client payment data for analysis"" }",A064,A065,"{}"
+A065,wait,Wait: Until 1 Day Before,3900,150,,,,,,"{ ""duration"": ""until_assessment_minus_1d"" }",A065,A066,"{}"
+A066,sms_send,Send: Assessment Reminder,4100,150,,,,"Reminder: Your unapplied funds assessment is tomorrow. We'll show you exactly where your cash is hiding!",,"{ ""text"": ""Reminder: Your unapplied funds assessment is tomorrow. We'll show you exactly where your cash is hiding!"" }",A066,A067,"{}"
+A067,wait,Wait: Until Assessment,4300,150,,,,,,"{ ""duration"": ""until_assessment_time"" }",A067,A068,"{}"
+A068,task,TASK: Conduct Assessment,4500,150,,,,,,"{ ""assign_to"": ""Sales"" }",A068,A069,"{}"
+A069,decision,Check: Assessment Completed?,4700,150,,,,,,"{ ""condition"": ""assessment_done"" }",A069,A070,"{ ""assessment_done"": true }"
+A069,decision,Check: Assessment Completed?,4700,150,,,,,,"{ ""condition"": ""assessment_done"" }",A069,A081,"{ ""assessment_done"": false }"
+A070,tag,Tag: Assessment-Complete,4900,100,,,,,,"{ ""tag"": ""assessed"" }",A070,A071,"{}"
+A071,stage,STAGE: Post-Assessment Follow-up,5100,100,,,,,,"{}",A071,A072,"{}"
+A072,email_send,Send: Assessment Results,5300,100,,Found $XXX,XXX in Unapplied Funds,"Here's what we found...",,"","{ ""subject"": ""Found $XXX,XXX in Unapplied Funds"", ""body"": ""Here's what we found..."" }",A072,A073,"{}"
+A073,wait,Wait: 1 Day,5500,100,,,,,,"{ ""duration"": ""P1D"" }",A073,A074,"{}"
+A074,task,TASK: Send Recovery Proposal,5700,100,,,,,,"{ ""assign_to"": ""Sales"" }",A074,A075,"{}"
+A075,wait,Wait: 2 Days,5900,100,,,,,,"{ ""duration"": ""P2D"" }",A075,A076,"{}"
+A076,sms_send,Send: Proposal Follow-up SMS,6100,100,,,,"Hi {{contact.first_name}}, following up on your unapplied funds proposal. Questions?",,"{ ""text"": ""Hi {{contact.first_name}}, following up on your unapplied funds proposal. Questions?"" }",A076,A077,"{}"
+A077,task,TASK: Sales Call,6300,100,,,,,,"{ ""assign_to"": ""Sales"" }",A077,A078,"{}"
+A078,wait,Wait: 3 Days,6500,100,,,,,,"{ ""duration"": ""P3D"" }",A078,A079,"{}"
+A079,email_send,Send: Final Offer,6700,100,,Last call - recover your unapplied funds,"Final opportunity...",,"","{ ""subject"": ""Last call - recover your unapplied funds"", ""body"": ""Final opportunity..."" }",A079,A080,"{}"
+A080,goal,GOAL: Deal Won,6900,50,,,,,,"{}",,,
+A081,stage,STAGE: Assessment No-Show,4900,250,,,,,,"{}",A081,A082,"{}"
+A082,email_send,Send: Missed Assessment,5100,250,,Missed your assessment,"Want to reschedule?",,"","{ ""subject"": ""Missed your assessment"", ""body"": ""Want to reschedule?"" }",A082,A083,"{}"
+A083,sms_send,Send: Reschedule SMS,5300,250,,,,"Missed our assessment call. Want to reschedule? {{landing_page_url}}",,"{ ""text"": ""Missed our assessment call. Want to reschedule? {{landing_page_url}}"" }",A083,A084,"{}"
+A084,wait,Wait: 2 Days,5500,250,,,,,,"{ ""duration"": ""P2D"" }",A084,A085,"{}"
+A085,decision,Check: Rescheduled?,5700,250,,,,,,"{ ""condition"": ""rescheduled"" }",A085,A065,"{ ""rescheduled"": true }"
+A085,decision,Check: Rescheduled?,5700,250,,,,,,"{ ""condition"": ""rescheduled"" }",A085,A086,"{ ""rescheduled"": false }"
+A086,stage,STAGE: Long-term Nurture,4500,1150,,,,,,"{}",A086,A087,"{}"
+A087,wait,Wait: 30 Days,4700,1150,,,,,,"{ ""duration"": ""P30D"" }",A087,A088,"{}"
+A088,email_send,Send: Re-engagement,4900,1150,,Still have unapplied funds?,"Quick follow-up on payment automation...",,"","{ ""subject"": ""Still have unapplied funds?"", ""body"": ""Quick follow-up on payment automation..."" }",A088,A089,"{}"
+A089,decision,Check: Re-engaged?,5100,1150,,,,,,"{ ""condition"": ""email_opened"" }",A089,A004,"{ ""email_opened"": true }"
+A089,decision,Check: Re-engaged?,5100,1150,,,,,,"{ ""condition"": ""email_opened"" }",A089,A090,"{ ""email_opened"": false }"
+A090,exit,EXIT: End Campaign,5300,1200,,,,,,"{}",,,
+
+
