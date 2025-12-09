@@ -1,0 +1,155 @@
+# Azure DevOps Pipeline for PLG Backend API
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+  paths:
+    include:
+    - adtv-event-automation/apps/server/*
+
+variables:
+  # Build variables
+  buildConfiguration: 'Release'
+  nodeVersion: '20.x'
+  workingDirectory: 'adtv-event-automation/apps/server'
+  
+  # Azure resources (update these with your actual resource names)
+  azureServiceConnection: 'plg-service-connection' # Create this in Azure DevOps
+  appServiceName: 'prod-paycile-plg-api'
+  resourceGroupName: 'prod-corp'
+  keyVaultName: 'prod-plg-vault'
+
+stages:
+- stage: Build
+  displayName: 'Build Backend API'
+  jobs:
+  - job: Build
+    displayName: 'Build'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: NodeTool@0
+      displayName: 'Use Node.js $(nodeVersion)'
+      inputs:
+        versionSpec: '$(nodeVersion)'
+    
+    - task: Cache@2
+      displayName: 'Cache pnpm dependencies'
+      inputs:
+        key: 'pnpm | "$(Agent.OS)" | $(workingDirectory)/pnpm-lock.yaml'
+        path: '~/.pnpm-store'
+        cacheHitVar: 'PNPM_CACHE_RESTORED'
+    
+    - script: |
+        npm install -g pnpm@latest
+        cd $(workingDirectory)
+        pnpm install --frozen-lockfile
+      displayName: 'Install dependencies'
+    
+    - script: |
+        cd $(workingDirectory)
+        pnpm prisma generate
+      displayName: 'Generate Prisma client'
+    
+    - script: |
+        cd $(workingDirectory)
+        pnpm run build
+      displayName: 'Build application'
+    
+    - task: ArchiveFiles@2
+      displayName: 'Archive build output'
+      inputs:
+        rootFolderOrFile: '$(workingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/backend-$(Build.BuildId).zip'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish build artifacts'
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: 'backend'
+
+- stage: Deploy_Dev
+  displayName: 'Deploy to Development'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  jobs:
+  - deployment: DeployDev
+    displayName: 'Deploy to Dev Environment'
+    environment: 'paycile-dev'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureKeyVault@2
+            displayName: 'Get secrets from Key Vault'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              KeyVaultName: '$(keyVaultName)'
+              SecretsFilter: '*'
+              RunAsPreJob: true
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Azure Web App'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appType: 'webAppLinux'
+              appName: '$(appServiceName)-dev'
+              package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
+              runtimeStack: 'NODE|20-lts'
+              appSettings: |
+                -NODE_ENV "development"
+                -PORT "8000"
+                -DATABASE_URL "$(DATABASE-URL)"
+                -JWT_SECRET "$(JWT-SECRET)"
+                -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)"
+                -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)"
+                -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)"
+                -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)"
+
+- stage: Deploy_Prod
+  displayName: 'Deploy to Production'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: DeployProd
+    displayName: 'Deploy to Production Environment'
+    environment: 'paycile-production'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureKeyVault@2
+            displayName: 'Get secrets from Key Vault'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              KeyVaultName: '$(keyVaultName)'
+              SecretsFilter: '*'
+              RunAsPreJob: true
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Azure Web App'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appType: 'webAppLinux'
+              appName: '$(appServiceName)'
+              package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
+              runtimeStack: 'NODE|20-lts'
+              appSettings: |
+                -NODE_ENV "production"
+                -PORT "8000"
+                -DATABASE_URL "$(DATABASE-URL)"
+                -JWT_SECRET "$(JWT-SECRET)"
+                -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)"
+                -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)"
+                -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)"
+                -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)"
+                -GEMINI_API_KEY "$(GEMINI-API-KEY)"
+                -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)"
