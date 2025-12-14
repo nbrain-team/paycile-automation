@@ -54,7 +54,7 @@ stages:
     
     - script: |
         cd $(workingDirectory)
-        echo "VITE_API_URL=https://prod-paycile-plg-api.azurewebsites.net" > .env.production
+        echo "VITE_API_URL=https://prod-paycile-plg-api.paycile.com" > .env.production
       displayName: 'Create production environment file'
     
     - script: |
@@ -124,8 +124,8 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     variables:
-      NEXT_PUBLIC_API_URL: 'https://prod-paycile-plg-api.azurewebsites.net'
-      VITE_API_URL: 'https://prod-paycile-plg-api.azurewebsites.net'
+      NEXT_PUBLIC_API_URL: 'https://prod-paycile-plg-api.paycile.com'
+      VITE_API_URL: 'https://prod-paycile-plg-api.paycile.com'
     strategy:
       runOnce:
         deploy:
