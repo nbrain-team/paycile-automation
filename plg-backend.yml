@@ -103,15 +103,7 @@ stages:
               appName: '$(appServiceName)-dev'
               package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
               runtimeStack: 'NODE|20-lts'
-              appSettings: |
-                -NODE_ENV "development"
-                -PORT "8000"
-                -DATABASE_URL "$(DATABASE-URL)"
-                -JWT_SECRET "$(JWT-SECRET)"
-                -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)"
-                -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)"
-                -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)"
-                -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)"
+              appSettings: '-NODE_ENV "development" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)"'
 
 - stage: Deploy_Prod
   displayName: 'Deploy to Production'
@@ -143,14 +135,4 @@ stages:
               appName: '$(appServiceName)'
               package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
               runtimeStack: 'NODE|20-lts'
-              appSettings: |
-                -NODE_ENV "production"
-                -PORT "8000"
-                -DATABASE_URL "$(DATABASE-URL)"
-                -JWT_SECRET "$(JWT-SECRET)"
-                -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)"
-                -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)"
-                -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)"
-                -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)"
-                -GEMINI_API_KEY "$(GEMINI-API-KEY)"
-                -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)"
+              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)" -GEMINI_API_KEY "$(GEMINI-API-KEY)" -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)"'
