@@ -105,10 +105,8 @@ stages:
                 ls -la $(Pipeline.Workspace)/frontend-web
                 
                 echo "Deploying pre-built files to Azure Static Web Apps"
-                cd $(Pipeline.Workspace)/frontend-web
-                
-                # Deploy using SWA CLI with explicit no-build flags
-                swa deploy . \
+                # Deploy from the workspace root, pointing to the artifact folder
+                swa deploy $(Pipeline.Workspace)/frontend-web \
                   --deployment-token $(AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_GLACIER_0634BA310) \
                   --no-use-keychain \
                   --verbose
@@ -151,10 +149,8 @@ stages:
                 ls -la $(Pipeline.Workspace)/frontend-web
                 
                 echo "Deploying pre-built files to Azure Static Web Apps"
-                cd $(Pipeline.Workspace)/frontend-web
-                
-                # Deploy using SWA CLI with explicit no-build flags
-                swa deploy . \
+                # Deploy from the workspace root, pointing to the artifact folder
+                swa deploy $(Pipeline.Workspace)/frontend-web \
                   --deployment-token $(AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_GLACIER_0634BA310) \
                   --no-use-keychain \
                   --verbose
