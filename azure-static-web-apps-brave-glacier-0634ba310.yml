@@ -152,4 +152,3 @@ stages:
                   --deployment-token $(AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_GLACIER_0634BA310) \
                   --no-use-keychain \
                   --verbose
-
