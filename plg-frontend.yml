@@ -85,15 +85,21 @@ stages:
               artifactName: 'frontend-web'
               downloadPath: '$(Pipeline.Workspace)'
           
-          - task: AzureStaticWebApp@0
+          - task: AzureCLI@2
             displayName: 'Deploy to Azure Static Web Apps'
             inputs:
-              app_location: '$(Pipeline.Workspace)/frontend-web'
-              api_location: ''
-              output_location: ''
-              azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN_DEV)'
-              action: 'upload'
-              skip_app_build: true
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Installing Azure Static Web Apps CLI"
+                npm install -g @azure/static-web-apps-cli
+                
+                echo "Deploying to Azure Static Web Apps"
+                cd $(Pipeline.Workspace)/frontend-web
+                
+                # Deploy using SWA CLI with deployment token
+                swa deploy . --deployment-token $(AZURE_STATIC_WEB_APPS_API_TOKEN_DEV) --app-location . --output-location .
 
 - stage: Deploy_Prod
   displayName: 'Deploy to Production'
@@ -119,12 +125,18 @@ stages:
               artifactName: 'frontend-web'
               downloadPath: '$(Pipeline.Workspace)'
           
-          - task: AzureStaticWebApp@0
+          - task: AzureCLI@2
             displayName: 'Deploy to Azure Static Web Apps'
             inputs:
-              app_location: '$(Pipeline.Workspace)/frontend-web'
-              api_location: ''
-              output_location: ''
-              azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN_PROD)'
-              action: 'upload'
-              skip_app_build: true
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Installing Azure Static Web Apps CLI"
+                npm install -g @azure/static-web-apps-cli
+                
+                echo "Deploying to Azure Static Web Apps"
+                cd $(Pipeline.Workspace)/frontend-web
+                
+                # Deploy using SWA CLI with deployment token
+                swa deploy . --deployment-token $(AZURE_STATIC_WEB_APPS_API_TOKEN_PROD) --app-location . --output-location .
