@@ -10,13 +10,19 @@ trigger:
 
 variables:
   # Build variables
-  nodeVersion: '20.x'
-  workingDirectory: 'paycile'
+  - name: nodeVersion
+    value: '20.x'
+  - name: workingDirectory
+    value: 'paycile'
+  - name: azureServiceConnection
+    value: 'plg-service-connection'
+  - name: staticWebAppName
+    value: 'prod-paycile-plg-web'
+  - name: resourceGroupName
+    value: 'prod-corp'
   
-  # Azure resources
-  azureServiceConnection: 'plg-service-connection'
-  staticWebAppName: 'prod-paycile-plg-web'
-  resourceGroupName: 'prod-corp'
+  # Include the auto-generated variable group
+  - group: Azure-Static-Web-Apps-brave-glacier-0634ba310-variable-group
 
 stages:
 - stage: Build
@@ -152,3 +158,4 @@ stages:
                   --deployment-token $(AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_GLACIER_0634BA310) \
                   --no-use-keychain \
                   --verbose
+
