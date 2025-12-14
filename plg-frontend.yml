@@ -34,17 +34,15 @@ stages:
         versionSpec: '$(nodeVersion)'
     
     - task: Cache@2
-      displayName: 'Cache pnpm dependencies'
+      displayName: 'Cache npm dependencies'
       inputs:
-        key: 'pnpm | "$(Agent.OS)" | $(workingDirectory)/pnpm-lock.yaml'
-        path: '~/.pnpm-store'
-        cacheHitVar: 'PNPM_CACHE_RESTORED'
+        key: 'npm | "$(Agent.OS)" | $(workingDirectory)/package-lock.json'
+        path: '$(workingDirectory)/node_modules'
+        cacheHitVar: 'NPM_CACHE_RESTORED'
     
     - script: |
-        npm install -g pnpm@latest
-    - script: |
         cd $(workingDirectory)
-        pnpm install --frozen-lockfile
+        npm ci
       displayName: 'Install dependencies'
     
     - script: |
@@ -54,7 +52,7 @@ stages:
     
     - script: |
         cd $(workingDirectory)
-        pnpm run build
+        npm run build
       displayName: 'Build Next.js application'
     
     - task: PublishBuildArtifacts@1
