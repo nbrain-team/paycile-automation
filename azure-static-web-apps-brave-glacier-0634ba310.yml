@@ -6,14 +6,14 @@ trigger:
     - develop
   paths:
     include:
-    - paycile/*
+    - adtv-event-automation/apps/web/*
 
 variables:
   # Build variables
   - name: nodeVersion
     value: '20.x'
   - name: workingDirectory
-    value: 'paycile'
+    value: 'adtv-event-automation/apps/web'
   - name: azureServiceConnection
     value: 'plg-service-connection'
   - name: staticWebAppName
@@ -40,31 +40,32 @@ stages:
         versionSpec: '$(nodeVersion)'
     
     - task: Cache@2
-      displayName: 'Cache npm dependencies'
+      displayName: 'Cache pnpm dependencies'
       inputs:
-        key: 'npm | "$(Agent.OS)" | $(workingDirectory)/package-lock.json'
+        key: 'pnpm | "$(Agent.OS)" | $(workingDirectory)/pnpm-lock.yaml'
         path: '$(workingDirectory)/node_modules'
-        cacheHitVar: 'NPM_CACHE_RESTORED'
+        cacheHitVar: 'PNPM_CACHE_RESTORED'
     
     - script: |
+        npm install -g pnpm@latest
         cd $(workingDirectory)
-        npm ci
+        pnpm install --frozen-lockfile
       displayName: 'Install dependencies'
     
     - script: |
         cd $(workingDirectory)
-        echo "NEXT_PUBLIC_API_URL=$(NEXT_PUBLIC_API_URL)" > .env.production
+        echo "VITE_API_URL=$(NEXT_PUBLIC_API_URL)" > .env.production
       displayName: 'Create production environment file'
     
     - script: |
         cd $(workingDirectory)
         npm run build
-      displayName: 'Build Next.js application'
+      displayName: 'Build Vite application'
     
     - task: PublishBuildArtifacts@1
       displayName: 'Publish build artifacts'
       inputs:
-        pathToPublish: '$(workingDirectory)/out'
+        pathToPublish: '$(workingDirectory)/dist'
         artifactName: 'frontend-web'
 
 - stage: Deploy_Dev
