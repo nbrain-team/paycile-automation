@@ -39,12 +39,13 @@ stages:
       displayName: 'Cache pnpm dependencies'
       inputs:
         key: 'pnpm | "$(Agent.OS)" | $(workingDirectory)/pnpm-lock.yaml'
-        path: '~/.pnpm-store'
+        path: '$(Pipeline.Workspace)/.pnpm-store'
         cacheHitVar: 'PNPM_CACHE_RESTORED'
     
     - script: |
         npm install -g pnpm@latest
         cd $(workingDirectory)
+        pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
         pnpm install --frozen-lockfile
       displayName: 'Install dependencies'
     
