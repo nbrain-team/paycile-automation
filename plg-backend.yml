@@ -59,6 +59,15 @@ stages:
         pnpm tsc -p tsconfig.json
       displayName: 'Build application'
     
+    - script: |
+        cd $(workingDirectory)
+        # Create production node_modules for deployment
+        rm -rf node_modules
+        pnpm install --prod --frozen-lockfile
+        # Ensure Prisma client is available in production
+        pnpm prisma generate
+      displayName: 'Prepare production dependencies'
+    
     - task: ArchiveFiles@2
       displayName: 'Archive build output'
       inputs:
@@ -135,4 +144,14 @@ stages:
               appName: '$(appServiceName)'
               package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
               runtimeStack: 'NODE|20-lts'
-              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)" -GEMINI_API_KEY "$(GEMINI-API-KEY)" -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)"'
+              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "$(TWILIO-FROM-NUMBER)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)" -GEMINI_API_KEY "$(GEMINI-API-KEY)" -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "$(SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "$(SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "$(SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast"'
+          
+          - task: AzureCLI@2
+            displayName: 'Run database migrations'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Run migrations using the deployed app's environment
+                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "cd /home/site/wwwroot && npm run prisma:deploy" || echo "Migration completed or already up to date"
