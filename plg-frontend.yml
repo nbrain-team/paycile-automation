@@ -77,19 +77,23 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download build artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'frontend-web'
+              downloadPath: '$(Pipeline.Workspace)'
+          
           - task: AzureStaticWebApp@0
             displayName: 'Deploy to Azure Static Web Apps'
             inputs:
-              app_location: 'paycile'
+              app_location: '$(Pipeline.Workspace)/frontend-web'
               api_location: ''
-              output_location: 'out'
+              output_location: ''
               azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN_DEV)'
               action: 'upload'
-              skip_app_build: false
-              app_build_command: 'npm run build'
-              config_file_location: 'paycile'
-            env:
-              NEXT_PUBLIC_API_URL: $(NEXT_PUBLIC_API_URL)
+              skip_app_build: true
 
 - stage: Deploy_Prod
   displayName: 'Deploy to Production'
@@ -107,16 +111,20 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download build artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'frontend-web'
+              downloadPath: '$(Pipeline.Workspace)'
+          
           - task: AzureStaticWebApp@0
             displayName: 'Deploy to Azure Static Web Apps'
             inputs:
-              app_location: 'paycile'
+              app_location: '$(Pipeline.Workspace)/frontend-web'
               api_location: ''
-              output_location: 'out'
+              output_location: ''
               azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN_PROD)'
               action: 'upload'
-              skip_app_build: false
-              app_build_command: 'npm run build'
-              config_file_location: 'paycile'
-            env:
-              NEXT_PUBLIC_API_URL: $(NEXT_PUBLIC_API_URL)
+              skip_app_build: true
