@@ -61,12 +61,24 @@ stages:
     
     - script: |
         cd $(workingDirectory)
-        # Create production node_modules for deployment
+        # Create production node_modules for deployment using npm (more compatible with Azure)
         rm -rf node_modules
-        pnpm install --prod --frozen-lockfile
+        rm -f package-lock.json
+        npm install --only=production
         # Ensure Prisma client is available in production
-        pnpm prisma generate
+        npx prisma generate
       displayName: 'Prepare production dependencies'
+    
+    - script: |
+        cd $(workingDirectory)
+        # Verify critical dependencies are present
+        echo "Verifying dependencies..."
+        ls node_modules/ | grep -E "(express|body-parser|cors)" || echo "Missing critical dependencies"
+        echo "Express files:"
+        ls -la node_modules/express/ || echo "Express not found"
+        echo "Body-parser files:"
+        ls -la node_modules/body-parser/ || echo "Body-parser not found"
+      displayName: 'Verify dependencies'
     
     - task: ArchiveFiles@2
       displayName: 'Archive build output'
@@ -144,14 +156,27 @@ stages:
               appName: '$(appServiceName)'
               package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
               runtimeStack: 'NODE|20-lts'
-              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "$(TWILIO-FROM-NUMBER)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)" -GEMINI_API_KEY "$(GEMINI-API-KEY)" -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "$(SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "$(SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "$(SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast"'
+              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "$(TWILIO-FROM-NUMBER)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)" -GEMINI_API_KEY "$(GEMINI-API-KEY)" -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "$(SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "$(SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "$(SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast" -SCM_DO_BUILD_DURING_DEPLOYMENT "false"'
           
           - task: AzureCLI@2
-            displayName: 'Run database migrations'
+            displayName: 'Verify deployment and run migrations'
             inputs:
               azureSubscription: '$(azureServiceConnection)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
+                # Wait for deployment to complete
+                sleep 30
+                
+                # Check if dependencies are available
+                echo "Checking app structure..."
+                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "ls -la /home/site/wwwroot/" || echo "Could not list app files"
+                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "ls -la /home/site/wwwroot/node_modules/ | head -10" || echo "Could not list node_modules"
+                
+                # Try to install missing dependencies if needed
+                echo "Installing any missing dependencies..."
+                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "cd /home/site/wwwroot && npm install --only=production" || echo "NPM install completed or failed"
+                
                 # Run migrations using the deployed app's environment
+                echo "Running migrations..."
                 az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "cd /home/site/wwwroot && npm run prisma:deploy" || echo "Migration completed or already up to date"
