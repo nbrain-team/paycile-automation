@@ -55,7 +55,7 @@ stages:
     
     - script: |
         cd $(workingDirectory)
-        pnpm run build
+        pnpm tsc -p tsconfig.json
       displayName: 'Build application'
     
     - task: ArchiveFiles@2
