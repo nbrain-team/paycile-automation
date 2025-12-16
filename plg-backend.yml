@@ -84,7 +84,7 @@ stages:
               appType: 'webAppLinux'
               appName: '$(appServiceName)-dev'
               deployToSlotOrASE: false
-              deploymentMethod: 'auto'
+              deploymentMethod: 'container'
               dockerNamespace: '$(containerRegistry)'
               dockerRepository: '$(imageRepository)'
               dockerImageTag: '$(Build.BuildId)'
@@ -119,7 +119,7 @@ stages:
               appType: 'webAppLinux'
               appName: '$(appServiceName)'
               deployToSlotOrASE: false
-              deploymentMethod: 'auto'
+              deploymentMethod: 'container'
               dockerNamespace: '$(containerRegistry)'
               dockerRepository: '$(imageRepository)'
               dockerImageTag: '$(Build.BuildId)'
