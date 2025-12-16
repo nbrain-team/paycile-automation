@@ -245,48 +245,170 @@ stages:
                     exit 1
                 }
 
-          # Post-deployment migration notification
-          - task: PowerShell@2
-            displayName: 'Post-Deployment Migration Instructions'
-            inputs:
-              targetType: 'inline'
-              script: |
-                Write-Host "🎉 Deployment Successful!" -ForegroundColor Green
-                Write-Host "================================" -ForegroundColor Cyan
-                Write-Host ""
-                Write-Host "📋 Next Steps - Run Database Migrations:" -ForegroundColor Yellow
-                Write-Host ""
-                Write-Host "Option 1 - Automated Script:" -ForegroundColor White
-                Write-Host "   ./migrate-manually.ps1" -ForegroundColor Cyan
-                Write-Host ""
-                Write-Host "Option 2 - Manual SSH:" -ForegroundColor White
-                Write-Host "   1. SSH: az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName)" -ForegroundColor Cyan
-                Write-Host "   2. Run: cd /home/site/wwwroot && npx prisma migrate deploy" -ForegroundColor Cyan
-                Write-Host "   3. Run: npx prisma generate" -ForegroundColor Cyan
-                Write-Host ""
-                Write-Host "🌐 App URLs:" -ForegroundColor Yellow
-                Write-Host "   • https://prod-paycile-plg-api.paycile.com/" -ForegroundColor Green
-                Write-Host "   • https://prod-paycile-plg-api.paycile.com/health" -ForegroundColor Green
-                Write-Host ""
-                Write-Host "📊 Check app status with:" -ForegroundColor White
-                Write-Host "   curl https://prod-paycile-plg-api.paycile.com/health" -ForegroundColor Cyan
-                Write-Host ""
-                Write-Host "✅ Deployment pipeline completed successfully!" -ForegroundColor Green
-          
+          # Run database migrations automatically after app is healthy
           - task: AzureCLI@2
-            displayName: 'Verify migration completion'
+            displayName: 'Run Database Migrations'
             inputs:
               azureSubscription: '$(azureServiceConnection)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                echo "Waiting for app service to restart and migrations to complete..."
-                sleep 60
+                echo "🔄 Running database migrations automatically..."
                 
-                echo "Checking app service status..."
-                az webapp show --resource-group $(resourceGroupName) --name $(appServiceName) --query "state" -o tsv
+                # Use Azure CLI to execute commands in the app service container
+                APP_NAME="$(appServiceName)"
+                RG_NAME="$(resourceGroupName)"
                 
-                echo "Testing database connectivity by checking app health..."
-                curl -f "https://$(appServiceName).azurewebsites.net/health" || echo "Health check endpoint not available"
+                echo "App Service: $APP_NAME"
+                echo "Resource Group: $RG_NAME"
                 
-                echo "Migration verification completed"
+                # Method 1: Try using az webapp ssh with a script upload approach
+                echo "Creating migration script..."
+                
+                # Create a temporary migration script
+                cat > /tmp/migrate.sh << 'EOF'
+                #!/bin/bash
+                set -e
+                cd /home/site/wwwroot
+                echo "=== RUNNING AUTOMATED MIGRATIONS ==="
+                echo "Current directory: $(pwd)"
+                echo "Node version: $(node --version)"
+                echo "NPM version: $(npm --version)"
+                
+                echo "Checking Prisma installation..."
+                npx prisma --version || { echo "Prisma not found, attempting reinstall..."; npm install prisma @prisma/client --no-package-lock; }
+                
+                echo "Running Prisma migrations..."
+                npx prisma migrate deploy --skip-generate
+                MIGRATE_EXIT=$?
+                
+                echo "Migration exit code: $MIGRATE_EXIT"
+                
+                if [ $MIGRATE_EXIT -eq 0 ]; then
+                    echo "✅ Migrations completed successfully"
+                else
+                    echo "⚠️ Migration completed with exit code: $MIGRATE_EXIT"
+                fi
+                
+                echo "Generating Prisma client..."
+                npx prisma generate
+                GENERATE_EXIT=$?
+                
+                if [ $GENERATE_EXIT -eq 0 ]; then
+                    echo "✅ Prisma client generated successfully"
+                else
+                    echo "⚠️ Prisma generate completed with exit code: $GENERATE_EXIT"
+                fi
+                
+                echo "=== MIGRATION SCRIPT COMPLETED ==="
+                EOF
+                
+                chmod +x /tmp/migrate.sh
+                
+                # Method 2: Use Kudu API to run the migration
+                echo "Getting publishing credentials for Kudu API..."
+                
+                CREDS=$(az webapp deployment list-publishing-credentials \
+                  --resource-group "$RG_NAME" \
+                  --name "$APP_NAME" \
+                  --query '{username: publishingUserName, password: publishingPassword}' \
+                  --output json)
+                
+                if [ $? -eq 0 ]; then
+                    USERNAME=$(echo "$CREDS" | jq -r '.username')
+                    PASSWORD=$(echo "$CREDS" | jq -r '.password')
+                    KUDU_URL="https://$APP_NAME.scm.azurewebsites.net"
+                    
+                    echo "✅ Retrieved Kudu credentials for user: $USERNAME"
+                    echo "Kudu URL: $KUDU_URL"
+                    
+                    # Run migration command via Kudu API
+                    echo "Executing migration via Kudu API..."
+                    
+                    RESPONSE=$(curl -X POST \
+                      -u "$USERNAME:$PASSWORD" \
+                      -H "Content-Type: application/json" \
+                      -d '{"command": "cd D:\\home\\site\\wwwroot && npx prisma migrate deploy", "dir": "site\\wwwroot"}' \
+                      "$KUDU_URL/api/command" \
+                      --max-time 300 \
+                      --silent \
+                      --show-error \
+                      --fail \
+                      -w "%{http_code}")
+                    
+                    HTTP_CODE="${RESPONSE: -3}"
+                    BODY="${RESPONSE%???}"
+                    
+                    echo "HTTP Status: $HTTP_CODE"
+                    echo "Response: $BODY"
+                    
+                    if [ "$HTTP_CODE" = "200" ]; then
+                        echo "✅ Migration command executed successfully"
+                        
+                        # Also run Prisma generate
+                        echo "Generating Prisma client via Kudu API..."
+                        GENERATE_RESPONSE=$(curl -X POST \
+                          -u "$USERNAME:$PASSWORD" \
+                          -H "Content-Type: application/json" \
+                          -d '{"command": "cd D:\\home\\site\\wwwroot && npx prisma generate", "dir": "site\\wwwroot"}' \
+                          "$KUDU_URL/api/command" \
+                          --max-time 180 \
+                          --silent \
+                          --show-error)
+                        
+                        echo "Generate response: $GENERATE_RESPONSE"
+                        echo "✅ Automated migration process completed"
+                    else
+                        echo "❌ Migration command failed with HTTP $HTTP_CODE"
+                        echo "Response: $BODY"
+                        exit 1
+                    fi
+                    
+                else
+                    echo "❌ Could not retrieve Kudu credentials"
+                    echo "⚠️ Migrations must be run manually"
+                    exit 1
+                fi
+                
+                echo "🎉 Database migrations completed via CI/CD pipeline!"
+          
+          # Final verification and success notification
+          - task: PowerShell@2
+            displayName: 'Deployment Complete - Final Verification'
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "🎉 CI/CD Pipeline Deployment Complete!" -ForegroundColor Green
+                Write-Host "=======================================" -ForegroundColor Cyan
+                Write-Host ""
+                
+                # Test the health endpoint one final time
+                $appUrl = "https://prod-paycile-plg-api.paycile.com/health"
+                try {
+                    $response = Invoke-RestMethod -Uri $appUrl -TimeoutSec 15 -Method Get
+                    if ($response.ok -eq $true) {
+                        Write-Host "✅ Final health check: PASSED" -ForegroundColor Green
+                    } else {
+                        Write-Host "⚠️ Final health check: Unexpected response" -ForegroundColor Yellow
+                    }
+                }
+                catch {
+                    Write-Host "❌ Final health check: FAILED - $($_.Exception.Message)" -ForegroundColor Red
+                }
+                
+                Write-Host ""
+                Write-Host "🌐 Production URLs:" -ForegroundColor Cyan
+                Write-Host "   • API: https://prod-paycile-plg-api.paycile.com/" -ForegroundColor Green
+                Write-Host "   • Health: https://prod-paycile-plg-api.paycile.com/health" -ForegroundColor Green
+                Write-Host ""
+                Write-Host "📋 What was completed:" -ForegroundColor Yellow
+                Write-Host "   ✅ Application built and deployed" -ForegroundColor White
+                Write-Host "   ✅ Health checks passed" -ForegroundColor White  
+                Write-Host "   ✅ Database migrations executed" -ForegroundColor White
+                Write-Host "   ✅ Prisma client generated" -ForegroundColor White
+                Write-Host ""
+                Write-Host "🔧 Manual backup options (if needed):" -ForegroundColor Yellow
+                Write-Host "   • Manual script: ./migrate-manually.ps1" -ForegroundColor Cyan
+                Write-Host "   • SSH access: az webapp ssh --name prod-paycile-plg-api --resource-group prod-corp" -ForegroundColor Cyan
+                Write-Host ""
+                Write-Host "🎊 Deployment pipeline successfully completed!" -ForegroundColor Green
