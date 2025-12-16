@@ -6,17 +6,23 @@ trigger:
     - develop
   paths:
     include:
-    - paycile/*
+    - adtv-event-automation/apps/web/*
 
 variables:
   # Build variables
-  nodeVersion: '20.x'
-  workingDirectory: 'paycile'
+  - name: nodeVersion
+    value: '20.x'
+  - name: workingDirectory
+    value: 'adtv-event-automation/apps/web'
+  - name: azureServiceConnection
+    value: 'plg-service-connection'
+  - name: staticWebAppName
+    value: 'prod-paycile-plg-web'
+  - name: resourceGroupName
+    value: 'prod-corp'
   
-  # Azure resources
-  azureServiceConnection: 'plg-service-connection'
-  staticWebAppName: 'prod-paycile-plg-web'
-  resourceGroupName: 'prod-corp'
+  # Include the auto-generated variable group
+  - group: Azure-Static-Web-Apps-brave-glacier-0634ba310-variable-group
 
 stages:
 - stage: Build
@@ -34,31 +40,32 @@ stages:
         versionSpec: '$(nodeVersion)'
     
     - task: Cache@2
-      displayName: 'Cache npm dependencies'
+      displayName: 'Cache pnpm dependencies'
       inputs:
-        key: 'npm | "$(Agent.OS)" | $(workingDirectory)/package-lock.json'
+        key: 'pnpm | "$(Agent.OS)" | $(workingDirectory)/pnpm-lock.yaml'
         path: '$(workingDirectory)/node_modules'
-        cacheHitVar: 'NPM_CACHE_RESTORED'
+        cacheHitVar: 'PNPM_CACHE_RESTORED'
     
     - script: |
+        npm install -g pnpm@latest
         cd $(workingDirectory)
-        npm ci
+        pnpm install --frozen-lockfile
       displayName: 'Install dependencies'
     
     - script: |
         cd $(workingDirectory)
-        echo "NEXT_PUBLIC_API_URL=$(NEXT_PUBLIC_API_URL)" > .env.production
+        echo "VITE_API_URL=https://prod-paycile-plg-api.paycile.com" > .env.production
       displayName: 'Create production environment file'
     
     - script: |
         cd $(workingDirectory)
         npm run build
-      displayName: 'Build Next.js application'
+      displayName: 'Build Vite application'
     
     - task: PublishBuildArtifacts@1
       displayName: 'Publish build artifacts'
       inputs:
-        pathToPublish: '$(workingDirectory)/out'
+        pathToPublish: '$(workingDirectory)/dist'
         artifactName: 'frontend-web'
 
 - stage: Deploy_Dev
@@ -73,6 +80,7 @@ stages:
       vmImage: 'ubuntu-latest'
     variables:
       NEXT_PUBLIC_API_URL: 'https://prod-paycile-plg-api-dev.azurewebsites.net'
+      VITE_API_URL: 'https://prod-paycile-plg-api-dev.azurewebsites.net'
     strategy:
       runOnce:
         deploy:
@@ -99,10 +107,8 @@ stages:
                 ls -la $(Pipeline.Workspace)/frontend-web
                 
                 echo "Deploying pre-built files to Azure Static Web Apps"
-                cd $(Pipeline.Workspace)/frontend-web
-                
-                # Deploy using SWA CLI with explicit no-build flags
-                swa deploy . \
+                # Deploy from the workspace root, pointing to the artifact folder
+                swa deploy $(Pipeline.Workspace)/frontend-web \
                   --deployment-token $(AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_GLACIER_0634BA310) \
                   --no-use-keychain \
                   --verbose
@@ -118,7 +124,8 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     variables:
-      NEXT_PUBLIC_API_URL: 'https://prod-paycile-plg-api.azurewebsites.net'
+      NEXT_PUBLIC_API_URL: 'https://prod-paycile-plg-api.paycile.com'
+      VITE_API_URL: 'https://prod-paycile-plg-api.paycile.com'
     strategy:
       runOnce:
         deploy:
@@ -145,10 +152,8 @@ stages:
                 ls -la $(Pipeline.Workspace)/frontend-web
                 
                 echo "Deploying pre-built files to Azure Static Web Apps"
-                cd $(Pipeline.Workspace)/frontend-web
-                
-                # Deploy using SWA CLI with explicit no-build flags
-                swa deploy . \
+                # Deploy from the workspace root, pointing to the artifact folder
+                swa deploy $(Pipeline.Workspace)/frontend-web \
                   --deployment-token $(AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_GLACIER_0634BA310) \
                   --no-use-keychain \
                   --verbose
