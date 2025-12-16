@@ -1,10 +1,11 @@
 # Use official Node.js runtime as base image (Debian-based for better Prisma compatibility)
 FROM node:20-slim
 
-# Install system dependencies for Prisma
+# Install system dependencies for Prisma and SSH
 RUN apt-get update && apt-get install -y \
     openssl \
     ca-certificates \
+    openssh-server \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
@@ -43,12 +44,14 @@ RUN groupadd --gid 1001 nodejs && \
 RUN chown -R nodejs:nodejs /app
 USER nodejs
 
-# Expose port
-EXPOSE 8000
+# Expose ports (app and SSH)
+EXPOSE 8000 2222
 
 # Create startup script (NO AUTO-MIGRATIONS FOR SAFETY)
 RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
+    echo '# Start SSH daemon' >> /app/start.sh && \
+    echo 'service ssh start' >> /app/start.sh && \
     echo 'echo "=== PAYCILE API STARTUP ==="' >> /app/start.sh && \
     echo 'echo "⚠️ Database migrations should be run manually before deployment"' >> /app/start.sh && \
     echo 'echo "🚀 Starting the application..."' >> /app/start.sh && \

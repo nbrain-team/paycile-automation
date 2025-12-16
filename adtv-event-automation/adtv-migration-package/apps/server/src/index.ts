@@ -1610,6 +1610,33 @@ app.post('/api/gmail/sync', async (req, res) => {
   }
 });
 
+// TEMPORARY: Admin endpoint to resolve migrations (REMOVE AFTER USE!)
+app.post('/admin/resolve-migrations', async (req, res) => {
+  try {
+    const { exec } = require('child_process');
+    const util = require('util');
+    const execPromise = util.promisify(exec);
+    
+    console.log('🔧 Resolving failed migrations...');
+    
+    // Resolve both failed migrations
+    await execPromise('npx prisma migrate resolve --applied 20250910155615_init');
+    console.log('✅ Resolved init migration');
+    
+    await execPromise('npx prisma migrate resolve --applied 20250116000000_add_template_versioning');
+    console.log('✅ Resolved template versioning migration');
+    
+    // Deploy any remaining migrations
+    await execPromise('npx prisma migrate deploy');
+    console.log('✅ Deployed remaining migrations');
+    
+    res.json({ success: true, message: 'All migrations resolved successfully!' });
+  } catch (error: any) {
+    console.error('❌ Migration resolution failed:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   // eslint-disable-next-line no-console
