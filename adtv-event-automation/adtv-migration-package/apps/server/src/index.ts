@@ -1630,7 +1630,7 @@ app.post('/admin/resolve-migrations', async (req, res) => {
     }
     
     // If deploy fails, try resolving specific migrations
-    const migrations = ['20250910155615_init', '20250116000000_add_template_versioning'];
+    const migrations = ['20250910155615_init', '20250910182327_add_campaign_graph', '20250116000000_add_template_versioning'];
     const results: string[] = [];
     
     for (const migration of migrations) {
