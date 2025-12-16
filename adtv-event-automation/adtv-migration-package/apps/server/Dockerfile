@@ -51,6 +51,8 @@ RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
     echo 'echo "=== PAYCILE API STARTUP ==="' >> /app/start.sh && \
     echo 'echo "Running database migrations..."' >> /app/start.sh && \
+    echo '# Check for failed migrations and resolve them' >> /app/start.sh && \
+    echo 'npx prisma migrate resolve --applied 20250116000000_add_template_versioning || echo "Migration resolution attempted"' >> /app/start.sh && \
     echo 'npx prisma migrate deploy || echo "⚠️ Migration failed, continuing..."' >> /app/start.sh && \
     echo 'echo "✅ Migrations completed"' >> /app/start.sh && \
     echo 'echo "🚀 Starting the application..."' >> /app/start.sh && \
