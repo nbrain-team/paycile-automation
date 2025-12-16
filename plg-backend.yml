@@ -77,18 +77,38 @@ stages:
               SecretsFilter: '*'
               RunAsPreJob: true
           
-          - task: AzureWebApp@1
-            displayName: 'Deploy Docker container to Azure Web App'
+          - task: AzureCLI@2
+            displayName: 'Deploy Docker container to Azure Web App Dev'
             inputs:
               azureSubscription: '$(azureServiceConnection)'
-              appType: 'webAppLinux'
-              appName: '$(appServiceName)-dev'
-              deployToSlotOrASE: false
-              deploymentMethod: 'container'
-              dockerNamespace: '$(containerRegistry)'
-              dockerRepository: '$(imageRepository)'
-              dockerImageTag: '$(Build.BuildId)'
-              appSettings: '-NODE_ENV "development" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)"'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Configure the web app to use the Docker container
+                az webapp config container set \
+                  --name $(appServiceName)-dev \
+                  --resource-group $(resourceGroupName) \
+                  --docker-custom-image-name $(containerRegistry)/$(imageRepository):$(Build.BuildId) \
+                  --docker-registry-server-url https://$(containerRegistry)
+                
+                # Update app settings
+                az webapp config appsettings set \
+                  --name $(appServiceName)-dev \
+                  --resource-group $(resourceGroupName) \
+                  --settings \
+                    NODE_ENV="development" \
+                    PORT="8000" \
+                    DATABASE_URL="$(DATABASE-URL)" \
+                    JWT_SECRET="$(JWT-SECRET)" \
+                    TWILIO_ACCOUNT_SID="$(TWILIO-ACCOUNT-SID)" \
+                    TWILIO_AUTH_TOKEN="$(TWILIO-AUTH-TOKEN)" \
+                    GOOGLE_CLIENT_ID="$(GOOGLE-CLIENT-ID)" \
+                    GOOGLE_CLIENT_SECRET="$(GOOGLE-CLIENT-SECRET)"
+                
+                # Restart the web app to pull the new image
+                az webapp restart --name $(appServiceName)-dev --resource-group $(resourceGroupName)
+                
+                echo "✅ Docker container deployed to $(appServiceName)-dev"
 
 - stage: Deploy_Prod
   displayName: 'Deploy to Production'
@@ -112,18 +132,46 @@ stages:
               SecretsFilter: '*'
               RunAsPreJob: true
           
-          - task: AzureWebApp@1
+          - task: AzureCLI@2
             displayName: 'Deploy Docker container to Azure Web App'
             inputs:
               azureSubscription: '$(azureServiceConnection)'
-              appType: 'webAppLinux'
-              appName: '$(appServiceName)'
-              deployToSlotOrASE: false
-              deploymentMethod: 'container'
-              dockerNamespace: '$(containerRegistry)'
-              dockerRepository: '$(imageRepository)'
-              dockerImageTag: '$(Build.BuildId)'
-              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" -JWT_SECRET "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" -TWILIO_ACCOUNT_SID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-FROM-NUMBER)" -ELEVENLABS_API_KEY "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast"'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Configure the web app to use the Docker container
+                az webapp config container set \
+                  --name $(appServiceName) \
+                  --resource-group $(resourceGroupName) \
+                  --docker-custom-image-name $(containerRegistry)/$(imageRepository):$(Build.BuildId) \
+                  --docker-registry-server-url https://$(containerRegistry)
+                
+                # Update app settings
+                az webapp config appsettings set \
+                  --name $(appServiceName) \
+                  --resource-group $(resourceGroupName) \
+                  --settings \
+                    NODE_ENV="production" \
+                    PORT="8000" \
+                    DATABASE_URL="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" \
+                    JWT_SECRET="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" \
+                    TWILIO_ACCOUNT_SID="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" \
+                    TWILIO_AUTH_TOKEN="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-AUTH-TOKEN)" \
+                    TWILIO_FROM_NUMBER="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-FROM-NUMBER)" \
+                    ELEVENLABS_API_KEY="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=ELEVENLABS-API-KEY)" \
+                    ELEVENLABS_VOICE_ID="21m00Tcm4TlvDq8ikWAM" \
+                    ELEVENLABS_MODEL_ID="eleven_flash_v2_5" \
+                    SLYBROADCAST_USERNAME="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-USERNAME)" \
+                    SLYBROADCAST_PASSWORD="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-PASSWORD)" \
+                    SLYBROADCAST_CALLER_ID="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-CALLER-ID)" \
+                    SLYBROADCAST_API_BASE_URL="https://www.mobile-sphere.com/gateway/vmb.php" \
+                    SMS_PROVIDER="twilio" \
+                    VOICEMAIL_PROVIDER="slybroadcast"
+                
+                # Restart the web app to pull the new image
+                az webapp restart --name $(appServiceName) --resource-group $(resourceGroupName)
+                
+                echo "✅ Docker container deployed to $(appServiceName)"
 
           # Quick deployment verification
           - task: PowerShell@2
