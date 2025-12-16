@@ -64,15 +64,39 @@ stages:
         # Create production node_modules for deployment using npm (more compatible with Azure)
         rm -rf node_modules
         rm -f package-lock.json
+        
+        # Install production dependencies with npm
         npm install --only=production
-        # Ensure Prisma client is available in production
+        
+        # Reinstall Prisma specifically to ensure binaries are correct
+        npm install prisma @prisma/client --save
+        
+        # Generate Prisma client with fresh installation
         npx prisma generate
+        
+        # Verify Prisma installation
+        echo "Verifying Prisma installation..."
+        npx prisma --version || echo "Prisma verification failed"
+        
+        # Verify critical files exist
+        if [ -f "node_modules/.bin/prisma" ]; then
+            echo "✅ Prisma binary found"
+        else
+            echo "❌ Prisma binary missing"
+        fi
+        
+        # Check for wasm files
+        find node_modules -name "*.wasm" | head -5 || echo "No wasm files found"
         
         # Create a more robust startup script with timeout and error handling
         echo '#!/bin/bash' > startup.sh
         echo 'echo "=== STARTUP SCRIPT RUNNING ==="' >> startup.sh
         echo 'cd /home/site/wwwroot' >> startup.sh
         echo 'echo "Current directory: $(pwd)"' >> startup.sh
+        echo '' >> startup.sh
+        echo '# Verify Prisma installation before running migrations' >> startup.sh
+        echo 'echo "Verifying Prisma installation..."' >> startup.sh
+        echo 'npx prisma --version || echo "Prisma not properly installed"' >> startup.sh
         echo '' >> startup.sh
         echo '# Run migrations with timeout to prevent hanging' >> startup.sh
         echo 'echo "Running Prisma migrations with timeout..."' >> startup.sh
@@ -221,54 +245,33 @@ stages:
                     exit 1
                 }
 
-          # Run database migrations safely after app is healthy
-          - task: AzureCLI@2
-            displayName: 'Run Database Migrations'
+          # Post-deployment migration notification
+          - task: PowerShell@2
+            displayName: 'Post-Deployment Migration Instructions'
             inputs:
-              azureSubscription: '$(azureServiceConnection)'
-              scriptType: 'pscore'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                Write-Host "🔄 Running database migrations..."
-                
-                # Run migrations via SSH command
-                $migrationCommand = "cd /home/site/wwwroot && timeout 120 npx prisma migrate deploy"
-                
-                try {
-                    Write-Host "Executing migration command..."
-                    az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "$migrationCommand"
-                    
-                    if ($LASTEXITCODE -eq 0) {
-                        Write-Host "✅ Database migrations completed successfully!"
-                    }
-                    else {
-                        Write-Host "❌ Migration command failed with exit code: $LASTEXITCODE"
-                        Write-Host "⚠️  This may be expected if no new migrations exist."
-                    }
-                }
-                catch {
-                    Write-Host "❌ Migration execution failed: $($_.Exception.Message)"
-                    Write-Host "⚠️  Continuing deployment - migrations can be run manually if needed."
-                }
-                
-                # Generate Prisma client
-                Write-Host "🔄 Generating Prisma client..."
-                try {
-                    $generateCommand = "cd /home/site/wwwroot && timeout 60 npx prisma generate"
-                    az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "$generateCommand"
-                    
-                    if ($LASTEXITCODE -eq 0) {
-                        Write-Host "✅ Prisma client generated successfully!"
-                    }
-                    else {
-                        Write-Host "⚠️  Prisma client generation had exit code: $LASTEXITCODE"
-                    }
-                }
-                catch {
-                    Write-Host "⚠️  Prisma client generation failed: $($_.Exception.Message)"
-                }
-                
-                Write-Host "🎉 Post-deployment setup complete!"
+              targetType: 'inline'
+              script: |
+                Write-Host "🎉 Deployment Successful!" -ForegroundColor Green
+                Write-Host "================================" -ForegroundColor Cyan
+                Write-Host ""
+                Write-Host "📋 Next Steps - Run Database Migrations:" -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "Option 1 - Automated Script:" -ForegroundColor White
+                Write-Host "   ./migrate-manually.ps1" -ForegroundColor Cyan
+                Write-Host ""
+                Write-Host "Option 2 - Manual SSH:" -ForegroundColor White
+                Write-Host "   1. SSH: az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName)" -ForegroundColor Cyan
+                Write-Host "   2. Run: cd /home/site/wwwroot && npx prisma migrate deploy" -ForegroundColor Cyan
+                Write-Host "   3. Run: npx prisma generate" -ForegroundColor Cyan
+                Write-Host ""
+                Write-Host "🌐 App URLs:" -ForegroundColor Yellow
+                Write-Host "   • https://prod-paycile-plg-api.paycile.com/" -ForegroundColor Green
+                Write-Host "   • https://prod-paycile-plg-api.paycile.com/health" -ForegroundColor Green
+                Write-Host ""
+                Write-Host "📊 Check app status with:" -ForegroundColor White
+                Write-Host "   curl https://prod-paycile-plg-api.paycile.com/health" -ForegroundColor Cyan
+                Write-Host ""
+                Write-Host "✅ Deployment pipeline completed successfully!" -ForegroundColor Green
           
           - task: AzureCLI@2
             displayName: 'Verify migration completion'
