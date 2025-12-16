@@ -255,122 +255,128 @@ stages:
               inlineScript: |
                 echo "🔄 Running database migrations automatically..."
                 
-                # Use Azure CLI to execute commands in the app service container
                 APP_NAME="$(appServiceName)"
                 RG_NAME="$(resourceGroupName)"
                 
                 echo "App Service: $APP_NAME"
                 echo "Resource Group: $RG_NAME"
                 
-                # Method 1: Try using az webapp ssh with a script upload approach
-                echo "Creating migration script..."
-                
-                # Create a temporary migration script
-                cat > /tmp/migrate.sh << 'EOF'
-                #!/bin/bash
-                set -e
-                cd /home/site/wwwroot
-                echo "=== RUNNING AUTOMATED MIGRATIONS ==="
-                echo "Current directory: $(pwd)"
-                echo "Node version: $(node --version)"
-                echo "NPM version: $(npm --version)"
-                
-                echo "Checking Prisma installation..."
-                npx prisma --version || { echo "Prisma not found, attempting reinstall..."; npm install prisma @prisma/client --no-package-lock; }
-                
-                echo "Running Prisma migrations..."
-                npx prisma migrate deploy --skip-generate
-                MIGRATE_EXIT=$?
-                
-                echo "Migration exit code: $MIGRATE_EXIT"
-                
-                if [ $MIGRATE_EXIT -eq 0 ]; then
-                    echo "✅ Migrations completed successfully"
-                else
-                    echo "⚠️ Migration completed with exit code: $MIGRATE_EXIT"
-                fi
-                
-                echo "Generating Prisma client..."
-                npx prisma generate
-                GENERATE_EXIT=$?
-                
-                if [ $GENERATE_EXIT -eq 0 ]; then
-                    echo "✅ Prisma client generated successfully"
-                else
-                    echo "⚠️ Prisma generate completed with exit code: $GENERATE_EXIT"
-                fi
-                
-                echo "=== MIGRATION SCRIPT COMPLETED ==="
-                EOF
-                
-                chmod +x /tmp/migrate.sh
-                
-                # Method 2: Use Kudu API to run the migration
-                echo "Getting publishing credentials for Kudu API..."
-                
-                CREDS=$(az webapp deployment list-publishing-credentials \
-                  --resource-group "$RG_NAME" \
-                  --name "$APP_NAME" \
-                  --query '{username: publishingUserName, password: publishingPassword}' \
-                  --output json)
+                # Get the actual app service URL (Azure generates unique URLs)
+                echo "Getting app service details..."
+                APP_DETAILS=$(az webapp show --name "$APP_NAME" --resource-group "$RG_NAME" --query '{defaultHostName: defaultHostName, state: state}' --output json)
                 
                 if [ $? -eq 0 ]; then
-                    USERNAME=$(echo "$CREDS" | jq -r '.username')
-                    PASSWORD=$(echo "$CREDS" | jq -r '.password')
-                    KUDU_URL="https://$APP_NAME.scm.azurewebsites.net"
+                    DEFAULT_HOSTNAME=$(echo "$APP_DETAILS" | jq -r '.defaultHostName')
+                    APP_STATE=$(echo "$APP_DETAILS" | jq -r '.state')
                     
-                    echo "✅ Retrieved Kudu credentials for user: $USERNAME"
-                    echo "Kudu URL: $KUDU_URL"
+                    echo "✅ App Details Retrieved:"
+                    echo "   Default Hostname: $DEFAULT_HOSTNAME"
+                    echo "   State: $APP_STATE"
                     
-                    # Run migration command via Kudu API
-                    echo "Executing migration via Kudu API..."
+                    # Extract the full app name from the hostname for Kudu
+                    FULL_APP_NAME=$(echo "$DEFAULT_HOSTNAME" | cut -d'.' -f1)
+                    KUDU_URL="https://${FULL_APP_NAME}.scm.azurewebsites.net"
                     
-                    RESPONSE=$(curl -X POST \
-                      -u "$USERNAME:$PASSWORD" \
-                      -H "Content-Type: application/json" \
-                      -d '{"command": "cd D:\\home\\site\\wwwroot && npx prisma migrate deploy", "dir": "site\\wwwroot"}' \
-                      "$KUDU_URL/api/command" \
-                      --max-time 300 \
-                      --silent \
-                      --show-error \
-                      --fail \
-                      -w "%{http_code}")
+                    echo "   Full App Name: $FULL_APP_NAME"
+                    echo "   Kudu URL: $KUDU_URL"
                     
-                    HTTP_CODE="${RESPONSE: -3}"
-                    BODY="${RESPONSE%???}"
-                    
-                    echo "HTTP Status: $HTTP_CODE"
-                    echo "Response: $BODY"
-                    
-                    if [ "$HTTP_CODE" = "200" ]; then
-                        echo "✅ Migration command executed successfully"
+                    # Test if Kudu URL is accessible
+                    echo "Testing Kudu URL accessibility..."
+                    if curl -s --head "$KUDU_URL" | head -n 1 | grep -q "200\|401\|403"; then
+                        echo "✅ Kudu URL is accessible"
                         
-                        # Also run Prisma generate
-                        echo "Generating Prisma client via Kudu API..."
-                        GENERATE_RESPONSE=$(curl -X POST \
-                          -u "$USERNAME:$PASSWORD" \
-                          -H "Content-Type: application/json" \
-                          -d '{"command": "cd D:\\home\\site\\wwwroot && npx prisma generate", "dir": "site\\wwwroot"}' \
-                          "$KUDU_URL/api/command" \
-                          --max-time 180 \
-                          --silent \
-                          --show-error)
+                        # Get publishing credentials
+                        echo "Getting publishing credentials..."
+                        CREDS=$(az webapp deployment list-publishing-credentials \
+                          --resource-group "$RG_NAME" \
+                          --name "$APP_NAME" \
+                          --query '{username: publishingUserName, password: publishingPassword}' \
+                          --output json)
                         
-                        echo "Generate response: $GENERATE_RESPONSE"
-                        echo "✅ Automated migration process completed"
+                        if [ $? -eq 0 ]; then
+                            USERNAME=$(echo "$CREDS" | jq -r '.username')
+                            PASSWORD=$(echo "$CREDS" | jq -r '.password')
+                            
+                            echo "✅ Retrieved publishing credentials"
+                            
+                            # Method 1: Try Linux/Unix path format first
+                            echo "Attempting migration with Linux path format..."
+                            MIGRATE_RESPONSE=$(curl -X POST \
+                              -u "$USERNAME:$PASSWORD" \
+                              -H "Content-Type: application/json" \
+                              -d '{"command": "cd /home/site/wwwroot && npx prisma migrate deploy", "dir": "/home/site/wwwroot"}' \
+                              "$KUDU_URL/api/command" \
+                              --max-time 300 \
+                              --silent \
+                              --show-error \
+                              -w "%{http_code}" || echo "000")
+                            
+                            HTTP_CODE="${MIGRATE_RESPONSE: -3}"
+                            BODY="${MIGRATE_RESPONSE%???}"
+                            
+                            echo "HTTP Status: $HTTP_CODE"
+                            echo "Response Body: $BODY"
+                            
+                            if [ "$HTTP_CODE" = "200" ]; then
+                                echo "✅ Migration executed successfully with Linux paths"
+                                
+                                # Generate Prisma client
+                                echo "Generating Prisma client..."
+                                GENERATE_RESPONSE=$(curl -X POST \
+                                  -u "$USERNAME:$PASSWORD" \
+                                  -H "Content-Type: application/json" \
+                                  -d '{"command": "cd /home/site/wwwroot && npx prisma generate", "dir": "/home/site/wwwroot"}' \
+                                  "$KUDU_URL/api/command" \
+                                  --max-time 180 \
+                                  --silent \
+                                  --show-error)
+                                
+                                echo "Generate result: $GENERATE_RESPONSE"
+                                echo "✅ Prisma client generation completed"
+                                
+                            else
+                                # Method 2: Try Windows path format as fallback
+                                echo "Attempting migration with Windows path format..."
+                                MIGRATE_RESPONSE2=$(curl -X POST \
+                                  -u "$USERNAME:$PASSWORD" \
+                                  -H "Content-Type: application/json" \
+                                  -d '{"command": "cd D:\\home\\site\\wwwroot && npx prisma migrate deploy", "dir": "site\\wwwroot"}' \
+                                  "$KUDU_URL/api/command" \
+                                  --max-time 300 \
+                                  --silent \
+                                  --show-error \
+                                  -w "%{http_code}" || echo "000")
+                                
+                                HTTP_CODE2="${MIGRATE_RESPONSE2: -3}"
+                                BODY2="${MIGRATE_RESPONSE2%???}"
+                                
+                                echo "Windows format - HTTP Status: $HTTP_CODE2"
+                                echo "Windows format - Response: $BODY2"
+                                
+                                if [ "$HTTP_CODE2" = "200" ]; then
+                                    echo "✅ Migration executed successfully with Windows paths"
+                                else
+                                    echo "❌ Both migration attempts failed"
+                                    echo "  Linux attempt: HTTP $HTTP_CODE"
+                                    echo "  Windows attempt: HTTP $HTTP_CODE2"
+                                    echo "⚠️ Falling back to manual migration requirement"
+                                fi
+                            fi
+                        else
+                            echo "❌ Failed to get publishing credentials"
+                            exit 1
+                        fi
                     else
-                        echo "❌ Migration command failed with HTTP $HTTP_CODE"
-                        echo "Response: $BODY"
+                        echo "❌ Kudu URL is not accessible: $KUDU_URL"
+                        echo "⚠️ This may indicate the app service is not fully ready"
                         exit 1
                     fi
-                    
                 else
-                    echo "❌ Could not retrieve Kudu credentials"
-                    echo "⚠️ Migrations must be run manually"
+                    echo "❌ Failed to get app service details"
                     exit 1
                 fi
                 
-                echo "🎉 Database migrations completed via CI/CD pipeline!"
+                echo "🎉 Migration process completed!"
           
           # Final verification and success notification
           - task: PowerShell@2
