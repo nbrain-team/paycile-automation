@@ -46,14 +46,33 @@ stages:
           # Login to ACR
           az acr login --name paycileregistry
           
-          # Build and push the image
-          docker build -t $(containerRegistry)/$(imageRepository):$(Build.BuildId) .
-          docker build -t $(containerRegistry)/$(imageRepository):latest .
+          # Build the images (exit on failure)
+          echo "=== Building Docker Images ==="
+          if ! docker build -t $(containerRegistry)/$(imageRepository):$(Build.BuildId) .; then
+            echo "❌ Docker build failed!"
+            exit 1
+          fi
           
-          docker push $(containerRegistry)/$(imageRepository):$(Build.BuildId)
-          docker push $(containerRegistry)/$(imageRepository):latest
+          if ! docker build -t $(containerRegistry)/$(imageRepository):latest .; then
+            echo "❌ Docker build (latest tag) failed!"
+            exit 1
+          fi
           
-          echo "✅ Image pushed to $(containerRegistry)/$(imageRepository):$(Build.BuildId)"
+          # Push the images (exit on failure)
+          echo "=== Pushing Docker Images ==="
+          if ! docker push $(containerRegistry)/$(imageRepository):$(Build.BuildId); then
+            echo "❌ Docker push (build tag) failed!"
+            exit 1
+          fi
+          
+          if ! docker push $(containerRegistry)/$(imageRepository):latest; then
+            echo "❌ Docker push (latest tag) failed!"
+            exit 1
+          fi
+          
+          echo "✅ Images successfully built and pushed:"
+          echo "   • $(containerRegistry)/$(imageRepository):$(Build.BuildId)"
+          echo "   • $(containerRegistry)/$(imageRepository):latest"
 
 - stage: Deploy_Dev
   displayName: 'Deploy to Development'
@@ -168,16 +187,32 @@ stages:
                 
                 # Set the web app to use Linux and container
                 echo "=== Configuring Web App for Container ==="
+                
+                # Try to use the specific build tag, fall back to latest if it doesn't exist
+                IMAGE_TAG=$(Build.BuildId)
+                echo "Attempting to use image tag: $IMAGE_TAG"
+                
+                # Check if the specific tag exists in ACR
+                if az acr repository show-tags --name paycileregistry --repository $(imageRepository) --output tsv | grep -q "^$IMAGE_TAG$"; then
+                    echo "✅ Using build-specific tag: $IMAGE_TAG"
+                    DOCKER_IMAGE="$(containerRegistry)/$(imageRepository):$IMAGE_TAG"
+                else
+                    echo "⚠️ Build tag $IMAGE_TAG not found, falling back to 'latest'"
+                    DOCKER_IMAGE="$(containerRegistry)/$(imageRepository):latest"
+                fi
+                
+                echo "Using Docker image: $DOCKER_IMAGE"
+                
                 az webapp config set \
                   --name $(appServiceName) \
                   --resource-group $(resourceGroupName) \
-                  --linux-fx-version "DOCKER|$(containerRegistry)/$(imageRepository):$(Build.BuildId)"
+                  --linux-fx-version "DOCKER|$DOCKER_IMAGE"
                 
                 # Configure container settings
                 az webapp config container set \
                   --name $(appServiceName) \
                   --resource-group $(resourceGroupName) \
-                  --docker-custom-image-name $(containerRegistry)/$(imageRepository):$(Build.BuildId) \
+                  --docker-custom-image-name "$DOCKER_IMAGE" \
                   --docker-registry-server-url https://$(containerRegistry)
                 
                 # Enable container logging

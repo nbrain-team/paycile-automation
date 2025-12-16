@@ -2,7 +2,7 @@
 FROM node:20-alpine
 
 # Install OpenSSL and other necessary libraries for Prisma
-RUN apk add --no-cache openssl1.1-compat
+RUN apk add --no-cache openssl-dev ca-certificates
 
 # Set the working directory
 WORKDIR /app
