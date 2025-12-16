@@ -1,8 +1,11 @@
-# Use official Node.js runtime as base image
-FROM node:20-alpine
+# Use official Node.js runtime as base image (Debian-based for better Prisma compatibility)
+FROM node:20-slim
 
-# Install OpenSSL 1.1 compatibility and other necessary libraries for Prisma
-RUN apk add --no-cache openssl1.1-compat ca-certificates
+# Install system dependencies for Prisma
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /app
