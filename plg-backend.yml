@@ -187,7 +187,7 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                $appUrl = "https://$(appServiceName).azurewebsites.net/health"
+                $appUrl = "https://prod-paycile-plg-api.paycile.com/health"
                 $maxAttempts = 20
                 $attempt = 0
                 $healthy = $false
