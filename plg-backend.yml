@@ -276,7 +276,7 @@ stages:
                     # Extract the full app name from the hostname for Kudu - keep the regional suffix
                     # From: prod-paycile-plg-api-ehafe0f6gxf8d6a7.centralus-01.azurewebsites.net
                     # To: prod-paycile-plg-api-ehafe0f6gxf8d6a7.scm.centralus-01.azurewebsites.net
-                    KUDU_URL=$(echo "$DEFAULT_HOSTNAME" | sed 's/\.azurewebsites\.net/.scm.azurewebsites.net/' | sed 's/^/https:\/\//')
+                    KUDU_URL=$(echo "$DEFAULT_HOSTNAME" | sed 's/\.centralus-01\.azurewebsites\.net/.scm.centralus-01.azurewebsites.net/' | sed 's/^/https:\/\//')
                     
                     echo "   Kudu URL: $KUDU_URL"
                     
