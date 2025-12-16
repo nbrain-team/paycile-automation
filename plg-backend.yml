@@ -273,11 +273,11 @@ stages:
                     echo "   Default Hostname: $DEFAULT_HOSTNAME"
                     echo "   State: $APP_STATE"
                     
-                    # Extract the full app name from the hostname for Kudu
-                    FULL_APP_NAME=$(echo "$DEFAULT_HOSTNAME" | cut -d'.' -f1)
-                    KUDU_URL="https://${FULL_APP_NAME}.scm.azurewebsites.net"
+                    # Extract the full app name from the hostname for Kudu - keep the regional suffix
+                    # From: prod-paycile-plg-api-ehafe0f6gxf8d6a7.centralus-01.azurewebsites.net
+                    # To: prod-paycile-plg-api-ehafe0f6gxf8d6a7.scm.centralus-01.azurewebsites.net
+                    KUDU_URL=$(echo "$DEFAULT_HOSTNAME" | sed 's/\.azurewebsites\.net/.scm.azurewebsites.net/' | sed 's/^/https:\/\//')
                     
-                    echo "   Full App Name: $FULL_APP_NAME"
                     echo "   Kudu URL: $KUDU_URL"
                     
                     # Test if Kudu URL is accessible
