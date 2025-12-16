@@ -61,21 +61,37 @@ stages:
     
     - script: |
         cd $(workingDirectory)
-        # Keep the working Prisma installation from pnpm, just prune dev dependencies
-        echo "Pruning dev dependencies while preserving Prisma..."
+        # Keep the working pnpm installation and fix the pruning issue
+        echo "Fixing Prisma dependencies before pruning..."
         
-        # Use pnpm to prune dev dependencies (keeps Prisma working)
+        # Ensure all Prisma packages are marked as production dependencies
+        pnpm add @prisma/engines --save-prod
+        pnpm add @prisma/client-runtime-utils --save-prod
+        
+        # Verify all required packages are now production dependencies
+        echo "Verifying Prisma packages are production dependencies..."
+        
+        # Now prune dev dependencies safely
+        echo "Pruning dev dependencies while preserving all Prisma packages..."
         pnpm prune --production
         
-        # Verify Prisma is still working
-        echo "Verifying Prisma installation..."
+        # Verify Prisma is still working after pruning
+        echo "Verifying Prisma installation after pruning..."
         npx prisma --version
         
         # Verify critical files exist
         if [ -f "node_modules/.bin/prisma" ]; then
             echo "✅ Prisma binary found"
         else
-            echo "❌ Prisma binary missing - this should not happen"
+            echo "❌ Prisma binary missing"
+            exit 1
+        fi
+        
+        # Check that engines are available
+        if [ -d "node_modules/@prisma/engines" ]; then
+            echo "✅ Prisma engines found"
+        else
+            echo "❌ Prisma engines missing"
             exit 1
         fi
         
@@ -89,7 +105,7 @@ stages:
         echo 'echo "=== PAYCILE API STARTUP ==="' >> startup.sh
         echo 'cd /home/site/wwwroot' >> startup.sh
         echo '' >> startup.sh
-        echo '# Run database migrations (Prisma is already working)' >> startup.sh
+        echo '# Run database migrations (Prisma is ready)' >> startup.sh
         echo 'echo "Running database migrations..."' >> startup.sh
         echo 'npx prisma migrate deploy' >> startup.sh
         echo 'echo "✅ Migrations completed"' >> startup.sh
