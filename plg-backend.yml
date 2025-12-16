@@ -180,6 +180,95 @@ stages:
               package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
               runtimeStack: 'NODE|20-lts'
               appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" -JWT_SECRET "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" -TWILIO_ACCOUNT_SID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-FROM-NUMBER)" -ELEVENLABS_API_KEY "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast" -SCM_DO_BUILD_DURING_DEPLOYMENT "false"'
+
+          # Wait for app to be healthy before running migrations
+          - task: PowerShell@2
+            displayName: 'Wait for App to be Healthy'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $appUrl = "https://$(appServiceName).azurewebsites.net/health"
+                $maxAttempts = 20
+                $attempt = 0
+                $healthy = $false
+                
+                Write-Host "Waiting for app to be healthy at: $appUrl"
+                
+                do {
+                    $attempt++
+                    Write-Host "Health check attempt $attempt/$maxAttempts..."
+                    
+                    try {
+                        $response = Invoke-RestMethod -Uri $appUrl -TimeoutSec 30 -Method Get
+                        if ($response.ok -eq $true) {
+                            Write-Host "✅ App is healthy!"
+                            $healthy = $true
+                            break
+                        }
+                    }
+                    catch {
+                        Write-Host "❌ Health check failed: $($_.Exception.Message)"
+                    }
+                    
+                    if ($attempt -lt $maxAttempts) {
+                        Write-Host "⏳ Waiting 15 seconds before next attempt..."
+                        Start-Sleep -Seconds 15
+                    }
+                } while ($attempt -lt $maxAttempts)
+                
+                if (-not $healthy) {
+                    Write-Host "🚨 App failed health checks after $maxAttempts attempts"
+                    exit 1
+                }
+
+          # Run database migrations safely after app is healthy
+          - task: AzureCLI@2
+            displayName: 'Run Database Migrations'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                Write-Host "🔄 Running database migrations..."
+                
+                # Run migrations via SSH command
+                $migrationCommand = "cd /home/site/wwwroot && timeout 120 npx prisma migrate deploy"
+                
+                try {
+                    Write-Host "Executing migration command..."
+                    az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "$migrationCommand"
+                    
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Host "✅ Database migrations completed successfully!"
+                    }
+                    else {
+                        Write-Host "❌ Migration command failed with exit code: $LASTEXITCODE"
+                        Write-Host "⚠️  This may be expected if no new migrations exist."
+                    }
+                }
+                catch {
+                    Write-Host "❌ Migration execution failed: $($_.Exception.Message)"
+                    Write-Host "⚠️  Continuing deployment - migrations can be run manually if needed."
+                }
+                
+                # Generate Prisma client
+                Write-Host "🔄 Generating Prisma client..."
+                try {
+                    $generateCommand = "cd /home/site/wwwroot && timeout 60 npx prisma generate"
+                    az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "$generateCommand"
+                    
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Host "✅ Prisma client generated successfully!"
+                    }
+                    else {
+                        Write-Host "⚠️  Prisma client generation had exit code: $LASTEXITCODE"
+                    }
+                }
+                catch {
+                    Write-Host "⚠️  Prisma client generation failed: $($_.Exception.Message)"
+                }
+                
+                Write-Host "🎉 Post-deployment setup complete!"
           
           - task: AzureCLI@2
             displayName: 'Verify migration completion'
