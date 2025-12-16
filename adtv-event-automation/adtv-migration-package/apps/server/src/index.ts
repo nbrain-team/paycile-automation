@@ -1617,20 +1617,48 @@ app.post('/admin/resolve-migrations', async (req, res) => {
     const util = require('util');
     const execPromise = util.promisify(exec);
     
-    console.log('🔧 Resolving failed migrations...');
+    console.log('🔧 Checking migration status...');
     
-    // Resolve both failed migrations
-    await execPromise('npx prisma migrate resolve --applied 20250910155615_init');
-    console.log('✅ Resolved init migration');
+    // Try to deploy migrations directly first
+    try {
+      const deployResult = await execPromise('npx prisma migrate deploy');
+      console.log('✅ Migrations deployed successfully:', deployResult.stdout);
+      res.json({ success: true, message: 'All migrations applied successfully!', output: deployResult.stdout });
+      return;
+    } catch (deployError: any) {
+      console.log('⚠️ Deploy failed, trying to resolve individual migrations:', deployError.stderr);
+    }
     
-    await execPromise('npx prisma migrate resolve --applied 20250116000000_add_template_versioning');
-    console.log('✅ Resolved template versioning migration');
+    // If deploy fails, try resolving specific migrations
+    const migrations = ['20250910155615_init', '20250116000000_add_template_versioning'];
+    const results: string[] = [];
     
-    // Deploy any remaining migrations
-    await execPromise('npx prisma migrate deploy');
-    console.log('✅ Deployed remaining migrations');
+    for (const migration of migrations) {
+      try {
+        await execPromise(`npx prisma migrate resolve --applied ${migration}`);
+        results.push(`✅ Resolved: ${migration}`);
+        console.log(`✅ Resolved migration: ${migration}`);
+      } catch (error: any) {
+        if (error.stderr?.includes('already recorded as applied')) {
+          results.push(`ℹ️ Already applied: ${migration}`);
+          console.log(`ℹ️ Already applied: ${migration}`);
+        } else {
+          results.push(`❌ Failed to resolve: ${migration} - ${error.stderr}`);
+          console.error(`❌ Failed to resolve: ${migration}`, error.stderr);
+        }
+      }
+    }
     
-    res.json({ success: true, message: 'All migrations resolved successfully!' });
+    // Try deploy again
+    try {
+      const finalDeploy = await execPromise('npx prisma migrate deploy');
+      results.push('✅ Final deploy successful');
+      console.log('✅ Final deploy successful');
+    } catch (finalError: any) {
+      results.push(`⚠️ Final deploy failed: ${finalError.stderr}`);
+    }
+    
+    res.json({ success: true, message: 'Migration resolution completed', results });
   } catch (error: any) {
     console.error('❌ Migration resolution failed:', error);
     res.status(500).json({ success: false, error: error.message });
