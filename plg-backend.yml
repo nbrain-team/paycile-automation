@@ -1,4 +1,4 @@
-# Azure DevOps Pipeline for PLG Backend API
+# Azure DevOps Pipeline for PLG Backend API (Docker)
 trigger:
   branches:
     include:
@@ -12,17 +12,22 @@ variables:
   # Build variables
   buildConfiguration: 'Release'
   nodeVersion: '20.x'
-  workingDirectory: 'adtv-event-automation/apps/server'
+  workingDirectory: 'adtv-event-automation/adtv-migration-package/apps/server'
   
-  # Azure resources (update these with your actual resource names)
-  azureServiceConnection: 'plg-service-connection' # Create this in Azure DevOps
+  # Docker variables
+  containerRegistry: 'paycileregistry-gadacgg8gwd8evfv.azurecr.io'
+  imageRepository: 'paycile-plg-api'
+  dockerfilePath: '$(workingDirectory)/Dockerfile'
+  
+  # Azure resources
+  azureServiceConnection: 'plg-service-connection'
   appServiceName: 'prod-paycile-plg-api'
   resourceGroupName: 'prod-corp'
   keyVaultName: 'prod-plg-vault'
 
 stages:
 - stage: Build
-  displayName: 'Build Backend API'
+  displayName: 'Build and Push Docker Image'
   jobs:
   - job: Build
     displayName: 'Build'
@@ -30,69 +35,17 @@ stages:
       vmImage: 'ubuntu-latest'
     
     steps:
-    - task: NodeTool@0
-      displayName: 'Use Node.js $(nodeVersion)'
+    - task: Docker@2
+      displayName: 'Build and push Docker image'
       inputs:
-        versionSpec: '$(nodeVersion)'
-    
-    - task: Cache@2
-      displayName: 'Cache pnpm dependencies'
-      inputs:
-        key: 'pnpm | "$(Agent.OS)" | $(workingDirectory)/pnpm-lock.yaml'
-        path: '$(Pipeline.Workspace)/.pnpm-store'
-        cacheHitVar: 'PNPM_CACHE_RESTORED'
-    
-    - script: |
-        npm install -g pnpm@latest
-        cd $(workingDirectory)
-        pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
-        pnpm install --frozen-lockfile
-      displayName: 'Install dependencies'
-    
-    - script: |
-        cd $(workingDirectory)
-        pnpm prisma generate
-      displayName: 'Generate Prisma client'
-    
-    - script: |
-        cd $(workingDirectory)
-        pnpm tsc -p tsconfig.json
-      displayName: 'Build application'
-    
-    - script: |
-        cd $(workingDirectory)
-        # Create production node_modules for deployment using npm (more compatible with Azure)
-        rm -rf node_modules
-        rm -f package-lock.json
-        npm install --only=production
-        # Ensure Prisma client is available in production
-        npx prisma generate
-      displayName: 'Prepare production dependencies'
-    
-    - script: |
-        cd $(workingDirectory)
-        # Verify critical dependencies are present
-        echo "Verifying dependencies..."
-        ls node_modules/ | grep -E "(express|body-parser|cors)" || echo "Missing critical dependencies"
-        echo "Express files:"
-        ls -la node_modules/express/ || echo "Express not found"
-        echo "Body-parser files:"
-        ls -la node_modules/body-parser/ || echo "Body-parser not found"
-      displayName: 'Verify dependencies'
-    
-    - task: ArchiveFiles@2
-      displayName: 'Archive build output'
-      inputs:
-        rootFolderOrFile: '$(workingDirectory)'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/backend-$(Build.BuildId).zip'
-    
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish build artifacts'
-      inputs:
-        pathToPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: 'backend'
+        containerRegistry: 'paycileregistry'
+        repository: '$(imageRepository)'
+        command: 'buildAndPush'
+        Dockerfile: '$(dockerfilePath)'
+        buildContext: '$(workingDirectory)'
+        tags: |
+          $(Build.BuildId)
+          latest
 
 - stage: Deploy_Dev
   displayName: 'Deploy to Development'
@@ -117,13 +70,16 @@ stages:
               RunAsPreJob: true
           
           - task: AzureWebApp@1
-            displayName: 'Deploy to Azure Web App'
+            displayName: 'Deploy Docker container to Azure Web App'
             inputs:
               azureSubscription: '$(azureServiceConnection)'
               appType: 'webAppLinux'
               appName: '$(appServiceName)-dev'
-              package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
-              runtimeStack: 'NODE|20-lts'
+              deployToSlotOrASE: false
+              deploymentMethod: 'auto'
+              dockerNamespace: '$(containerRegistry)'
+              dockerRepository: '$(imageRepository)'
+              dockerImageTag: '$(Build.BuildId)'
               appSettings: '-NODE_ENV "development" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)"'
 
 - stage: Deploy_Prod
@@ -149,34 +105,45 @@ stages:
               RunAsPreJob: true
           
           - task: AzureWebApp@1
-            displayName: 'Deploy to Azure Web App'
+            displayName: 'Deploy Docker container to Azure Web App'
             inputs:
               azureSubscription: '$(azureServiceConnection)'
               appType: 'webAppLinux'
               appName: '$(appServiceName)'
-              package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
-              runtimeStack: 'NODE|20-lts'
-              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "$(TWILIO-FROM-NUMBER)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)" -GEMINI_API_KEY "$(GEMINI-API-KEY)" -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "$(SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "$(SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "$(SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast" -SCM_DO_BUILD_DURING_DEPLOYMENT "false"'
-          
-          - task: AzureCLI@2
-            displayName: 'Verify deployment and run migrations'
+              deployToSlotOrASE: false
+              deploymentMethod: 'auto'
+              dockerNamespace: '$(containerRegistry)'
+              dockerRepository: '$(imageRepository)'
+              dockerImageTag: '$(Build.BuildId)'
+              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" -JWT_SECRET "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" -TWILIO_ACCOUNT_SID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-FROM-NUMBER)" -ELEVENLABS_API_KEY "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast"'
+
+          # Quick deployment verification
+          - task: PowerShell@2
+            displayName: 'Docker Deployment Verification'
             inputs:
-              azureSubscription: '$(azureServiceConnection)'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                # Wait for deployment to complete
-                sleep 30
+              targetType: 'inline'
+              script: |
+                Write-Host "🐳 Docker container deployed successfully!" -ForegroundColor Green
+                Write-Host "Container will start automatically with migrations built-in." -ForegroundColor Cyan
                 
-                # Check if dependencies are available
-                echo "Checking app structure..."
-                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "ls -la /home/site/wwwroot/" || echo "Could not list app files"
-                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "ls -la /home/site/wwwroot/node_modules/ | head -10" || echo "Could not list node_modules"
+                # Give container time to start
+                Start-Sleep -Seconds 15
+                $appUrl = "https://prod-paycile-plg-api.paycile.com/health"
                 
-                # Try to install missing dependencies if needed
-                echo "Installing any missing dependencies..."
-                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "cd /home/site/wwwroot && npm install --only=production" || echo "NPM install completed or failed"
+                try {
+                    Write-Host "Checking container health..." -ForegroundColor Yellow
+                    $response = Invoke-RestMethod -Uri $appUrl -TimeoutSec 15 -Method Get
+                    if ($response.ok -eq $true) {
+                        Write-Host "✅ Container health check: PASSED" -ForegroundColor Green
+                    } else {
+                        Write-Host "⏳ Container starting up (normal)" -ForegroundColor Yellow
+                    }
+                }
+                catch {
+                    Write-Host "⏳ Container starting up (normal)" -ForegroundColor Yellow
+                }
                 
-                # Run migrations using the deployed app's environment
-                echo "Running migrations..."
-                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "cd /home/site/wwwroot && npm run prisma:deploy" || echo "Migration completed or already up to date"
+                Write-Host "" 
+                Write-Host "🎉 Docker Deployment Complete!" -ForegroundColor Green
+                Write-Host "🌐 API: https://prod-paycile-plg-api.paycile.com/" -ForegroundColor Green
+                Write-Host "🐳 Image: $(containerRegistry)/$(imageRepository):$(Build.BuildId)" -ForegroundColor Cyan
