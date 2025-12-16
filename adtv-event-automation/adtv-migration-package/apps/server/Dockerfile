@@ -35,9 +35,9 @@ RUN pnpm tsc -p tsconfig.json
 # Remove dev dependencies to reduce image size
 RUN pnpm prune --production
 
-# Create a non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Create a non-root user for security (Debian syntax)
+RUN groupadd --gid 1001 nodejs && \
+    useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nodejs
 
 # Change ownership of the app directory
 RUN chown -R nodejs:nodejs /app
