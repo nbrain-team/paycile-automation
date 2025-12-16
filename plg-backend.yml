@@ -35,17 +35,25 @@ stages:
       vmImage: 'ubuntu-latest'
     
     steps:
-    - task: Docker@2
-      displayName: 'Build and push Docker image'
+    - task: AzureCLI@2
+      displayName: 'Build and push Docker image to ACR'
       inputs:
-        containerRegistry: 'paycileregistry'
-        repository: '$(imageRepository)'
-        command: 'buildAndPush'
-        Dockerfile: '$(dockerfilePath)'
-        buildContext: '$(workingDirectory)'
-        tags: |
-          $(Build.BuildId)
-          latest
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        workingDirectory: '$(workingDirectory)'
+        inlineScript: |
+          # Login to ACR
+          az acr login --name paycileregistry
+          
+          # Build and push the image
+          docker build -t $(containerRegistry)/$(imageRepository):$(Build.BuildId) .
+          docker build -t $(containerRegistry)/$(imageRepository):latest .
+          
+          docker push $(containerRegistry)/$(imageRepository):$(Build.BuildId)
+          docker push $(containerRegistry)/$(imageRepository):latest
+          
+          echo "✅ Image pushed to $(containerRegistry)/$(imageRepository):$(Build.BuildId)"
 
 - stage: Deploy_Dev
   displayName: 'Deploy to Development'
