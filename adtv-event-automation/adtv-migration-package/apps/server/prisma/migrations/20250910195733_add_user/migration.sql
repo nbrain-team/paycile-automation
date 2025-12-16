@@ -8,8 +8,8 @@ CREATE TABLE "User" (
     "smtpUser" TEXT,
     "smtpPass" TEXT,
     "smtpSecure" BOOLEAN DEFAULT true,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateIndex
