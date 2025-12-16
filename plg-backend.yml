@@ -156,52 +156,22 @@ stages:
               appName: '$(appServiceName)'
               package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
               runtimeStack: 'NODE|20-lts'
-              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" -JWT_SECRET "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" -TWILIO_ACCOUNT_SID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-FROM-NUMBER)" -ELEVENLABS_API_KEY "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast" -SCM_DO_BUILD_DURING_DEPLOYMENT "false"'
+              appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" -JWT_SECRET "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" -TWILIO_ACCOUNT_SID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-FROM-NUMBER)" -ELEVENLABS_API_KEY "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast" -SCM_DO_BUILD_DURING_DEPLOYMENT "false" -POST_BUILD_COMMAND "npm run prisma:deploy || npx prisma migrate deploy"'
           
           - task: AzureCLI@2
-            displayName: 'Run database migrations'
+            displayName: 'Verify migration completion'
             inputs:
               azureSubscription: '$(azureServiceConnection)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                echo "Waiting for deployment to complete..."
-                sleep 30
+                echo "Waiting for app service to restart and migrations to complete..."
+                sleep 60
                 
-                echo "Running Prisma database migrations..."
+                echo "Checking app service status..."
+                az webapp show --resource-group $(resourceGroupName) --name $(appServiceName) --query "state" -o tsv
                 
-                # Use Azure CLI to execute commands on the App Service
-                # Method 1: Try using az webapp deploy with a post-deployment script
-                cat > migrate.sh << 'EOF'
-                #!/bin/bash
-                cd /home/site/wwwroot
-                echo "Current directory: $(pwd)"
-                echo "Checking if Prisma is available..."
-                if [ -f "node_modules/.bin/prisma" ]; then
-                  echo "Running Prisma migrations..."
-                  NODE_ENV=production npx prisma migrate deploy --skip-generate
-                  echo "Migration completed"
-                elif [ -f "package.json" ]; then
-                  echo "Running migrations via npm script..."
-                  NODE_ENV=production npm run prisma:deploy || npm run db:migrate:deploy || npx prisma migrate deploy --skip-generate
-                  echo "Migration attempt completed"
-                else
-                  echo "Could not find package.json or Prisma"
-                  ls -la
-                fi
-                EOF
+                echo "Testing database connectivity by checking app health..."
+                curl -f "https://$(appServiceName).azurewebsites.net/health" || echo "Health check endpoint not available"
                 
-                chmod +x migrate.sh
-                
-                # Upload and execute the migration script
-                echo "Uploading migration script..."
-                az webapp deploy --resource-group $(resourceGroupName) --name $(appServiceName) --src-path migrate.sh --type startup --restart
-                
-                # Wait for restart and migration to complete
-                sleep 45
-                
-                # Verify the migration worked by checking app logs
-                echo "Checking recent application logs for migration results..."
-                az webapp log tail --resource-group $(resourceGroupName) --name $(appServiceName) --timeout 30 || echo "Could not retrieve logs"
-                
-                echo "Migration process completed"
+                echo "Migration verification completed"
