@@ -67,6 +67,9 @@ stages:
         # Ensure all Prisma packages are marked as production dependencies
         pnpm add @prisma/engines --save-prod
         pnpm add @prisma/client-runtime-utils --save-prod
+        pnpm add @prisma/debug --save-prod
+        pnpm add @prisma/internals --save-prod
+        pnpm add @prisma/get-platform --save-prod
         
         # Verify all required packages are now production dependencies
         echo "Verifying Prisma packages are production dependencies..."
