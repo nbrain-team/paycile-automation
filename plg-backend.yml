@@ -84,12 +84,29 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Configure the web app to use the Docker container
+                # First check if the web app exists and its current configuration
+                echo "=== Current Dev Web App Configuration ==="
+                az webapp show --name $(appServiceName)-dev --resource-group $(resourceGroupName) --query "{linuxFxVersion:linuxFxVersion,kind:kind}" -o table
+                
+                # Set the web app to use Linux and container
+                echo "=== Configuring Dev Web App for Container ==="
+                az webapp config set \
+                  --name $(appServiceName)-dev \
+                  --resource-group $(resourceGroupName) \
+                  --linux-fx-version "DOCKER|$(containerRegistry)/$(imageRepository):$(Build.BuildId)"
+                
+                # Configure container settings
                 az webapp config container set \
                   --name $(appServiceName)-dev \
                   --resource-group $(resourceGroupName) \
                   --docker-custom-image-name $(containerRegistry)/$(imageRepository):$(Build.BuildId) \
                   --docker-registry-server-url https://$(containerRegistry)
+                
+                # Enable container logging
+                az webapp log config \
+                  --name $(appServiceName)-dev \
+                  --resource-group $(resourceGroupName) \
+                  --docker-container-logging filesystem
                 
                 # Update app settings
                 az webapp config appsettings set \
@@ -98,6 +115,7 @@ stages:
                   --settings \
                     NODE_ENV="development" \
                     PORT="8000" \
+                    WEBSITES_PORT="8000" \
                     DATABASE_URL="$(DATABASE-URL)" \
                     JWT_SECRET="$(JWT-SECRET)" \
                     TWILIO_ACCOUNT_SID="$(TWILIO-ACCOUNT-SID)" \
@@ -106,7 +124,12 @@ stages:
                     GOOGLE_CLIENT_SECRET="$(GOOGLE-CLIENT-SECRET)"
                 
                 # Restart the web app to pull the new image
+                echo "=== Restarting Dev Web App ==="
                 az webapp restart --name $(appServiceName)-dev --resource-group $(resourceGroupName)
+                
+                # Verify the new configuration
+                echo "=== New Dev Web App Configuration ==="
+                az webapp show --name $(appServiceName)-dev --resource-group $(resourceGroupName) --query "{linuxFxVersion:linuxFxVersion,kind:kind}" -o table
                 
                 echo "✅ Docker container deployed to $(appServiceName)-dev"
 
@@ -139,12 +162,29 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Configure the web app to use the Docker container
+                # First check if the web app exists and its current configuration
+                echo "=== Current Web App Configuration ==="
+                az webapp show --name $(appServiceName) --resource-group $(resourceGroupName) --query "{linuxFxVersion:linuxFxVersion,kind:kind}" -o table
+                
+                # Set the web app to use Linux and container
+                echo "=== Configuring Web App for Container ==="
+                az webapp config set \
+                  --name $(appServiceName) \
+                  --resource-group $(resourceGroupName) \
+                  --linux-fx-version "DOCKER|$(containerRegistry)/$(imageRepository):$(Build.BuildId)"
+                
+                # Configure container settings
                 az webapp config container set \
                   --name $(appServiceName) \
                   --resource-group $(resourceGroupName) \
                   --docker-custom-image-name $(containerRegistry)/$(imageRepository):$(Build.BuildId) \
                   --docker-registry-server-url https://$(containerRegistry)
+                
+                # Enable container logging
+                az webapp log config \
+                  --name $(appServiceName) \
+                  --resource-group $(resourceGroupName) \
+                  --docker-container-logging filesystem
                 
                 # Update app settings
                 az webapp config appsettings set \
@@ -153,6 +193,7 @@ stages:
                   --settings \
                     NODE_ENV="production" \
                     PORT="8000" \
+                    WEBSITES_PORT="8000" \
                     DATABASE_URL="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" \
                     JWT_SECRET="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" \
                     TWILIO_ACCOUNT_SID="@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" \
@@ -169,11 +210,14 @@ stages:
                     VOICEMAIL_PROVIDER="slybroadcast"
                 
                 # Restart the web app to pull the new image
+                echo "=== Restarting Web App ==="
                 az webapp restart --name $(appServiceName) --resource-group $(resourceGroupName)
                 
-                echo "✅ Docker container deployed to $(appServiceName)"
-
-          # Quick deployment verification
+                # Verify the new configuration
+                echo "=== New Web App Configuration ==="
+                az webapp show --name $(appServiceName) --resource-group $(resourceGroupName) --query "{linuxFxVersion:linuxFxVersion,kind:kind}" -o table
+                
+                echo "✅ Docker container deployed to $(appServiceName)"          # Quick deployment verification
           - task: PowerShell@2
             displayName: 'Docker Deployment Verification'
             inputs:
