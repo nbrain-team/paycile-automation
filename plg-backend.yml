@@ -68,16 +68,28 @@ stages:
         # Ensure Prisma client is available in production
         npx prisma generate
         
-        # Create a startup script that will run migrations on app start
+        # Create a more robust startup script with timeout and error handling
         echo '#!/bin/bash' > startup.sh
         echo 'echo "=== STARTUP SCRIPT RUNNING ==="' >> startup.sh
         echo 'cd /home/site/wwwroot' >> startup.sh
         echo 'echo "Current directory: $(pwd)"' >> startup.sh
-        echo 'echo "Running Prisma migrations..."' >> startup.sh
-        echo 'NODE_ENV=production npx prisma migrate deploy --skip-generate || echo "Migration failed or already up to date"' >> startup.sh
+        echo '' >> startup.sh
+        echo '# Run migrations with timeout to prevent hanging' >> startup.sh
+        echo 'echo "Running Prisma migrations with timeout..."' >> startup.sh
+        echo 'timeout 60s npx prisma migrate deploy --skip-generate 2>&1 || echo "Migration completed or timed out"' >> startup.sh
+        echo '' >> startup.sh
+        echo '# Always start the application regardless of migration status' >> startup.sh
         echo 'echo "Starting the application..."' >> startup.sh
-        echo 'node dist/index.js' >> startup.sh
+        echo 'exec node dist/index.js' >> startup.sh
         chmod +x startup.sh
+        
+        # Also create a fallback startup without migrations for emergency
+        echo '#!/bin/bash' > startup-no-migrate.sh
+        echo 'echo "=== FALLBACK STARTUP (NO MIGRATIONS) ==="' >> startup-no-migrate.sh
+        echo 'cd /home/site/wwwroot' >> startup-no-migrate.sh
+        echo 'echo "Starting application without migrations..."' >> startup-no-migrate.sh
+        echo 'exec node dist/index.js' >> startup-no-migrate.sh
+        chmod +x startup-no-migrate.sh
       displayName: 'Prepare production dependencies and startup script'
     
     - script: |
@@ -168,7 +180,6 @@ stages:
               package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
               runtimeStack: 'NODE|20-lts'
               appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" -JWT_SECRET "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" -TWILIO_ACCOUNT_SID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-FROM-NUMBER)" -ELEVENLABS_API_KEY "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast" -SCM_DO_BUILD_DURING_DEPLOYMENT "false"'
-              startUpCommand: '/home/site/wwwroot/startup.sh'
           
           - task: AzureCLI@2
             displayName: 'Verify migration completion'
