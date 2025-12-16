@@ -65,11 +65,16 @@ stages:
         rm -rf node_modules
         rm -f package-lock.json
         
-        # Install production dependencies with npm
-        npm install --only=production
+        # Install production dependencies with npm, ignoring scripts to prevent binary corruption
+        npm install --only=production --ignore-scripts
         
-        # Reinstall Prisma specifically to ensure binaries are correct
-        npm install prisma @prisma/client --save
+        # Reinstall Prisma specifically with fresh binaries
+        npm uninstall prisma @prisma/client || true
+        npm install prisma @prisma/client --save --ignore-scripts
+        
+        # Run install scripts manually after installation
+        npm rebuild prisma
+        npm rebuild @prisma/client
         
         # Generate Prisma client with fresh installation
         npx prisma generate
@@ -88,22 +93,40 @@ stages:
         # Check for wasm files
         find node_modules -name "*.wasm" | head -5 || echo "No wasm files found"
         
-        # Create a more robust startup script with timeout and error handling
+        # Create a robust startup script that fixes Prisma and runs migrations
         echo '#!/bin/bash' > startup.sh
-        echo 'echo "=== STARTUP SCRIPT RUNNING ==="' >> startup.sh
+        echo 'set -e  # Exit on any error' >> startup.sh
+        echo 'echo "=== PAYCILE API STARTUP ==="' >> startup.sh
         echo 'cd /home/site/wwwroot' >> startup.sh
         echo 'echo "Current directory: $(pwd)"' >> startup.sh
+        echo 'echo "Node version: $(node --version)"' >> startup.sh
+        echo 'echo "NPM version: $(npm --version)"' >> startup.sh
         echo '' >> startup.sh
-        echo '# Verify Prisma installation before running migrations' >> startup.sh
-        echo 'echo "Verifying Prisma installation..."' >> startup.sh
-        echo 'npx prisma --version || echo "Prisma not properly installed"' >> startup.sh
+        echo '# Fix Prisma installation if needed' >> startup.sh
+        echo 'echo "Checking Prisma installation..."' >> startup.sh
+        echo 'if ! npx prisma --version >/dev/null 2>&1; then' >> startup.sh
+        echo '    echo "Prisma not working, reinstalling..."' >> startup.sh
+        echo '    npm install prisma @prisma/client --no-package-lock --ignore-scripts' >> startup.sh
+        echo '    npm rebuild prisma @prisma/client' >> startup.sh
+        echo '    npx prisma generate' >> startup.sh
+        echo 'else' >> startup.sh
+        echo '    echo "✅ Prisma is working"' >> startup.sh
+        echo 'fi' >> startup.sh
         echo '' >> startup.sh
-        echo '# Run migrations with timeout to prevent hanging' >> startup.sh
-        echo 'echo "Running Prisma migrations with timeout..."' >> startup.sh
-        echo 'timeout 60s npx prisma migrate deploy --skip-generate 2>&1 || echo "Migration completed or timed out"' >> startup.sh
+        echo '# Run database migrations' >> startup.sh
+        echo 'echo "Running database migrations..."' >> startup.sh
+        echo 'if npx prisma migrate deploy; then' >> startup.sh
+        echo '    echo "✅ Migrations completed successfully"' >> startup.sh
+        echo 'else' >> startup.sh
+        echo '    echo "⚠️ Migration failed, but continuing..."' >> startup.sh
+        echo 'fi' >> startup.sh
         echo '' >> startup.sh
-        echo '# Always start the application regardless of migration status' >> startup.sh
-        echo 'echo "Starting the application..."' >> startup.sh
+        echo '# Ensure Prisma client is generated' >> startup.sh
+        echo 'echo "Generating Prisma client..."' >> startup.sh
+        echo 'npx prisma generate || echo "⚠️ Client generation failed"' >> startup.sh
+        echo '' >> startup.sh
+        echo '# Start the application' >> startup.sh
+        echo 'echo "🚀 Starting the application..."' >> startup.sh
         echo 'exec node dist/index.js' >> startup.sh
         chmod +x startup.sh
         
@@ -203,6 +226,7 @@ stages:
               appName: '$(appServiceName)'
               package: '$(Pipeline.Workspace)/backend/backend-$(Build.BuildId).zip'
               runtimeStack: 'NODE|20-lts'
+              startUpCommand: '/home/site/wwwroot/startup.sh'
               appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=DATABASE-URL)" -JWT_SECRET "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=JWT-SECRET)" -TWILIO_ACCOUNT_SID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=TWILIO-FROM-NUMBER)" -ELEVENLABS_API_KEY "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "@Microsoft.KeyVault(VaultName=$(keyVaultName);SecretName=SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast" -SCM_DO_BUILD_DURING_DEPLOYMENT "false"'
 
           # Wait for app to be healthy before running migrations
@@ -245,138 +269,22 @@ stages:
                     exit 1
                 }
 
-          # Run database migrations automatically after app is healthy
-          - task: AzureCLI@2
-            displayName: 'Run Database Migrations'
+          # Wait for startup script to complete migrations
+          - task: PowerShell@2
+            displayName: 'Wait for Startup Script Migration'
             inputs:
-              azureSubscription: '$(azureServiceConnection)'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                echo "🔄 Running database migrations automatically..."
-                
-                APP_NAME="$(appServiceName)"
-                RG_NAME="$(resourceGroupName)"
-                
-                echo "App Service: $APP_NAME"
-                echo "Resource Group: $RG_NAME"
-                
-                # Get the actual app service URL (Azure generates unique URLs)
-                echo "Getting app service details..."
-                APP_DETAILS=$(az webapp show --name "$APP_NAME" --resource-group "$RG_NAME" --query '{defaultHostName: defaultHostName, state: state}' --output json)
-                
-                if [ $? -eq 0 ]; then
-                    DEFAULT_HOSTNAME=$(echo "$APP_DETAILS" | jq -r '.defaultHostName')
-                    APP_STATE=$(echo "$APP_DETAILS" | jq -r '.state')
-                    
-                    echo "✅ App Details Retrieved:"
-                    echo "   Default Hostname: $DEFAULT_HOSTNAME"
-                    echo "   State: $APP_STATE"
-                    
-                    # Extract the full app name from the hostname for Kudu - keep the regional suffix
-                    # From: prod-paycile-plg-api-ehafe0f6gxf8d6a7.centralus-01.azurewebsites.net
-                    # To: prod-paycile-plg-api-ehafe0f6gxf8d6a7.scm.centralus-01.azurewebsites.net
-                    KUDU_URL=$(echo "$DEFAULT_HOSTNAME" | sed 's/\.centralus-01\.azurewebsites\.net/.scm.centralus-01.azurewebsites.net/' | sed 's/^/https:\/\//')
-                    
-                    echo "   Kudu URL: $KUDU_URL"
-                    
-                    # Test if Kudu URL is accessible
-                    echo "Testing Kudu URL accessibility..."
-                    if curl -s --head "$KUDU_URL" | head -n 1 | grep -q "200\|401\|403"; then
-                        echo "✅ Kudu URL is accessible"
-                        
-                        # Get publishing credentials
-                        echo "Getting publishing credentials..."
-                        CREDS=$(az webapp deployment list-publishing-credentials \
-                          --resource-group "$RG_NAME" \
-                          --name "$APP_NAME" \
-                          --query '{username: publishingUserName, password: publishingPassword}' \
-                          --output json)
-                        
-                        if [ $? -eq 0 ]; then
-                            USERNAME=$(echo "$CREDS" | jq -r '.username')
-                            PASSWORD=$(echo "$CREDS" | jq -r '.password')
-                            
-                            echo "✅ Retrieved publishing credentials"
-                            
-                            # Method 1: Try Linux/Unix path format first
-                            echo "Attempting migration with Linux path format..."
-                            MIGRATE_RESPONSE=$(curl -X POST \
-                              -u "$USERNAME:$PASSWORD" \
-                              -H "Content-Type: application/json" \
-                              -d '{"command": "cd /home/site/wwwroot && npx prisma migrate deploy", "dir": "/home/site/wwwroot"}' \
-                              "$KUDU_URL/api/command" \
-                              --max-time 300 \
-                              --silent \
-                              --show-error \
-                              -w "%{http_code}" || echo "000")
-                            
-                            HTTP_CODE="${MIGRATE_RESPONSE: -3}"
-                            BODY="${MIGRATE_RESPONSE%???}"
-                            
-                            echo "HTTP Status: $HTTP_CODE"
-                            echo "Response Body: $BODY"
-                            
-                            if [ "$HTTP_CODE" = "200" ]; then
-                                echo "✅ Migration executed successfully with Linux paths"
-                                
-                                # Generate Prisma client
-                                echo "Generating Prisma client..."
-                                GENERATE_RESPONSE=$(curl -X POST \
-                                  -u "$USERNAME:$PASSWORD" \
-                                  -H "Content-Type: application/json" \
-                                  -d '{"command": "cd /home/site/wwwroot && npx prisma generate", "dir": "/home/site/wwwroot"}' \
-                                  "$KUDU_URL/api/command" \
-                                  --max-time 180 \
-                                  --silent \
-                                  --show-error)
-                                
-                                echo "Generate result: $GENERATE_RESPONSE"
-                                echo "✅ Prisma client generation completed"
-                                
-                            else
-                                # Method 2: Try Windows path format as fallback
-                                echo "Attempting migration with Windows path format..."
-                                MIGRATE_RESPONSE2=$(curl -X POST \
-                                  -u "$USERNAME:$PASSWORD" \
-                                  -H "Content-Type: application/json" \
-                                  -d '{"command": "cd D:\\home\\site\\wwwroot && npx prisma migrate deploy", "dir": "site\\wwwroot"}' \
-                                  "$KUDU_URL/api/command" \
-                                  --max-time 300 \
-                                  --silent \
-                                  --show-error \
-                                  -w "%{http_code}" || echo "000")
-                                
-                                HTTP_CODE2="${MIGRATE_RESPONSE2: -3}"
-                                BODY2="${MIGRATE_RESPONSE2%???}"
-                                
-                                echo "Windows format - HTTP Status: $HTTP_CODE2"
-                                echo "Windows format - Response: $BODY2"
-                                
-                                if [ "$HTTP_CODE2" = "200" ]; then
-                                    echo "✅ Migration executed successfully with Windows paths"
-                                else
-                                    echo "❌ Both migration attempts failed"
-                                    echo "  Linux attempt: HTTP $HTTP_CODE"
-                                    echo "  Windows attempt: HTTP $HTTP_CODE2"
-                                    echo "⚠️ Falling back to manual migration requirement"
-                                fi
-                            fi
-                        else
-                            echo "❌ Failed to get publishing credentials"
-                            exit 1
-                        fi
-                    else
-                        echo "❌ Kudu URL is not accessible: $KUDU_URL"
-                        echo "⚠️ This may indicate the app service is not fully ready"
-                        exit 1
-                    fi
-                else
-                    echo "❌ Failed to get app service details"
-                    exit 1
-                fi
-                
-                echo "🎉 Migration process completed!"
+              targetType: 'inline'
+              script: |
+                Write-Host "⏳ Waiting for startup script to complete migrations..." -ForegroundColor Yellow
+                Write-Host "The startup script is now handling:" -ForegroundColor Cyan
+                Write-Host "   • Prisma installation verification" -ForegroundColor White
+                Write-Host "   • Database migration execution" -ForegroundColor White
+                Write-Host "   • Prisma client generation" -ForegroundColor White
+                Write-Host "   • Application startup" -ForegroundColor White
+                Write-Host ""
+                Write-Host "⏱️ Allowing 60 seconds for startup process..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 60
+                Write-Host "✅ Startup wait period completed" -ForegroundColor Green
           
           # Final verification and success notification
           - task: PowerShell@2
