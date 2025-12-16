@@ -159,24 +159,49 @@ stages:
               appSettings: '-NODE_ENV "production" -PORT "8000" -DATABASE_URL "$(DATABASE-URL)" -JWT_SECRET "$(JWT-SECRET)" -TWILIO_ACCOUNT_SID "$(TWILIO-ACCOUNT-SID)" -TWILIO_AUTH_TOKEN "$(TWILIO-AUTH-TOKEN)" -TWILIO_FROM_NUMBER "$(TWILIO-FROM-NUMBER)" -GOOGLE_CLIENT_ID "$(GOOGLE-CLIENT-ID)" -GOOGLE_CLIENT_SECRET "$(GOOGLE-CLIENT-SECRET)" -GEMINI_API_KEY "$(GEMINI-API-KEY)" -ELEVENLABS_API_KEY "$(ELEVENLABS-API-KEY)" -ELEVENLABS_VOICE_ID "21m00Tcm4TlvDq8ikWAM" -ELEVENLABS_MODEL_ID "eleven_flash_v2_5" -SLYBROADCAST_USERNAME "$(SLYBROADCAST-USERNAME)" -SLYBROADCAST_PASSWORD "$(SLYBROADCAST-PASSWORD)" -SLYBROADCAST_CALLER_ID "$(SLYBROADCAST-CALLER-ID)" -SLYBROADCAST_API_BASE_URL "https://www.mobile-sphere.com/gateway/vmb.php" -SMS_PROVIDER "twilio" -VOICEMAIL_PROVIDER "slybroadcast" -SCM_DO_BUILD_DURING_DEPLOYMENT "false"'
           
           - task: AzureCLI@2
-            displayName: 'Verify deployment and run migrations'
+            displayName: 'Run database migrations'
             inputs:
               azureSubscription: '$(azureServiceConnection)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Wait for deployment to complete
+                echo "Waiting for deployment to complete..."
                 sleep 30
                 
-                # Check if dependencies are available
-                echo "Checking app structure..."
-                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "ls -la /home/site/wwwroot/" || echo "Could not list app files"
-                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "ls -la /home/site/wwwroot/node_modules/ | head -10" || echo "Could not list node_modules"
+                echo "Running Prisma database migrations..."
                 
-                # Try to install missing dependencies if needed
-                echo "Installing any missing dependencies..."
-                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "cd /home/site/wwwroot && npm install --only=production" || echo "NPM install completed or failed"
+                # Use Azure CLI to execute commands on the App Service
+                # Method 1: Try using az webapp deploy with a post-deployment script
+                cat > migrate.sh << 'EOF'
+                #!/bin/bash
+                cd /home/site/wwwroot
+                echo "Current directory: $(pwd)"
+                echo "Checking if Prisma is available..."
+                if [ -f "node_modules/.bin/prisma" ]; then
+                  echo "Running Prisma migrations..."
+                  NODE_ENV=production npx prisma migrate deploy --skip-generate
+                  echo "Migration completed"
+                elif [ -f "package.json" ]; then
+                  echo "Running migrations via npm script..."
+                  NODE_ENV=production npm run prisma:deploy || npm run db:migrate:deploy || npx prisma migrate deploy --skip-generate
+                  echo "Migration attempt completed"
+                else
+                  echo "Could not find package.json or Prisma"
+                  ls -la
+                fi
+                EOF
                 
-                # Run migrations using the deployed app's environment
-                echo "Running migrations..."
-                az webapp ssh --name $(appServiceName) --resource-group $(resourceGroupName) --command "cd /home/site/wwwroot && npm run prisma:deploy" || echo "Migration completed or already up to date"
+                chmod +x migrate.sh
+                
+                # Upload and execute the migration script
+                echo "Uploading migration script..."
+                az webapp deploy --resource-group $(resourceGroupName) --name $(appServiceName) --src-path migrate.sh --type startup --restart
+                
+                # Wait for restart and migration to complete
+                sleep 45
+                
+                # Verify the migration worked by checking app logs
+                echo "Checking recent application logs for migration results..."
+                az webapp log tail --resource-group $(resourceGroupName) --name $(appServiceName) --timeout 30 || echo "Could not retrieve logs"
+                
+                echo "Migration process completed"
