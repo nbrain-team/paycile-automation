@@ -4,6 +4,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './styles.css';
 import { AppLayout } from './shared/AppLayout';
 import { Dashboard } from './pages/Dashboard';
+import { Login } from './pages/Login';
+import { ProtectedRoute } from './components/ProtectedRoute';
 // import { Campaigns } from './pages/Campaigns';
 import { TemplatesFunnel } from './pages/TemplatesFunnel';
 import { CampaignsLive } from './pages/CampaignsLive';
@@ -27,6 +29,10 @@ import { PropMgmtLanding } from './pages/PropMgmtLanding';
 
 const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <Login />,
+  },
+  {
     path: '/landing',
     element: <LandingPage />,
   },
@@ -48,7 +54,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'templates', element: <TemplatesFunnel /> },
