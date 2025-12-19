@@ -854,29 +854,19 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
         if (!ct.phone) continue;
         const np = splitName(ct.name || '');
         const script = renderMergeTags(baseScript, { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx });
-        let audioUrl = '';
-        try {
-          const tts = await generateTtsMp3({ script });
-          if (tts.ok && tts.audioUrl) {
-            if (tts.audioUrl.startsWith('data:audio/mpeg;base64,')) {
-              const b64 = tts.audioUrl.replace('data:audio/mpeg;base64,', '');
-              const buf = Buffer.from(b64, 'base64');
-              const id = storeVoicemailMp3(buf);
-              const base = (process.env.PUBLIC_BASE_URL || (((req.headers['x-forwarded-proto'] || req.protocol) + '://' + req.get('host'))));
-              audioUrl = `${String(base).replace(/\/$/, '')}/media/vm/${id}.mp3`;
-            } else {
-              audioUrl = tts.audioUrl;
-            }
-          } else if (!tts.ok) {
-            // eslint-disable-next-line no-console
-            console.warn('[execute] ElevenLabs TTS failed', tts.raw);
-          }
-        } catch {}
-        const r = await sendVoicemailDrop({ to: ct.phone, audioUrl: audioUrl || undefined, callerId: ((campaign as any)?.senderUser?.vmCallerId) || process.env.DROPCOWBOY_CALLER_ID || process.env.SLYBROADCAST_CALLER_ID || undefined, campaignId: campaign?.id });
+        
+        // Send with DropCowboy voice_id (TTS script directly)
+        const r = await sendVoicemailDrop({ 
+          to: ct.phone, 
+          ttsScript: script,
+          callerId: ((campaign as any)?.senderUser?.vmCallerId) || process.env.DROPCOWBOY_CALLER_ID || undefined, 
+          campaignId: campaign?.id 
+        });
+        
         if (r.queued) vmQueued++;
         else {
           // eslint-disable-next-line no-console
-          console.warn('[execute] Voicemail drop failed', { to: ct.phone, audioUrl, raw: r.raw });
+          console.warn('[execute] Voicemail drop failed', { to: ct.phone, raw: r.raw });
         }
       }
     }
@@ -1460,26 +1450,11 @@ app.post('/api/voicemail/drop', async (req, res) => {
     }
     if (!toNumber) return res.status(400).json({ error: 'Missing destination number' });
 
-    let audioUrl = body.audioUrl || '';
-    if (!audioUrl && body.ttsScript) {
-      const tts = await generateTtsMp3({ script: body.ttsScript });
-      if (tts.ok && tts.audioUrl) {
-        // Convert data URL to Buffer and host at /media
-        if (tts.audioUrl.startsWith('data:audio/mpeg;base64,')) {
-          const b64 = tts.audioUrl.replace('data:audio/mpeg;base64,', '');
-          const buf = Buffer.from(b64, 'base64');
-          const id = storeVoicemailMp3(buf);
-          const base = (process.env.PUBLIC_BASE_URL || ((req.headers['x-forwarded-proto'] || req.protocol) + '://' + req.get('host')));
-          audioUrl = `${String(base).replace(/\/$/, '')}/media/vm/${id}.mp3`;
-        } else {
-          audioUrl = tts.audioUrl;
-        }
-      }
-    }
-
+    // Send to DropCowboy - pass ttsScript directly if provided (uses DropCowboy voice)
     const result = await sendVoicemailDrop({
       to: toNumber,
-      audioUrl: audioUrl || undefined,
+      ttsScript: body.ttsScript,
+      audioUrl: body.audioUrl,
       callerId: body.callerId,
       scheduleAt: body.scheduleAt,
       campaignId: body.campaignId,

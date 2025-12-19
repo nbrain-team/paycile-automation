@@ -2,6 +2,7 @@ export type VoicemailDropInput = {
   to: string;
   audioUrl?: string; // pre-recorded mp3 url
   audioFileId?: string; // for future: uploaded media id
+  ttsScript?: string; // text script for DropCowboy voice TTS
   campaignId?: string;
   from?: string;
   scheduleAt?: string; // ISO datetime for scheduling
@@ -49,14 +50,6 @@ export async function sendVoicemailDrop(input: VoicemailDropInput): Promise<Voic
       };
     }
 
-    if (!input.audioUrl) {
-      return { 
-        queued: false, 
-        provider: 'dropcowboy', 
-        raw: { error: 'Missing audio URL - ensure ElevenLabs TTS generated audio' } 
-      };
-    }
-
     try {
       // Format phone number in E.164 format (with +1)
       let phone = normalizePhone10(input.to);
@@ -67,6 +60,7 @@ export async function sendVoicemailDrop(input: VoicemailDropInput): Promise<Voic
       const forwardingE164 = forwardingNum.length === 10 ? `+1${forwardingNum}` : `+${forwardingNum}`;
       
       const brandId = process.env.DROPCOWBOY_BRAND_ID || '';
+      const voiceId = process.env.DROPCOWBOY_VOICE_ID || '';
       
       if (!brandId) {
         return {
@@ -76,22 +70,41 @@ export async function sendVoicemailDrop(input: VoicemailDropInput): Promise<Voic
         };
       }
       
-      // Use DropCowboy API v1 format
-      const payload = {
+      // Build payload - prefer voice_id (DropCowboy TTS) over audio_url
+      const payload: any = {
         team_id: teamId,
         secret: secret,
         brand_id: brandId,
         phone_number: phoneE164,
-        audio_url: input.audioUrl,
-        audio_type: 'mp3',
         forwarding_number: forwardingE164,
         foreign_id: input.campaignId || `paycile-${Date.now()}`
       };
+
+      // If voice_id is configured, use DropCowboy's TTS (no special approval needed)
+      if (voiceId && input.ttsScript) {
+        payload.voice_id = voiceId;
+        payload.tts_body = input.ttsScript;
+      }
+      // Otherwise use audio_url (requires special approval from DropCowboy)
+      else if (input.audioUrl) {
+        payload.audio_url = input.audioUrl;
+        payload.audio_type = 'mp3';
+      }
+      // No audio source provided
+      else {
+        return {
+          queued: false,
+          provider: 'dropcowboy',
+          raw: { error: 'Missing audio source - need either DROPCOWBOY_VOICE_ID with ttsScript, or audioUrl' }
+        };
+      }
 
       console.log('[DropCowboy] Sending voicemail drop:', { 
         phone: phoneE164, 
         forwarding: forwardingE164,
         brandId,
+        method: voiceId && input.ttsScript ? 'voice_id (DropCowboy TTS)' : 'audio_url (external MP3)',
+        scriptLength: input.ttsScript?.length,
         audioUrl: input.audioUrl?.substring(0, 60) + '...' 
       });
 
