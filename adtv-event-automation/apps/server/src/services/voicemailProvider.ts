@@ -58,26 +58,44 @@ export async function sendVoicemailDrop(input: VoicemailDropInput): Promise<Voic
     }
 
     try {
-      const phone = normalizePhone10(input.to);
-      const callerId = normalizePhone10(input.callerId || input.from || process.env.DROPCOWBOY_CALLER_ID || '');
+      // Format phone number in E.164 format (with +1)
+      let phone = normalizePhone10(input.to);
+      const phoneE164 = phone.length === 10 ? `+1${phone}` : `+${phone}`;
       
+      // Format caller ID / forwarding number
+      let forwardingNum = normalizePhone10(input.callerId || input.from || process.env.DROPCOWBOY_CALLER_ID || '');
+      const forwardingE164 = forwardingNum.length === 10 ? `+1${forwardingNum}` : `+${forwardingNum}`;
+      
+      const brandId = process.env.DROPCOWBOY_BRAND_ID || '';
+      
+      if (!brandId) {
+        return {
+          queued: false,
+          provider: 'dropcowboy',
+          raw: { error: 'Missing DROPCOWBOY_BRAND_ID - get from Trust Center in DropCowboy dashboard' }
+        };
+      }
+      
+      // Use DropCowboy API v1 format
       const payload = {
         team_id: teamId,
         secret: secret,
-        phone_numbers: [phone],
+        brand_id: brandId,
+        phone_number: phoneE164,
         audio_url: input.audioUrl,
-        caller_id: callerId,
-        campaign_name: input.campaignId || 'Paycile Campaign',
-        schedule_datetime: input.scheduleAt || undefined
+        audio_type: 'mp3',
+        forwarding_number: forwardingE164,
+        foreign_id: input.campaignId || `paycile-${Date.now()}`
       };
 
       console.log('[DropCowboy] Sending voicemail drop:', { 
-        to: phone, 
-        callerId, 
-        audioUrl: input.audioUrl?.substring(0, 50) + '...' 
+        phone: phoneE164, 
+        forwarding: forwardingE164,
+        brandId,
+        audioUrl: input.audioUrl?.substring(0, 60) + '...' 
       });
 
-      const res = await doFetch(`${baseUrl}/campaigns/send`, {
+      const res = await doFetch(`https://api.dropcowboy.com/v1/rvm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -85,12 +103,13 @@ export async function sendVoicemailDrop(input: VoicemailDropInput): Promise<Voic
 
       const data = await res.json().catch(() => null);
 
+      // DropCowboy returns 200 for queued voicemails (delivery happens async)
       if (res.ok && data && !data.error) {
-        console.log('[DropCowboy] Success:', data);
+        console.log('[DropCowboy] Voicemail queued successfully:', data);
         return {
           queued: true,
           provider: 'dropcowboy',
-          id: data.campaign_id || data.id,
+          id: data.drop_id || data.id || data.campaign_id,
           raw: data
         };
       } else {
@@ -98,7 +117,7 @@ export async function sendVoicemailDrop(input: VoicemailDropInput): Promise<Voic
         return {
           queued: false,
           provider: 'dropcowboy',
-          raw: { error: data || `HTTP ${res.status}` }
+          raw: { error: data?.message || data?.error || data || `HTTP ${res.status}` }
         };
       }
     } catch (err: any) {
