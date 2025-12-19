@@ -4,8 +4,6 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './styles.css';
 import { AppLayout } from './shared/AppLayout';
 import { Dashboard } from './pages/Dashboard';
-import { Login } from './pages/Login';
-import { ProtectedRoute } from './components/ProtectedRoute';
 // import { Campaigns } from './pages/Campaigns';
 import { TemplatesFunnel } from './pages/TemplatesFunnel';
 import { CampaignsLive } from './pages/CampaignsLive';
@@ -21,44 +19,11 @@ import { Settings } from './pages/Settings';
 import { Inbox } from './pages/Inbox';
 import { AnalyticsMaster } from './pages/AnalyticsMaster';
 import { ApolloSearch } from './pages/ApolloSearch';
-import { LandingPage } from './pages/LandingPage';
-import { CFOInsuranceLanding } from './pages/CFOInsuranceLanding';
-import { ControllerLanding } from './pages/ControllerLanding';
-import { ARAPLanding } from './pages/ARAPLanding';
-import { PropMgmtLanding } from './pages/PropMgmtLanding';
 
 const router = createBrowserRouter([
   {
-    path: '/login',
-    element: <Login />,
-  },
-  {
-    path: '/landing',
-    element: <LandingPage />,
-  },
-  {
-    path: '/landing/cfo-insurance',
-    element: <CFOInsuranceLanding />,
-  },
-  {
-    path: '/landing/controller',
-    element: <ControllerLanding />,
-  },
-  {
-    path: '/landing/arap',
-    element: <ARAPLanding />,
-  },
-  {
-    path: '/landing/property-management',
-    element: <PropMgmtLanding />,
-  },
-  {
     path: '/',
-    element: (
-      <ProtectedRoute>
-        <AppLayout />
-      </ProtectedRoute>
-    ),
+    element: <AppLayout />,
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'templates', element: <TemplatesFunnel /> },
