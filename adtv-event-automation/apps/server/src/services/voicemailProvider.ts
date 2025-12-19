@@ -99,31 +99,48 @@ export async function sendVoicemailDrop(input: VoicemailDropInput): Promise<Voic
         };
       }
 
+      const method = voiceId && input.ttsScript ? 'voice_id' : 'audio_url';
+      
       console.log('[DropCowboy] Sending voicemail drop:', { 
         phone: phoneE164, 
         forwarding: forwardingE164,
         brandId,
-        method: voiceId && input.ttsScript ? 'voice_id (DropCowboy TTS)' : 'audio_url (external MP3)',
+        method: method === 'voice_id' ? 'DropCowboy TTS' : 'ElevenLabs audio',
         scriptLength: input.ttsScript?.length,
-        audioUrl: input.audioUrl?.substring(0, 60) + '...' 
+        audioUrl: input.audioUrl?.substring(0, 60) 
       });
 
       const res = await doFetch(`https://api.dropcowboy.com/v1/rvm`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json().catch(() => null);
+      const responseText = await res.text().catch(() => '');
+      let data = null;
+      try {
+        data = responseText ? JSON.parse(responseText) : null;
+      } catch {
+        data = { raw_response: responseText };
+      }
 
-      // DropCowboy returns 200 for queued voicemails (delivery happens async)
-      if (res.ok && data && !data.error) {
-        console.log('[DropCowboy] Voicemail queued successfully:', data);
+      console.log('[DropCowboy] Response:', { 
+        status: res.status, 
+        ok: res.ok,
+        data: data 
+      });
+
+      // DropCowboy returns 200/204 for queued voicemails (delivery happens async)
+      if (res.ok || res.status === 204) {
+        console.log('[DropCowboy] Voicemail accepted for delivery');
         return {
           queued: true,
           provider: 'dropcowboy',
-          id: data.drop_id || data.id || data.campaign_id,
-          raw: data
+          id: data?.drop_id || data?.id || data?.campaign_id || `dc-${Date.now()}`,
+          raw: data || { status: res.status, message: 'Accepted' }
         };
       } else {
         console.error('[DropCowboy] API error:', { status: res.status, data });
