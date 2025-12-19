@@ -14,6 +14,7 @@ import { storeVoicemailMp3, getVoicemailMp3 } from './services/mediaStore';
 import { sendVoicemailDrop } from './services/voicemailProvider';
 import { generateInboxResponse, generateResponseOptions } from './inbox-ai-generator';
 import { searchPeople, searchOrganizations } from './services/apolloApi';
+import { sendGraphEmail, isGraphConfigured } from './services/graphEmailProvider';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -834,15 +835,12 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
         const bod = renderMergeTags(emailBody || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
         try {
           await (async () => {
-            const payload = { to: ct.email!, subject: sub, body: bod } as any;
+            const payload = { to: ct.email!, subject: sub, body: bod, contactId: ct.id } as any;
             const r = await fetch((process.env.PUBLIC_BASE_URL || '') + '/api/email/send', {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
             } as any);
             if (!r.ok) throw new Error('email send failed');
           })();
-          let convo = await prisma.conversation.findFirst({ where: { contactId: ct.id, channel: 'email' } });
-          if (!convo) convo = await prisma.conversation.create({ data: { contactId: ct.id, channel: 'email' } });
-          await prisma.message.create({ data: { conversationId: convo.id, direction: 'out', text: (sub ? `[${sub}]\n\n` : '') + bod, subject: sub, provider: 'smtp' } });
           emailSent++;
         } catch {}
       }
@@ -1278,7 +1276,7 @@ app.post('/api/test-email', async (req, res) => {
   }
 });
 
-// Send email via stored user SMTP
+// Send email via Microsoft Graph API or SMTP
 app.post('/api/email/send', async (req, res) => {
   try {
     const body = z.object({
@@ -1289,44 +1287,79 @@ app.post('/api/email/send', async (req, res) => {
       contactId: z.string().optional(),
     }).parse(req.body);
 
-    let smtpHost = process.env.SMTP_HOST;
-    let smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
-    let smtpUser = process.env.SMTP_USER;
-    let smtpPass = process.env.SMTP_PASS;
-    let smtpSecure = (process.env.SMTP_SECURE === 'true') || (smtpPort === 465);
+    let messageId: string | undefined;
+    let provider = 'unknown';
 
-    if (body.userId || (!smtpHost || !smtpPort || !smtpUser || !smtpPass)) {
-      const user = body.userId ? await prisma.user.findUnique({ where: { id: body.userId } }) : await prisma.user.findFirst();
-      if (user?.smtpHost && user?.smtpPort && user?.smtpUser && user?.smtpPass) {
-        smtpHost = user.smtpHost;
-        smtpPort = user.smtpPort as number;
-        smtpUser = user.smtpUser as string;
-        smtpPass = user.smtpPass as string;
-        smtpSecure = user.smtpSecure ?? true;
+    // Try Microsoft Graph API first (modern, secure method)
+    if (isGraphConfigured()) {
+      const result = await sendGraphEmail({
+        to: body.to,
+        subject: body.subject,
+        body: body.body,
+        from: process.env.EMAIL_FROM
+      });
+
+      if (result.sent) {
+        messageId = result.messageId;
+        provider = 'graph';
+      } else {
+        console.error('Graph API failed, falling back to SMTP:', result.error);
+        // Fall through to SMTP
       }
     }
 
-    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-      return res.status(400).json({ error: 'Missing SMTP configuration' });
+    // Fallback to SMTP if Graph API not configured or failed
+    if (!messageId) {
+      let smtpHost = process.env.SMTP_HOST;
+      let smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+      let smtpUser = process.env.SMTP_USER;
+      let smtpPass = process.env.SMTP_PASS;
+      let smtpSecure = (process.env.SMTP_SECURE === 'true') || (smtpPort === 465);
+
+      if (body.userId || (!smtpHost || !smtpPort || !smtpUser || !smtpPass)) {
+        const user = body.userId ? await prisma.user.findUnique({ where: { id: body.userId } }) : await prisma.user.findFirst();
+        if (user?.smtpHost && user?.smtpPort && user?.smtpUser && user?.smtpPass) {
+          smtpHost = user.smtpHost;
+          smtpPort = user.smtpPort as number;
+          smtpUser = user.smtpUser as string;
+          smtpPass = user.smtpPass as string;
+          smtpSecure = user.smtpSecure ?? true;
+        }
+      }
+
+      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+        return res.status(400).json({ error: 'Missing email configuration (Graph API or SMTP)' });
+      }
+
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+      const info = await transporter.sendMail({ from: smtpUser, to: body.to, subject: body.subject, text: body.body });
+      messageId = info.messageId;
+      provider = 'smtp';
     }
 
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: { user: smtpUser, pass: smtpPass },
-    });
-    const info = await transporter.sendMail({ from: smtpUser, to: body.to, subject: body.subject, text: body.body });
-
+    // Log to conversation if contactId provided
     if (body.contactId) {
       let convo = await prisma.conversation.findFirst({ where: { contactId: body.contactId } });
       if (!convo) {
         convo = await prisma.conversation.create({ data: { contactId: body.contactId, channel: 'email' } });
       }
-      await prisma.message.create({ data: { conversationId: convo.id, direction: 'out', text: (body.subject ? `[${body.subject}]\n\n` : '') + body.body } });
+      await prisma.message.create({ 
+        data: { 
+          conversationId: convo.id, 
+          direction: 'out', 
+          text: (body.subject ? `[${body.subject}]\n\n` : '') + body.body,
+          subject: body.subject,
+          provider
+        } 
+      });
     }
 
-    res.json({ ok: true, messageId: info.messageId });
+    res.json({ ok: true, messageId, provider });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'send error' });
   }
