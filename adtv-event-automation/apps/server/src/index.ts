@@ -2045,6 +2045,42 @@ app.post('/api/admin/import-apollo-yardi-contacts', async (req, res) => {
   }
 });
 
+/**
+ * ADMIN: Populate CFO Insurance Mock Data
+ * POST /api/admin/populate-cfo-mock-data
+ */
+app.post('/api/admin/populate-cfo-mock-data', async (req, res) => {
+  try {
+    const { exec } = require('child_process');
+    const util = require('util');
+    const execPromise = util.promisify(exec);
+    
+    console.log('📊 Populating CFO Insurance mock data...');
+    
+    const { stdout, stderr } = await execPromise(
+      'node scripts/populate_cfo_insurance_mock_data.js',
+      { cwd: '/opt/render/project/src/apps/server', timeout: 180000 }
+    );
+    
+    console.log('Mock data output:', stdout);
+    if (stderr) console.error('Mock data errors:', stderr);
+    
+    res.json({
+      success: true,
+      message: 'CFO Insurance mock data populated successfully',
+      output: stdout,
+      errors: stderr
+    });
+  } catch (e: any) {
+    console.error('Mock data population failed:', e);
+    res.status(500).json({ 
+      error: e?.message || 'Mock data population failed',
+      output: e?.stdout,
+      errors: e?.stderr
+    });
+  }
+});
+
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   // eslint-disable-next-line no-console
@@ -2057,6 +2093,7 @@ app.listen(port, () => {
   console.log('✓ Apollo Organizations Search: POST /api/apollo/organizations/search');
   console.log('✓ ADMIN Seed Endpoint: POST /api/admin/seed-comprehensive-funnels');
   console.log('✓ ADMIN Import Apollo Yardi: POST /api/admin/import-apollo-yardi-contacts');
+  console.log('✓ ADMIN Populate CFO Mock Data: POST /api/admin/populate-cfo-mock-data');
 });
 
 
