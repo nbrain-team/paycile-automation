@@ -24,4 +24,3 @@ echo "  - provider: dropcowboy (using DropCowboy)"
 echo "  - queued: true (voicemail queued)"
 echo ""
 
-

@@ -123,4 +123,3 @@
 
 **Your platform is 95% ready! Just needs 10DLC approval for SMS.** 🚀
 
-
