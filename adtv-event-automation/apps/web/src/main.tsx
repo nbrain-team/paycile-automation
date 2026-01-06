@@ -20,6 +20,9 @@ import { Inbox } from './pages/Inbox';
 import { AnalyticsMaster } from './pages/AnalyticsMaster';
 import { ApolloSearch } from './pages/ApolloSearch';
 import { CFOInsuranceLanding } from './pages/CFOInsuranceLanding';
+import { ControllerLanding } from './pages/ControllerLanding';
+import { ARAPLanding } from './pages/ARAPLanding';
+import { PropMgmtLanding } from './pages/PropMgmtLanding';
 
 const router = createBrowserRouter([
   {
@@ -44,6 +47,18 @@ const router = createBrowserRouter([
   {
     path: '/landing/cfo-insurance',
     element: <CFOInsuranceLanding />,
+  },
+  {
+    path: '/landing/controller',
+    element: <ControllerLanding />,
+  },
+  {
+    path: '/landing/arap',
+    element: <ARAPLanding />,
+  },
+  {
+    path: '/landing/property-management',
+    element: <PropMgmtLanding />,
   },
 ]);
 
