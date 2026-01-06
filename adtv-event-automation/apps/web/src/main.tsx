@@ -19,6 +19,7 @@ import { Settings } from './pages/Settings';
 import { Inbox } from './pages/Inbox';
 import { AnalyticsMaster } from './pages/AnalyticsMaster';
 import { ApolloSearch } from './pages/ApolloSearch';
+import { CFOInsuranceLanding } from './pages/CFOInsuranceLanding';
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,11 @@ const router = createBrowserRouter([
       { path: 'apollo', element: <ApolloSearch /> },
       { path: 'settings', element: <Settings /> },
     ],
+  },
+  // Landing pages (standalone, no AppLayout)
+  {
+    path: '/landing/cfo-insurance',
+    element: <CFOInsuranceLanding />,
   },
 ]);
 
