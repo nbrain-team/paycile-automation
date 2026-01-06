@@ -2081,6 +2081,100 @@ app.post('/api/admin/populate-cfo-mock-data', async (req, res) => {
   }
 });
 
+/**
+ * ADMIN: Cleanup duplicate messages for CFO campaign
+ * POST /api/admin/cleanup-cfo-messages
+ */
+app.post('/api/admin/cleanup-cfo-messages', async (req, res) => {
+  try {
+    console.log('🧹 Cleaning up duplicate CFO messages...');
+    
+    const CAMPAIGN_ID = 'cmk2tcx0q001e1403fls3rwc2';
+    
+    // Get all contacts for this campaign
+    const contacts = await prisma.contact.findMany({
+      where: { campaignId: CAMPAIGN_ID },
+      include: {
+        conversations: {
+          include: {
+            messages: {
+              orderBy: { createdAt: 'asc' }
+            }
+          }
+        }
+      }
+    });
+    
+    let messagesDeleted = 0;
+    let conversationsDeleted = 0;
+    
+    for (const contact of contacts) {
+      if (contact.status === 'No Activity') {
+        // Delete ALL messages and conversations for No Activity contacts
+        for (const conv of contact.conversations) {
+          if (conv.messages.length > 0) {
+            await prisma.message.deleteMany({
+              where: { conversationId: conv.id }
+            });
+            messagesDeleted += conv.messages.length;
+          }
+          
+          await prisma.conversation.delete({
+            where: { id: conv.id }
+          });
+          conversationsDeleted++;
+        }
+      } else if (contact.status === 'Email Sent' || contact.status === 'Email Opened') {
+        // Keep only the FIRST message, delete the rest
+        for (const conv of contact.conversations) {
+          if (conv.messages.length > 1) {
+            const messagesToDelete = conv.messages.slice(1);
+            
+            for (const msg of messagesToDelete) {
+              await prisma.message.delete({
+                where: { id: msg.id }
+              });
+              messagesDeleted++;
+            }
+          }
+        }
+      }
+    }
+    
+    // Verify final counts
+    const finalStats = await prisma.contact.groupBy({
+      by: ['status'],
+      where: { campaignId: CAMPAIGN_ID },
+      _count: true
+    });
+    
+    const totalMessages = await prisma.message.count({
+      where: {
+        convo: {
+          contact: {
+            campaignId: CAMPAIGN_ID
+          }
+        }
+      }
+    });
+    
+    res.json({
+      success: true,
+      messagesDeleted,
+      conversationsDeleted,
+      finalStats,
+      totalMessages,
+      message: `Cleaned up ${messagesDeleted} duplicate messages`
+    });
+    
+  } catch (e: any) {
+    console.error('Cleanup failed:', e);
+    res.status(500).json({ 
+      error: e?.message || 'Cleanup failed'
+    });
+  }
+});
+
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   // eslint-disable-next-line no-console
