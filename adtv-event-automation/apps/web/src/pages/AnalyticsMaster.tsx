@@ -146,6 +146,7 @@ export function AnalyticsMaster() {
     { label: 'LinkedIn Connections', value: data?.totals?.linkedin ?? 0 },
     { label: 'Positive Responses', value: data?.totals?.inbound ?? 0 },
     { label: 'Demos Booked', value: data?.funnel?.demosBooked ?? 0 },
+    { label: 'Assessments Requested', value: data?.funnel?.assessments ?? 0 },
   ];
 
   return (
