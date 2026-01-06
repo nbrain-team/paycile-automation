@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const prisma = new PrismaClient();
 
-const CAMPAIGN_ID = 'live_qe1v81z2ye';
+const CAMPAIGN_ID = 'cmk2tcx0q001e1403fls3rwc2'; // CFO Funnel campaign
 
 // Helper to generate realistic timestamps over the past 7 days
 function randomDate(daysAgo) {
