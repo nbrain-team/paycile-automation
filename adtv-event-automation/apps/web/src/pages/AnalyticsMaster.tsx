@@ -139,13 +139,13 @@ export function AnalyticsMaster() {
 
   const kpis = [
     { label: 'Total Contacts', value: data?.totals?.contacts ?? 0 },
-    { label: 'Emails Sent', value: data?.totals?.emails ?? 0 },
+    { label: 'Emails Sent', value: data?.totals?.outbound ?? 0 },
+    { label: 'Emails Opened', value: data?.statusCounts?.['Email Opened'] ?? 0 },
     { label: 'SMS Sent', value: data?.totals?.sms ?? 0 },
     { label: 'Voicemails Dropped', value: data?.totals?.voicemails ?? 0 },
     { label: 'LinkedIn Connections', value: data?.totals?.linkedin ?? 0 },
     { label: 'Positive Responses', value: data?.totals?.inbound ?? 0 },
     { label: 'Demos Booked', value: data?.funnel?.demosBooked ?? 0 },
-    { label: 'Assessments Requested', value: data?.funnel?.assessments ?? 0 },
   ];
 
   return (
