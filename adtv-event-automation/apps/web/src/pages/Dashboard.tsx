@@ -46,12 +46,12 @@ export function Dashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {([
-          { label: 'Total Contacts', value: stats?.totalContacts ?? 0 },
-          { label: 'Emails Sent', value: stats?.emailsSent ?? 0 },
+          { label: 'Total Contacts', value: stats?.enrolled ?? 0 },
+          { label: 'Emails Sent', value: stats?.messaged ?? 0 },
           { label: 'SMS Sent', value: stats?.smsSent ?? 0 },
           { label: 'Voicemails Dropped', value: stats?.voicemailsDropped ?? 0 },
           { label: 'LinkedIn Actions', value: stats?.linkedinActions ?? 0 },
-          { label: 'Positive Responses', value: stats?.positiveResponses ?? 0 },
+          { label: 'Positive Responses', value: stats?.respondedPos ?? 0 },
           { label: 'Demos Booked', value: stats?.demosBooked ?? 0 },
           { label: 'Assessments Scheduled', value: stats?.assessmentsScheduled ?? 0 },
         ]).map((k) => (
