@@ -341,6 +341,55 @@ app.delete('/api/templates/:id', async (req, res) => {
   }
 });
 
+// Duplicate template
+app.post('/api/templates/:id/duplicate', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const body = z.object({ name: z.string() }).parse(req.body);
+    
+    // Fetch the original template with nodes and edges
+    const original = await prisma.template.findUnique({
+      where: { id },
+      include: { nodes: true, edges: true }
+    });
+    
+    if (!original) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+    
+    // Create the duplicate template with all nodes and edges
+    const duplicate = await prisma.template.create({
+      data: {
+        name: body.name,
+        status: original.status,
+        version: 1, // Start at version 1 for the duplicate
+        nodes: {
+          create: original.nodes.map((n: any) => ({
+            key: n.key,
+            type: n.type,
+            name: n.name,
+            configJson: n.configJson,
+            posX: n.posX,
+            posY: n.posY
+          }))
+        },
+        edges: {
+          create: original.edges.map((e: any) => ({
+            fromKey: e.fromKey,
+            toKey: e.toKey,
+            conditionJson: e.conditionJson
+          }))
+        }
+      },
+      include: { nodes: true, edges: true }
+    });
+    
+    res.json(duplicate);
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'duplicate error' });
+  }
+});
+
 // Template Versions - List all versions for a template
 app.get('/api/templates/:id/versions', async (req, res) => {
   try {

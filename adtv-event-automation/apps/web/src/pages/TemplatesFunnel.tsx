@@ -114,6 +114,25 @@ export function TemplatesFunnel() {
               <div className="flex items-center gap-2">
                 <span className="badge-primary">{Array.isArray(c.nodes)?c.nodes.length:0} nodes</span>
                 <button
+                  className="btn-secondary btn-xs"
+                  onClick={(e)=> { e.preventDefault(); e.stopPropagation(); (async ()=> {
+                    const newName = window.prompt('Enter name for duplicated template:', `${c.name} (Copy)`);
+                    if (!newName) return;
+                    try {
+                      const resp = await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/templates/${c.id}/duplicate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: newName })
+                      });
+                      if (!resp.ok) throw new Error('Duplicate failed');
+                      await loadServerTemplates();
+                      addToast({ title: 'Template duplicated', description: newName, variant: 'success' });
+                    } catch (err: any) {
+                      addToast({ title: 'Duplicate failed', description: String(err?.message||'error'), variant: 'error' });
+                    }
+                  })(); }}
+                >Duplicate</button>
+                <button
                   className="btn-outline btn-xs"
                   onClick={(e)=> { e.preventDefault(); e.stopPropagation(); (async ()=> {
                     const confirmDel = window.confirm('Delete this funnel template?');
