@@ -482,17 +482,17 @@ async function seed() {
     const funnel = cfoInsuranceFunnelNoSMS;
     
     // Delete existing funnel if it exists
-    const existing = await prisma.funnelTemplate.findUnique({
+    const existing = await prisma.template.findUnique({
       where: { id: funnel.id },
     });
     
     if (existing) {
       console.log('⚠️  Existing funnel found, deleting...');
-      await prisma.funnelTemplate.delete({ where: { id: funnel.id } });
+      await prisma.template.delete({ where: { id: funnel.id } });
     }
 
     // Create funnel template
-    await prisma.funnelTemplate.create({
+    await prisma.template.create({
       data: {
         id: funnel.id,
         name: funnel.name,
