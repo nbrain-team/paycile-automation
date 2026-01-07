@@ -51,8 +51,7 @@ export function CampaignBuilder() {
 
   useEffect(() => {
     if (!campaign) return;
-    if (contacts.length > 0) return;
-    // Load from API if exists (keep seeded if empty)
+    // Always load from API to ensure we have latest contacts
     fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/campaigns/${campaign.id}/contacts`).then((r)=> r.json()).then((list)=> {
       if (Array.isArray(list) && list.length>0) {
         const mapped = list.map((c: any) => ({ id: c.id, name: c.name, company: c.company, email: c.email, phone: c.phone, city: c.city, state: c.state, url: c.url, status: c.status, stageId: c.stageKey, raw: c.rawJson?JSON.parse(c.rawJson):{} }));
