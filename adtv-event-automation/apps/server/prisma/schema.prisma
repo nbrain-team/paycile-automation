@@ -196,4 +196,22 @@ model CampaignEdge {
   conditionJson String?
 }
 
+model EmailQueue {
+  id          String   @id @default(cuid())
+  campaignId  String
+  contactId   String
+  to          String
+  subject     String
+  body        String
+  userId      String?
+  status      String   @default("pending") // pending | sent | failed
+  scheduledFor DateTime
+  sentAt      DateTime?
+  error       String?
+  createdAt   DateTime @default(now())
+  
+  @@index([status, scheduledFor])
+  @@index([campaignId])
+}
+
 

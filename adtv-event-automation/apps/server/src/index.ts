@@ -15,6 +15,7 @@ import { sendVoicemailDrop } from './services/voicemailProvider';
 import { generateInboxResponse, generateResponseOptions } from './inbox-ai-generator';
 import { searchPeople, searchOrganizations } from './services/apolloApi';
 import { sendGraphEmail, isGraphConfigured } from './services/graphEmailProvider';
+import { startEmailQueueWorker, queueBulkEmails, getQueueStats } from './services/emailQueue';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -269,6 +270,16 @@ app.get('/api/sms/status/:sid', async (req, res) => {
 
 // Health
 app.get('/health', (_req, res) => res.json({ ok: true }));
+
+// Email queue stats
+app.get('/api/email-queue/stats', async (_req, res) => {
+  try {
+    const stats = await getQueueStats();
+    res.json(stats);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'error' });
+  }
+});
 
 // Serve temp-hosted TTS mp3s (in-memory, ephemeral). Not for production.
 app.get('/media/vm/:id.mp3', async (req, res) => {
@@ -877,21 +888,28 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       let cfg: any = {};
       try { cfg = firstEmail.configJson ? JSON.parse(firstEmail.configJson) : {}; } catch {}
       const { subject, body: emailBody } = await resolveEmailFromConfig(cfg);
+      const emailsToQueue = [];
+      
       for (const ct of contacts) {
         if (!ct.email) continue;
         const np = splitName(ct.name || '');
         const sub = renderMergeTags(subject || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
         const bod = renderMergeTags(emailBody || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
-        try {
-          await (async () => {
-            const payload = { to: ct.email!, subject: sub, body: bod, contactId: ct.id } as any;
-            const r = await fetch((process.env.PUBLIC_BASE_URL || '') + '/api/email/send', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-            } as any);
-            if (!r.ok) throw new Error('email send failed');
-          })();
-          emailSent++;
-        } catch {}
+        
+        emailsToQueue.push({
+          campaignId,
+          contactId: ct.id,
+          to: ct.email,
+          subject: sub,
+          body: bod,
+          userId: campaign?.senderUserId || undefined,
+        });
+      }
+      
+      // Queue all emails with staggered delays (1-2.5 min between each)
+      if (emailsToQueue.length > 0) {
+        await queueBulkEmails(emailsToQueue);
+        emailSent = emailsToQueue.length;
       }
     }
 
@@ -940,7 +958,7 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       }
     }
 
-    res.json({ ok: true, smsSent, emailSent, vmQueued });
+    res.json({ ok: true, smsSent, emailQueued: emailSent, vmQueued });
   } catch (e: any) {
     res.status(400).json({ error: e?.message || 'execute error' });
   }
@@ -2237,6 +2255,10 @@ app.listen(port, () => {
   console.log('✓ ADMIN Seed Endpoint: POST /api/admin/seed-comprehensive-funnels');
   console.log('✓ ADMIN Import Apollo Yardi: POST /api/admin/import-apollo-yardi-contacts');
   console.log('✓ ADMIN Populate CFO Mock Data: POST /api/admin/populate-cfo-mock-data');
+  
+  // Start email queue worker for throttled sending
+  startEmailQueueWorker();
+  console.log('✓ Email Queue Worker: Started (1-2.5 min throttling)');
 });
 
 

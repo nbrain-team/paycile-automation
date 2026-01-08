@@ -31,3 +31,5 @@ fi
 echo ""
 echo "🔗 View campaign: https://paycile-automation.onrender.com/campaigns/live_qe1v81z2ye"
 
+
+

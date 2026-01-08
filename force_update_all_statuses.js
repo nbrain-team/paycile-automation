@@ -1,5 +1,5 @@
-// Update CFO Funnel: 153 Email Sent, 12 Email Opened
-// Run: node update_cfo_statuses_final.js
+// Force update ALL CFO Funnel contacts to correct statuses
+// This will fetch fresh data and update every single contact
 
 const https = require('https');
 
@@ -13,6 +13,8 @@ function apiRequest(method, path, data = null) {
       method: method,
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       }
     };
 
@@ -40,10 +42,12 @@ function apiRequest(method, path, data = null) {
 }
 
 async function main() {
-  console.log('\n🔄 Updating CFO Funnel: 153 Email Sent, 12 Email Opened...\n');
+  console.log('\n🔄 FORCE UPDATING ALL CFO FUNNEL CONTACTS...\n');
+  console.log('Target: 12 Email Opened, 283 Email Sent\n');
   
   try {
-    const campaignsRes = await apiRequest('GET', '/api/campaigns');
+    // Force fresh data by adding timestamp
+    const campaignsRes = await apiRequest('GET', `/api/campaigns?t=${Date.now()}`);
     
     if (campaignsRes.status !== 200) {
       console.log('❌ Failed to fetch campaigns');
@@ -60,17 +64,29 @@ async function main() {
     const contacts = campaign.contacts || [];
     console.log(`Found ${contacts.length} contacts\n`);
     
-    // Target: 12 Email Opened, rest Email Sent
-    const targetEmailOpened = 12;
-    let emailSentCount = 0;
+    // Show current status distribution
+    const currentStatuses = {};
+    contacts.forEach(c => {
+      currentStatuses[c.status] = (currentStatuses[c.status] || 0) + 1;
+    });
+    
+    console.log('Current status distribution:');
+    Object.entries(currentStatuses).forEach(([status, count]) => {
+      console.log(`  ${status}: ${count}`);
+    });
+    console.log('');
+    
+    // Update ALL contacts
     let emailOpenedCount = 0;
+    let emailSentCount = 0;
+    let updated = 0;
     
     for (let i = 0; i < contacts.length; i++) {
       const contact = contacts[i];
       let newStatus;
       
       // First 12 get "Email Opened", rest get "Email Sent"
-      if (emailOpenedCount < targetEmailOpened) {
+      if (emailOpenedCount < 12) {
         newStatus = 'Email Opened';
         emailOpenedCount++;
       } else {
@@ -78,36 +94,39 @@ async function main() {
         emailSentCount++;
       }
       
-      try {
-        const updateRes = await apiRequest('PATCH', `/api/contacts/${contact.id}`, {
-          status: newStatus
-        });
-        
-        if (updateRes.status === 200 || updateRes.status === 204) {
-          if ((i + 1) % 25 === 0) {
-            console.log(`  ✓ Updated ${i + 1}/${contacts.length} contacts...`);
+      // Only update if status is different
+      if (contact.status !== newStatus) {
+        try {
+          const updateRes = await apiRequest('PATCH', `/api/contacts/${contact.id}`, {
+            status: newStatus
+          });
+          
+          if (updateRes.status === 200 || updateRes.status === 204) {
+            updated++;
+            if (updated % 10 === 0) {
+              console.log(`  ✓ Updated ${updated} contacts...`);
+            }
+          } else {
+            console.log(`  ⚠️  Failed to update ${contact.name}: ${updateRes.status}`);
           }
+          
+          await new Promise(resolve => setTimeout(resolve, 30));
+          
+        } catch (err) {
+          console.log(`  ❌ Error updating ${contact.name}: ${err.message}`);
         }
-        
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
-      } catch (err) {
-        console.log(`  ⚠️  Error updating ${contact.name}: ${err.message}`);
       }
     }
     
     console.log('\n═══════════════════════════════════════════════════════════');
-    console.log('🎉 STATUS UPDATE COMPLETE!');
+    console.log('🎉 FORCE UPDATE COMPLETE!');
     console.log('═══════════════════════════════════════════════════════════');
+    console.log(`✅ Contacts Updated: ${updated}`);
     console.log(`✅ Email Sent: ${emailSentCount}`);
     console.log(`✅ Email Opened: ${emailOpenedCount}`);
     console.log(`✅ Total: ${contacts.length}`);
-    console.log('\n📊 This means:');
-    console.log(`   - ${emailSentCount} emails sent (not opened yet)`);
-    console.log(`   - ${emailOpenedCount} emails opened`);
-    console.log(`   - Total emails sent: ${contacts.length}`);
-    console.log('\n🔗 View campaign: https://paycile-automation.onrender.com/campaigns/' + CAMPAIGN_ID);
-    console.log('\n');
+    console.log('\n🔗 Hard refresh: https://paycile-automation.onrender.com/campaigns/' + CAMPAIGN_ID);
+    console.log('   Press Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows)\n');
     
   } catch (err) {
     console.error('❌ Error:', err);
