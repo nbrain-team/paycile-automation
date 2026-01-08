@@ -48,3 +48,4 @@ echo "Check logs for: '✓ Email Queue Worker: Started (1-2.5 min throttling)'"
 echo ""
 echo "📈 Monitor queue: curl https://paycile-automation-backend.onrender.com/api/email-queue/stats"
 
+

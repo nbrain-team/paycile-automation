@@ -1294,6 +1294,34 @@ app.get('/api/campaigns/:id/stats', async (req, res) => {
   const statusCounts = contacts.reduce<Record<string, number>>((acc, c) => { acc[c.status] = (acc[c.status]||0) + 1; return acc; }, {});
   const inbound = msgs.filter((m) => m.direction === 'in');
   const outbound = msgs.filter((m) => m.direction === 'out');
+  
+  // Get conversations by channel to determine message types
+  const convosWithChannel = await prisma.conversation.findMany({
+    where: { contact: { campaignId: id } },
+    select: { id: true, channel: true }
+  });
+  const convoChannelMap = new Map(convosWithChannel.map(c => [c.id, c.channel]));
+  
+  // Categorize outbound messages by channel
+  const emails = outbound.filter((m) => {
+    const channel = convoChannelMap.get(m.conversationId);
+    return channel === 'email' || m.provider === 'smtp' || m.provider === 'graph' || m.subject;
+  });
+  
+  const sms = outbound.filter((m) => {
+    const channel = convoChannelMap.get(m.conversationId);
+    return channel === 'sms' || m.provider === 'twilio' || m.provider === 'bonzo';
+  });
+  
+  const voicemails = outbound.filter((m) => {
+    const channel = convoChannelMap.get(m.conversationId);
+    return channel === 'voicemail' || m.provider === 'slybroadcast' || m.provider === 'dropcowboy';
+  });
+  
+  const linkedin = outbound.filter((m) => {
+    const channel = convoChannelMap.get(m.conversationId);
+    return channel === 'linkedin';
+  });
 
   const byDay: Record<string, { in: number; out: number }> = {};
   const now = new Date();
@@ -1317,6 +1345,8 @@ app.get('/api/campaigns/:id/stats', async (req, res) => {
   const attended = contacts.filter((c)=> c.status === 'Showed Up To Event').length;
   const esignSent = contacts.filter((c)=> c.status === 'Received Agreement').length;
   const signed = contacts.filter((c)=> c.status === 'Signed Agreement').length;
+  const demosBooked = contacts.filter((c)=> c.status === 'Demo Booked' || c.status === 'Demo Scheduled').length;
+  const assessments = contacts.filter((c)=> c.status === 'Assessment Requested').length;
 
   res.json({
     totals: {
@@ -1324,10 +1354,14 @@ app.get('/api/campaigns/:id/stats', async (req, res) => {
       messages: msgs.length,
       inbound: inbound.length,
       outbound: outbound.length,
+      emails: emails.length,
+      sms: sms.length,
+      voicemails: voicemails.length,
+      linkedin: linkedin.length,
     },
     statusCounts,
     messagesByDay,
-    funnel: { rsvpConfirmed, attended, esignSent, signed },
+    funnel: { rsvpConfirmed, attended, esignSent, signed, demosBooked, assessments },
     recentMessages: msgs.slice(0, 20).map((m)=> ({ id: m.id, direction: m.direction, text: m.text, time: m.createdAt }))
   });
 });
