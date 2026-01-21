@@ -1,4 +1,76 @@
+import { useState } from 'react';
+
 export function CFOInsuranceLanding() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    company: '',
+    phone: '',
+    jobTitle: '',
+    companySize: '',
+    message: ''
+  });
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormStatus('submitting');
+    setErrorMessage('');
+
+    try {
+      // Submit to backend API which will push to HubSpot
+      const response = await fetch('/api/leads/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          source: 'CFO Insurance Landing Page',
+          persona: 'cfo',
+          campaign_name: 'CFO Insurance - Website Lead',
+          status: 'new',
+          lead_score: 50 // Initial score for form submission
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit form');
+      }
+
+      setFormStatus('success');
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        company: '',
+        phone: '',
+        jobTitle: '',
+        companySize: '',
+        message: ''
+      });
+
+      // Scroll to success message
+      setTimeout(() => {
+        document.getElementById('form-success')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setFormStatus('error');
+      setErrorMessage('Something went wrong. Please try again or email us directly at jim@paycile.com');
+    }
+  };
+
   return (
     <div className="landing-page">
       <style>{`
@@ -320,6 +392,143 @@ export function CFOInsuranceLanding() {
           margin-bottom: 16px;
         }
 
+        /* Lead Form Section */
+        .lead-form-section {
+          background: #ffffff;
+          padding: 80px 32px;
+        }
+
+        .lead-form-section h2 {
+          font-size: 40px;
+          font-weight: 800;
+          margin-bottom: 16px;
+          text-align: center;
+          color: #1a1a1a;
+        }
+
+        .lead-form-section > .section-content > p {
+          font-size: 18px;
+          color: #6b7280;
+          text-align: center;
+          margin-bottom: 40px;
+        }
+
+        .lead-form-container {
+          max-width: 600px;
+          margin: 0 auto;
+          background: #f9fafb;
+          padding: 40px;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .form-group {
+          margin-bottom: 20px;
+        }
+
+        .form-group label {
+          display: block;
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+          width: 100%;
+          padding: 12px 16px;
+          font-size: 16px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          background: #ffffff;
+          transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+          outline: none;
+          border-color: #10b981;
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-group textarea {
+          min-height: 100px;
+          resize: vertical;
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+
+        .form-submit-btn {
+          width: 100%;
+          padding: 14px 32px;
+          font-size: 16px;
+          font-weight: 600;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          background: #10b981;
+          color: #ffffff;
+          margin-top: 8px;
+        }
+
+        .form-submit-btn:hover:not(:disabled) {
+          background: #059669;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+
+        .form-submit-btn:disabled {
+          background: #9ca3af;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .form-success-message {
+          background: #d1fae5;
+          border: 2px solid #10b981;
+          border-radius: 8px;
+          padding: 24px;
+          text-align: center;
+          margin-top: 20px;
+        }
+
+        .form-success-message h3 {
+          color: #065f46;
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 8px;
+        }
+
+        .form-success-message p {
+          color: #047857;
+          font-size: 16px;
+        }
+
+        .form-error-message {
+          background: #fee2e2;
+          border: 2px solid #ef4444;
+          border-radius: 8px;
+          padding: 16px;
+          text-align: center;
+          margin-top: 20px;
+          color: #991b1b;
+        }
+
+        .form-privacy {
+          font-size: 12px;
+          color: #6b7280;
+          text-align: center;
+          margin-top: 16px;
+        }
+
         /* CTA Section */
         .cta-section {
           background: #000000;
@@ -451,6 +660,7 @@ export function CFOInsuranceLanding() {
 
           .demo-section h2,
           .benefits-section h2,
+          .lead-form-section h2,
           .cta-section h2 {
             font-size: 32px;
           }
@@ -463,12 +673,17 @@ export function CFOInsuranceLanding() {
             width: 100%;
           }
 
-          .calendar-container {
+          .calendar-container,
+          .lead-form-container {
             padding: 20px;
           }
 
           .calendar-placeholder {
             height: 500px;
+          }
+
+          .form-row {
+            grid-template-columns: 1fr;
           }
 
           .footer-content {
@@ -502,8 +717,8 @@ export function CFOInsuranceLanding() {
             <div className="feature-item">Strategic financial oversight, not data entry</div>
           </div>
           <div className="button-group">
-            <a href="#demo" className="btn btn-primary">
-              Book Your Executive Demo
+            <a href="#contact" className="btn btn-primary">
+              Get Free ROI Assessment
             </a>
             <a href="#benefits" className="btn btn-secondary">
               See How It Works
@@ -526,6 +741,151 @@ export function CFOInsuranceLanding() {
           <div className="stat-card">
             <span className="stat-number">24/7</span>
             <span className="stat-label">Real-Time Visibility</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Lead Form Section */}
+      <section className="lead-form-section" id="contact">
+        <div className="section-content">
+          <h2>Get Your Free ROI Assessment</h2>
+          <p>Find out exactly how much time and money you could save with automated reconciliation.</p>
+          
+          <div className="lead-form-container">
+            {formStatus === 'success' ? (
+              <div className="form-success-message" id="form-success">
+                <h3>✓ Thank You!</h3>
+                <p>We've received your information and will be in touch within 24 hours to schedule your executive demo and ROI assessment.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="firstName">First Name *</label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="John"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="lastName">Last Name *</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Doe"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email">Business Email *</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="john.doe@company.com"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="company">Company Name *</label>
+                  <input
+                    type="text"
+                    id="company"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Your Insurance Company"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="jobTitle">Job Title *</label>
+                    <input
+                      type="text"
+                      id="jobTitle"
+                      name="jobTitle"
+                      value={formData.jobTitle}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="CFO"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="companySize">Company Size</label>
+                    <select
+                      id="companySize"
+                      name="companySize"
+                      value={formData.companySize}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select...</option>
+                      <option value="1-50">1-50 employees</option>
+                      <option value="51-200">51-200 employees</option>
+                      <option value="201-500">201-500 employees</option>
+                      <option value="501-1000">501-1000 employees</option>
+                      <option value="1000+">1000+ employees</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="phone">Phone Number</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="message">What are your biggest reconciliation challenges?</label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    placeholder="Tell us about your current process and pain points..."
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="form-submit-btn"
+                  disabled={formStatus === 'submitting'}
+                >
+                  {formStatus === 'submitting' ? 'Submitting...' : 'Get Your Free Assessment'}
+                </button>
+
+                {formStatus === 'error' && (
+                  <div className="form-error-message">
+                    {errorMessage}
+                  </div>
+                )}
+
+                <p className="form-privacy">
+                  By submitting this form, you agree to receive communications from Paycile. 
+                  We respect your privacy and will never share your information.
+                </p>
+              </form>
+            )}
           </div>
         </div>
       </section>
@@ -641,6 +1001,9 @@ export function CFOInsuranceLanding() {
     </div>
   );
 }
+
+
+
 
 
 

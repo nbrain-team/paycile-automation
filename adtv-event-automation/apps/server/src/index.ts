@@ -2276,6 +2276,185 @@ app.post('/api/admin/cleanup-cfo-messages', async (req, res) => {
   }
 });
 
+// =============================================================================
+// LEAD SUBMISSION FROM LANDING PAGES → HUBSPOT
+// =============================================================================
+
+app.post('/api/leads/submit', async (req, res) => {
+  try {
+    const leadData = req.body;
+    
+    console.log('📝 Received lead submission:', leadData.email);
+
+    // Validate required fields
+    if (!leadData.email || !leadData.firstName || !leadData.lastName || !leadData.company) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Push to HubSpot
+    const HUBSPOT_ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN;
+    
+    if (!HUBSPOT_ACCESS_TOKEN) {
+      console.error('❌ HUBSPOT_ACCESS_TOKEN not configured');
+      return res.status(500).json({ error: 'HubSpot integration not configured' });
+    }
+
+    const hubspotProperties: any = {
+      email: leadData.email,
+      firstname: leadData.firstName,
+      lastname: leadData.lastName,
+      company: leadData.company,
+      phone: leadData.phone || '',
+      jobtitle: leadData.jobTitle || '',
+      lifecyclestage: 'lead'
+    };
+
+    // Add custom Paycile properties if available
+    if (leadData.persona) hubspotProperties.paycile_persona = leadData.persona;
+    if (leadData.campaign_name) hubspotProperties.paycile_campaign_name = leadData.campaign_name;
+    if (leadData.status) hubspotProperties.paycile_status = leadData.status;
+    if (leadData.lead_score) hubspotProperties.paycile_lead_score = leadData.lead_score;
+    if (leadData.companySize) hubspotProperties.company_size = leadData.companySize;
+    if (leadData.message) hubspotProperties.message = leadData.message;
+
+    // Try to find existing contact
+    let hubspotContactId = null;
+    try {
+      const searchResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          filterGroups: [{
+            filters: [{
+              propertyName: 'email',
+              operator: 'EQ',
+              value: leadData.email
+            }]
+          }]
+        })
+      });
+
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        if (searchData.results && searchData.results.length > 0) {
+          hubspotContactId = searchData.results[0].id;
+        }
+      }
+    } catch (searchError) {
+      console.log('Contact not found, will create new');
+    }
+
+    // Create or update contact in HubSpot
+    let hubspotResponse;
+    if (hubspotContactId) {
+      // Update existing contact
+      hubspotResponse = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${hubspotContactId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ properties: hubspotProperties })
+      });
+      console.log(`✅ Updated HubSpot contact: ${leadData.email} (ID: ${hubspotContactId})`);
+    } else {
+      // Create new contact
+      hubspotResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ properties: hubspotProperties })
+      });
+      
+      if (hubspotResponse.ok) {
+        const hubspotData = await hubspotResponse.json();
+        hubspotContactId = hubspotData.id;
+        console.log(`✅ Created HubSpot contact: ${leadData.email} (ID: ${hubspotContactId})`);
+      }
+    }
+
+    if (!hubspotResponse.ok) {
+      const errorData = await hubspotResponse.json();
+      console.error('❌ HubSpot API error:', errorData);
+      throw new Error('Failed to sync with HubSpot');
+    }
+
+    // Create a note with the message if provided
+    if (leadData.message && hubspotContactId) {
+      try {
+        await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            properties: {
+              hs_timestamp: Date.now(),
+              hs_note_body: `<strong>Lead Form Submission - ${leadData.source || 'Landing Page'}</strong><br><br>${leadData.message}`
+            },
+            associations: [{
+              to: { id: hubspotContactId },
+              types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }]
+            }]
+          })
+        });
+        console.log(`✅ Added note to HubSpot contact ${hubspotContactId}`);
+      } catch (noteError) {
+        console.error('Failed to create note:', noteError);
+      }
+    }
+
+    // Send notification email to sales team
+    try {
+      const notificationSubject = `🎯 New Lead: ${leadData.firstName} ${leadData.lastName} from ${leadData.company}`;
+      const notificationBody = `
+        <h2>New Lead Submission from CFO Insurance Landing Page</h2>
+        <p><strong>Name:</strong> ${leadData.firstName} ${leadData.lastName}</p>
+        <p><strong>Email:</strong> ${leadData.email}</p>
+        <p><strong>Company:</strong> ${leadData.company}</p>
+        <p><strong>Job Title:</strong> ${leadData.jobTitle || 'Not provided'}</p>
+        <p><strong>Phone:</strong> ${leadData.phone || 'Not provided'}</p>
+        <p><strong>Company Size:</strong> ${leadData.companySize || 'Not provided'}</p>
+        ${leadData.message ? `<p><strong>Message:</strong><br>${leadData.message}</p>` : ''}
+        <p><strong>Source:</strong> ${leadData.source || 'Landing Page'}</p>
+        <p><strong>HubSpot Contact ID:</strong> ${hubspotContactId}</p>
+        <hr>
+        <p><a href="https://app.hubspot.com/contacts/${process.env.HUBSPOT_PORTAL_ID || '243314049'}/contact/${hubspotContactId}">View in HubSpot</a></p>
+      `;
+
+      if (isGraphConfigured()) {
+        await sendGraphEmail({
+          to: process.env.SALES_NOTIFICATION_EMAIL || 'jim@paycile.com',
+          subject: notificationSubject,
+          body: notificationBody
+        });
+        console.log('✅ Sent notification email to sales team');
+      }
+    } catch (emailError) {
+      console.error('Failed to send notification email:', emailError);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Lead submitted successfully',
+      hubspot_contact_id: hubspotContactId
+    });
+
+  } catch (error: any) {
+    console.error('❌ Lead submission error:', error);
+    res.status(500).json({ 
+      error: 'Failed to submit lead',
+      details: error.message 
+    });
+  }
+});
+
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   // eslint-disable-next-line no-console
@@ -2286,6 +2465,7 @@ app.listen(port, () => {
   console.log('✓ Check-out endpoint registered at POST /api/contacts/:id/checkout');
   console.log('✓ Apollo People Search: POST /api/apollo/people/search');
   console.log('✓ Apollo Organizations Search: POST /api/apollo/organizations/search');
+  console.log('✓ Lead Submission → HubSpot: POST /api/leads/submit');
   console.log('✓ ADMIN Seed Endpoint: POST /api/admin/seed-comprehensive-funnels');
   console.log('✓ ADMIN Import Apollo Yardi: POST /api/admin/import-apollo-yardi-contacts');
   console.log('✓ ADMIN Populate CFO Mock Data: POST /api/admin/populate-cfo-mock-data');
