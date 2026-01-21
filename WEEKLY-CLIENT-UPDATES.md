@@ -6,6 +6,13 @@
 
 ## Current Week (January 13-19, 2026)
 
+### CFO Landing Page HubSpot Lead Capture Integration
+- **Completed**: 2026-01-21
+- **Category**: Feature
+- **Client Impact**: Website visitors can now submit lead information directly from the CFO landing page, with data automatically flowing into HubSpot CRM and triggering instant sales notifications—eliminating manual data entry and enabling sub-5-minute response times to warm leads.
+- **Details**: Built professional 8-field lead capture form on CFO Insurance landing page with React state management and real-time validation. Backend API endpoint automatically searches for existing contacts, creates or updates HubSpot records, sets custom Paycile properties (persona, campaign, lead score), creates timeline notes, and sends formatted email notifications to sales team with direct HubSpot links. Form includes company size selection, challenge description field, privacy notice, and mobile-responsive design. All submissions tracked with source attribution for campaign ROI analysis.
+- **Status**: ✅ Deployed
+
 ### CFO Insurance Funnel Content Template Connection Fix
 - **Completed**: 2026-01-21
 - **Category**: Bug Fix
