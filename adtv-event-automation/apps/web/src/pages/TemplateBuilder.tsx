@@ -100,7 +100,13 @@ export function TemplateBuilder() {
     if (local) return local;
     if (serverTemplate) {
       // map server template to local shape
-      const nodes = Array.isArray(serverTemplate.nodes) ? serverTemplate.nodes.map((n: any) => ({ id: n.key, type: n.type, name: n.name, pos: (n.posX!=null && n.posY!=null)?{ x: n.posX, y: n.posY }: undefined })) : [];
+      const nodes = Array.isArray(serverTemplate.nodes) ? serverTemplate.nodes.map((n: any) => ({ 
+        id: n.key, 
+        type: n.type, 
+        name: n.name, 
+        config: n.configJson ? JSON.parse(n.configJson) : undefined,
+        pos: (n.posX!=null && n.posY!=null)?{ x: n.posX, y: n.posY }: undefined 
+      })) : [];
       const edges = Array.isArray(serverTemplate.edges) ? serverTemplate.edges.map((e: any) => ({ from: e.fromKey, to: e.toKey, condition: e.conditionJson?JSON.parse(e.conditionJson):undefined })) : [];
       return { id: serverTemplate.id, name: serverTemplate.name, status: serverTemplate.status||'draft', version: serverTemplate.version||1, graph: { schema_version: 1, nodes, edges, start_rules: {} } } as any;
     }
