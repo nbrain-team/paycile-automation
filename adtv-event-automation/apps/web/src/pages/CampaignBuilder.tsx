@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '@store/useStore';
 import Papa from 'papaparse';
 import { seedCampaigns } from '@seed/campaignSeed';
-import { apiCampaigns, apiInbox, apiEmail, apiSms, apiTemplates } from '@lib/api';
+import { apiCampaigns, apiInbox, apiEmail, apiSms, apiTemplates, getApiUrl } from '@lib/api';
 
 const tabs = ['Overview','Contacts','Funnel','Analytics','Map View'] as const;
 
@@ -52,7 +52,7 @@ export function CampaignBuilder() {
   useEffect(() => {
     if (!campaign) return;
     // Always load from API to ensure we have latest contacts
-    fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/campaigns/${campaign.id}/contacts`).then((r)=> r.json()).then((list)=> {
+    fetch(`${getApiUrl()}/api/campaigns/${campaign.id}/contacts`).then((r)=> r.json()).then((list)=> {
       if (Array.isArray(list) && list.length>0) {
         const mapped = list.map((c: any) => ({ id: c.id, name: c.name, company: c.company, email: c.email, phone: c.phone, city: c.city, state: c.state, url: c.url, status: c.status, stageId: c.stageKey, raw: c.rawJson?JSON.parse(c.rawJson):{} }));
         setContactsForCampaign(campaign.id, mapped as any);
@@ -306,7 +306,7 @@ export function CampaignBuilder() {
                   <button className="btn-primary btn-md" onClick={async ()=> {
                     await setStatus('active');
                     try {
-                      await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/campaigns/${campaign.id}/execute`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+                      await fetch(`${getApiUrl()}/api/campaigns/${campaign.id}/execute`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
                       addToast({ title: 'Campaign activated', description: 'Funnel execution started', variant: 'success' });
                     } catch {}
                   }}>{campaign.status==='paused' ? 'Resume Campaign' : 'Send / Activate Campaign'}</button>
@@ -517,7 +517,7 @@ function ContactsTab({ contacts }: ContactsTabProps) {
     const remaining = contacts.filter((c)=> !selectedIds.has(c.id));
     setContactsForCampaign(cid, remaining as any);
     try {
-      await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/campaigns/${cid}/contacts/bulk-delete`, {
+      await fetch(`${getApiUrl()}/api/campaigns/${cid}/contacts/bulk-delete`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: Array.from(selectedIds) })
       });
     } catch {}
@@ -587,7 +587,7 @@ function ContactsTab({ contacts }: ContactsTabProps) {
                   raw: r,
                 })).slice(0, 1000);
                 setContactsForCampaign(cid, mapped as any);
-                fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/campaigns/${cid}/contacts/bulk`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contacts: mapped }) }).catch(()=>{});
+                fetch(`${getApiUrl()}/api/campaigns/${cid}/contacts/bulk`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contacts: mapped }) }).catch(()=>{});
                 addToast({ title: 'Contacts imported', description: `${mapped.length} records`, variant: 'success' });
               };
               reader.readAsText(file);
@@ -741,7 +741,7 @@ function ContactsTab({ contacts }: ContactsTabProps) {
             <button className="btn-outline btn-sm" onClick={()=> setEditContactId(null)}>Cancel</button>
             <button className="btn-primary btn-sm" onClick={async ()=> {
               try {
-                await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/contacts/${editContactId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editForm) });
+                await fetch(`${getApiUrl()}/api/contacts/${editContactId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editForm) });
               } catch {}
               const updated = (contactsByCampaignId as any)[campaignId]?.map((c:any)=> c.id===editContactId ? { ...c, name: `${editForm.firstName||''} ${editForm.lastName||''}`.trim(), email: editForm.email, phone: editForm.phone, company: editForm.company, city: editForm.city, state: editForm.state, url: editForm.url, status: editForm.status, stageId: editForm.stageId } : c) || [];
               setContactsForCampaign(campaignId, updated);
@@ -793,7 +793,7 @@ function ContactsTab({ contacts }: ContactsTabProps) {
               const name = `${firstName} ${lastName}`.trim() || (email || phone || 'Contact');
               const payload: any = { name, email: email||undefined, phone: phone||undefined, status: 'No Activity', raw: buildRawFromForm() };
               try {
-                const res = await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/campaigns/${cid}/contacts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const res = await fetch(`${getApiUrl()}/api/campaigns/${cid}/contacts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const created = await res.json();
                 const next = [
                   { id: created.id, name: created.name, company: '', email: created.email, phone: created.phone, city: '', state: '', url: website||'', status: created.status||'No Activity', stageId: '', raw: payload.raw },

@@ -1,4 +1,11 @@
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000';
+// Support both runtime config (window.ENV) and build-time env vars
+const getApiUrl = () => {
+  return (window as any).ENV?.VITE_API_URL || 
+         (import.meta as any).env?.VITE_API_URL || 
+         'http://localhost:4000';
+};
+
+const API_URL = getApiUrl();
 
 async function getJson(path: string) {
   const res = await fetch(`${API_URL}${path}`);
@@ -133,6 +140,6 @@ export const apiApollo = {
   }) => sendJson('POST', '/api/apollo/organizations/search', params),
 };
 
-export { API_URL };
+export { API_URL, getApiUrl };
 
 

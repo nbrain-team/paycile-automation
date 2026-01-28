@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '@store/useStore';
 import { CreateFunnelTemplateModal } from '@components/CreateFunnelTemplateModal';
-import { apiTemplates, apiContentTemplates } from '@lib/api';
+import { apiTemplates, apiContentTemplates, getApiUrl } from '@lib/api';
 
 export function TemplatesFunnel() {
   const { campaigns, contentTemplates, upsertContentTemplate, addToast, setCampaigns } = useStore() as any;
@@ -119,7 +119,7 @@ export function TemplatesFunnel() {
                     const newName = window.prompt('Enter name for duplicated template:', `${c.name} (Copy)`);
                     if (!newName) return;
                     try {
-                      const resp = await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/templates/${c.id}/duplicate`, {
+                      const resp = await fetch(`${getApiUrl()}/api/templates/${c.id}/duplicate`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: newName })
@@ -138,7 +138,7 @@ export function TemplatesFunnel() {
                     const confirmDel = window.confirm('Delete this funnel template?');
                     if (!confirmDel) return;
                     try {
-                      const resp = await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/templates/${c.id}`, { method: 'DELETE' });
+                      const resp = await fetch(`${getApiUrl()}/api/templates/${c.id}`, { method: 'DELETE' });
                       if (!resp.ok) throw new Error('Delete failed');
                       await loadServerTemplates();
                       addToast({ title: 'Template deleted', description: c.name, variant: 'success' });

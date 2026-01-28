@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiAuth, apiGoogle } from '../lib/api';
+import { apiAuth, apiGoogle, getApiUrl } from '../lib/api';
 
 export function Settings() {
   const [me, setMe] = useState<any>(null);
@@ -10,7 +10,7 @@ export function Settings() {
     const num = window.prompt('Enter phone number (E.164 or US local)');
     if (!num) return;
     try {
-      const res = await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/sms/send`, {
+      const res = await fetch(`${getApiUrl()}/api/sms/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: num, text: 'ADTV test from Settings' })
@@ -25,7 +25,7 @@ export function Settings() {
     const num = window.prompt('Enter phone number for voicemail drop (US local or E.164)');
     if (!num) return;
     try {
-      const res = await fetch(`${(import.meta as any).env?.VITE_API_URL || ''}/api/voicemail/drop`, {
+      const res = await fetch(`${getApiUrl()}/api/voicemail/drop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: num, ttsScript: 'Hey, this is ADTV with a quick invite. Call me back when you can!' })
