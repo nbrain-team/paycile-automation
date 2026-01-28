@@ -35,6 +35,33 @@ function requireEnv(name: string): string {
   return v as string;
 }
 
+// Add unsubscribe link to email body
+function addUnsubscribeLink(emailBody: string, contactId: string, companyAddress?: string): string {
+  const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+  const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${contactId}`;
+  
+  const address = companyAddress || '123 Main Street, Suite 100, City, ST 12345';
+  
+  const footer = `
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
+      <p style="margin: 5px 0;">${address}</p>
+      <p style="margin: 5px 0;">
+        <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Unsubscribe</a> from this list
+      </p>
+    </div>
+  `;
+  
+  // If email already has closing body/html tags, insert before them
+  if (emailBody.includes('</body>')) {
+    return emailBody.replace('</body>', `${footer}</body>`);
+  } else if (emailBody.includes('</html>')) {
+    return emailBody.replace('</html>', `${footer}</html>`);
+  } else {
+    // Otherwise just append
+    return emailBody + footer;
+  }
+}
+
 function authMiddleware(req: any, _res: any, next: any) {
   try {
     const hdr = (req.headers['authorization'] || '').toString();
@@ -734,6 +761,45 @@ app.post('/api/content-templates', async (req, res) => {
   }
 });
 
+// Update content template
+app.patch('/api/content-templates/:id', async (req, res) => {
+  try {
+    const body = z.object({ 
+      type: z.enum(['email','sms','voicemail']).optional(), 
+      name: z.string().optional(), 
+      subject: z.string().optional(), 
+      body: z.string().optional(), 
+      text: z.string().optional(), 
+      tts_script: z.string().optional() 
+    }).parse(req.body);
+    
+    const updateData: any = {};
+    if (body.type !== undefined) updateData.type = body.type;
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.subject !== undefined) updateData.subject = body.subject || null;
+    if (body.body !== undefined) updateData.body = body.body || null;
+    if (body.text !== undefined) updateData.text = body.text || null;
+    if (body.tts_script !== undefined) updateData.ttsScript = body.tts_script || null;
+    
+    const updated = await prisma.contentTemplate.update({ 
+      where: { id: req.params.id }, 
+      data: updateData 
+    });
+    
+    res.json({ 
+      id: updated.id, 
+      type: updated.type, 
+      name: updated.name, 
+      subject: updated.subject || undefined, 
+      body: updated.body || undefined, 
+      text: updated.text || undefined, 
+      tts_script: updated.ttsScript || undefined 
+    });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'update error' });
+  }
+});
+
 // Delete content template
 app.delete('/api/content-templates/:id', async (req, res) => {
   try {
@@ -1398,6 +1464,23 @@ app.post('/api/email/send', async (req, res) => {
       contactId: z.string().optional(),
     }).parse(req.body);
 
+    // Check if contact has unsubscribed
+    if (body.contactId) {
+      const contact = await prisma.contact.findUnique({
+        where: { id: body.contactId }
+      });
+      
+      if (contact?.unsubscribed) {
+        return res.status(400).json({ error: 'Contact has unsubscribed' });
+      }
+    }
+
+    // Add unsubscribe link if contactId is provided
+    let emailBody = body.body;
+    if (body.contactId) {
+      emailBody = addUnsubscribeLink(body.body, body.contactId, process.env.COMPANY_ADDRESS);
+    }
+
     let messageId: string | undefined;
     let provider = 'unknown';
 
@@ -1406,7 +1489,7 @@ app.post('/api/email/send', async (req, res) => {
       const result = await sendGraphEmail({
         to: body.to,
         subject: body.subject,
-        body: body.body,
+        body: emailBody,
         from: process.env.EMAIL_FROM
       });
 
@@ -2452,6 +2535,81 @@ app.post('/api/leads/submit', async (req, res) => {
       error: 'Failed to submit lead',
       details: error.message 
     });
+  }
+});
+
+// Unsubscribe endpoint
+app.get('/api/unsubscribe/:contactId', async (req, res) => {
+  try {
+    const contactId = req.params.contactId;
+    
+    const contact = await prisma.contact.findUnique({
+      where: { id: contactId },
+      include: { campaign: true }
+    });
+    
+    if (!contact) {
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Contact Not Found</title></head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+          <h1>Contact Not Found</h1>
+          <p>We couldn't find this contact in our system.</p>
+        </body>
+        </html>
+      `);
+    }
+    
+    if (contact.unsubscribed) {
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Already Unsubscribed</title></head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+          <h1>Already Unsubscribed</h1>
+          <p>You have already been unsubscribed from our communications.</p>
+          <p>If you continue to receive emails, please contact us directly.</p>
+        </body>
+        </html>
+      `);
+    }
+    
+    await prisma.contact.update({
+      where: { id: contactId },
+      data: { 
+        unsubscribed: true,
+        unsubscribedAt: new Date()
+      }
+    });
+    
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>Successfully Unsubscribed</title></head>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center;">
+        <h1 style="color: #28a745;">✓ Successfully Unsubscribed</h1>
+        <p>You have been removed from our email list.</p>
+        <p>You will no longer receive emails from the <strong>${contact.campaign.name}</strong> campaign.</p>
+        <p style="margin-top: 40px; color: #666; font-size: 14px;">
+          If this was a mistake, please contact us at ${contact.campaign.ownerEmail}
+        </p>
+      </body>
+      </html>
+    `);
+    
+  } catch (error: any) {
+    console.error('Unsubscribe error:', error);
+    res.status(500).send(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>Error</title></head>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+        <h1>Error</h1>
+        <p>An error occurred while processing your request. Please try again later.</p>
+      </body>
+      </html>
+    `);
   }
 });
 

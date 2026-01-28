@@ -296,12 +296,15 @@ export function TemplatesFunnel() {
           <button className="btn-outline btn-sm" onClick={()=> { resetTplForm(); setOpenTpl(false); }}>Cancel</button>
           <button className="btn-primary btn-sm" onClick={async ()=> {
                 try {
+                  let saved;
                   if (editingTplId) {
-                    // Simple approach: delete and recreate for now
-                    await apiContentTemplates.delete(editingTplId);
+                    // Update existing template
+                    saved = await apiContentTemplates.update(editingTplId, { type: tplType, name: tplName, subject: tplSubject, body: tplBody, text: tplText, tts_script: tplScript });
+                  } else {
+                    // Create new template
+                    saved = await apiContentTemplates.create({ type: tplType, name: tplName, subject: tplSubject, body: tplBody, text: tplText, tts_script: tplScript });
                   }
-                  const created = await apiContentTemplates.create({ type: tplType, name: tplName, subject: tplSubject, body: tplBody, text: tplText, tts_script: tplScript });
-                  upsertContentTemplate(created as any);
+                  upsertContentTemplate(saved as any);
                   addToast({ title: 'Template saved', description: tplName, variant: 'success' });
                   resetTplForm();
                   setOpenTpl(false);

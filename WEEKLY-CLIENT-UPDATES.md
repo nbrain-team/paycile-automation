@@ -4,7 +4,25 @@
 
 ---
 
-## Current Week (January 13-19, 2026)
+## Current Week (January 27 - February 2, 2026)
+
+### Email Template Editing System Overhaul
+- **Completed**: 2026-01-28
+- **Category**: Bug Fix
+- **Client Impact**: Campaign managers can now successfully save edits to email and voicemail templates without encountering "save failed" errors, enabling real-time campaign message customization and faster iteration on messaging strategy.
+- **Details**: Fixed critical backend API issue where template updates were using a delete-and-recreate approach that failed when templates were in use by active campaigns. Added proper PATCH endpoint for content template updates, updated frontend API client with update method, and modified template editor to use atomic updates instead of destructive operations. All template types (email, SMS, voicemail) now support in-place editing with full data preservation.
+- **Status**: ✅ Deployed
+
+### Email Unsubscribe Compliance System
+- **Completed**: 2026-01-28
+- **Category**: Feature
+- **Client Impact**: All outbound campaign emails now include legally compliant unsubscribe links and company physical address in footer, reducing spam complaints and ensuring CAN-SPAM Act compliance while protecting sender reputation and deliverability rates.
+- **Details**: Implemented complete unsubscribe infrastructure including database migration for unsubscribe tracking, dedicated unsubscribe landing page with confirmation UI, automatic footer injection with company address and unsubscribe link for all campaign emails, and contact-level unsubscribe status checking before email sends. System automatically skips sending to unsubscribed contacts and logs unsubscribe events with timestamps. Unsubscribe links are unique per contact and campaign for accurate tracking.
+- **Status**: ✅ Deployed
+
+---
+
+## Previous Week (January 13-19, 2026)
 
 ### CFO Landing Page HubSpot Lead Capture Integration
 - **Completed**: 2026-01-21

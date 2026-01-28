@@ -42,6 +42,7 @@ export const apiTemplates = {
 export const apiContentTemplates = {
   list: () => getJson('/api/content-templates') as Promise<Array<{ id: string; type: 'email'|'sms'|'voicemail'; name: string; subject?: string; body?: string; text?: string; tts_script?: string }>>,
   create: (tpl: { type: 'email'|'sms'|'voicemail'; name: string; subject?: string; body?: string; text?: string; tts_script?: string }) => sendJson('POST', '/api/content-templates', tpl),
+  update: (id: string, tpl: { type?: 'email'|'sms'|'voicemail'; name?: string; subject?: string; body?: string; text?: string; tts_script?: string }) => sendJson('PATCH', `/api/content-templates/${id}`, tpl),
   delete: (id: string) => sendJson('DELETE', `/api/content-templates/${id}`),
 };
 

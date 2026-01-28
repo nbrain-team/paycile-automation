@@ -113,11 +113,51 @@ async function processQueue() {
     
     for (const email of pending) {
       try {
+        // Check if contact has unsubscribed
+        const contact = await prisma.contact.findUnique({
+          where: { id: email.contactId }
+        });
+        
+        if (contact?.unsubscribed) {
+          console.log(`[EmailQueue] Skipping email to ${email.to} - contact unsubscribed`);
+          await prisma.emailQueue.update({
+            where: { id: email.id },
+            data: { 
+              status: 'failed',
+              error: 'Contact unsubscribed'
+            },
+          });
+          continue;
+        }
+        
         // Mark as processing
         await prisma.emailQueue.update({
           where: { id: email.id },
           data: { status: 'processing' },
         });
+        
+        // Add unsubscribe link to email body
+        const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+        const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${email.contactId}`;
+        const companyAddress = process.env.COMPANY_ADDRESS || '123 Main Street, Suite 100, City, ST 12345';
+        
+        const footer = `
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
+            <p style="margin: 5px 0;">${companyAddress}</p>
+            <p style="margin: 5px 0;">
+              <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Unsubscribe</a> from this list
+            </p>
+          </div>
+        `;
+        
+        let emailBodyWithFooter = email.body;
+        if (emailBodyWithFooter.includes('</body>')) {
+          emailBodyWithFooter = emailBodyWithFooter.replace('</body>', `${footer}</body>`);
+        } else if (emailBodyWithFooter.includes('</html>')) {
+          emailBodyWithFooter = emailBodyWithFooter.replace('</html>', `${footer}</html>`);
+        } else {
+          emailBodyWithFooter = emailBodyWithFooter + footer;
+        }
         
         let messageId: string | undefined;
         let provider = 'unknown';
@@ -127,7 +167,7 @@ async function processQueue() {
           const result = await sendGraphEmail({
             to: email.to,
             subject: email.subject,
-            body: email.body,
+            body: emailBodyWithFooter,
             from: process.env.EMAIL_FROM,
           });
           
@@ -277,5 +317,8 @@ export async function getQueueStats() {
   
   return { pending, sent, failed, total };
 }
+
+
+
 
 

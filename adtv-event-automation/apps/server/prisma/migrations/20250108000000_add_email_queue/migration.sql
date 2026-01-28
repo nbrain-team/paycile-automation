@@ -23,3 +23,6 @@ CREATE INDEX "EmailQueue_status_scheduledFor_idx" ON "EmailQueue"("status", "sch
 CREATE INDEX "EmailQueue_campaignId_idx" ON "EmailQueue"("campaignId");
 
 
+
+
+
