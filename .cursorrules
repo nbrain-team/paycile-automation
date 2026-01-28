@@ -79,6 +79,38 @@ When updating `WEEKLY-CLIENT-UPDATES.md`, add entries in this format:
 - Single-file change, purely aesthetic
 ```
 
+---
+
+## Git & Deployment Configuration
+
+### Repository Setup
+- **Primary Remote:** GitHub (git@github.com:nbrain-team/paycile-automation.git)
+- **Remote Name:** `github` (NOT `origin`)
+- **Authentication:** SSH key-based
+
+### Git Commands
+Always use the `github` remote for push operations:
+
+```bash
+# Correct
+git push github main
+
+# Incorrect (old Azure DevOps remote)
+git push origin main
+```
+
+### Deployment Flow
+1. Commit changes locally
+2. Push to GitHub: `git push github main`
+3. Render auto-deploys from GitHub
+4. Verify deployment in Render dashboard
+
+### Important Notes
+- **DO NOT** reference Azure DevOps in documentation or commands
+- **DO NOT** use `origin` remote (it points to old Azure DevOps)
+- **ALWAYS** use `github` remote for all git operations
+- Render is configured to deploy from GitHub repository
+
 
 
 
