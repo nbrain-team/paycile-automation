@@ -31,6 +31,57 @@ const INDUSTRY_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
+const PERSONA_OPTIONS = [
+  { value: 'cfo', label: 'CFO / Financial Executive', industry: 'insurance' },
+  { value: 'controller', label: 'Finance Manager / Controller', industry: 'multi_entity' },
+  { value: 'arap', label: 'AR/AP Specialist', industry: 'general' },
+  { value: 'property_finance', label: 'Property Finance Manager', industry: 'property_management' },
+  { value: 'treasury', label: 'Treasury / Cash Manager', industry: 'finance' },
+  { value: 'accountant', label: 'Accountant / GL Specialist', industry: 'general' },
+  { value: 'small_biz', label: 'Small Business Owner / CEO', industry: 'general' },
+  { value: 'auditor', label: 'Auditor / Compliance Officer', industry: 'general' },
+];
+
+const LANDING_PAGE_TEMPLATES = [
+  { 
+    value: 'none', 
+    label: 'No Landing Page', 
+    description: 'Campaign only (no landing page link)' 
+  },
+  { 
+    value: 'cfo_insurance', 
+    label: 'CFO Insurance Landing', 
+    description: 'For CFOs at insurance companies',
+    url: '/landing/cfo-insurance',
+    persona: 'cfo',
+    industry: 'insurance'
+  },
+  { 
+    value: 'controller', 
+    label: 'Controller Multi-Entity Landing', 
+    description: 'For Controllers managing multiple entities',
+    url: '/landing/controller',
+    persona: 'controller',
+    industry: 'multi_entity'
+  },
+  { 
+    value: 'arap', 
+    label: 'AR/AP Unapplied Funds Landing', 
+    description: 'For AR/AP specialists focused on fund recovery',
+    url: '/landing/arap',
+    persona: 'arap',
+    industry: 'general'
+  },
+  { 
+    value: 'property_mgmt', 
+    label: 'Property Management Yardi Landing', 
+    description: 'For property managers using Yardi',
+    url: '/landing/property-management',
+    persona: 'property_finance',
+    industry: 'property_management'
+  },
+];
+
 interface GeneratedCampaign {
   name: string;
   description: string;
@@ -63,6 +114,8 @@ export function AICampaignBuilder() {
   const [campaignGoal, setCampaignGoal] = useState('');
   const [tone, setTone] = useState('professional');
   const [industry, setIndustry] = useState('insurance');
+  const [targetPersona, setTargetPersona] = useState('cfo');
+  const [landingPageTemplate, setLandingPageTemplate] = useState('none');
   
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -103,6 +156,10 @@ export function AICampaignBuilder() {
           campaignGoal: campaignGoal || undefined,
           tone,
           industry: industry || undefined,
+          targetPersona: targetPersona || undefined,
+          landingPageUrl: landingPageTemplate !== 'none' 
+            ? LANDING_PAGE_TEMPLATES.find(t => t.value === landingPageTemplate)?.url 
+            : undefined,
           includeExistingTemplates: true, // Match tone from existing templates
         }),
       });
@@ -251,11 +308,31 @@ export function AICampaignBuilder() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Target Audience (Optional)
+                    Target Persona *
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={targetPersona}
+                    onChange={(e) => setTargetPersona(e.target.value)}
+                  >
+                    {PERSONA_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    AI will tailor messaging to this persona's pain points and goals
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Target Audience Details (Optional)
                   </label>
                   <input
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., CFOs at insurance companies with 100+ employees"
+                    placeholder="e.g., Companies with 100+ employees, $50M-$500M revenue"
                     value={targetAudience}
                     onChange={(e) => setTargetAudience(e.target.value)}
                   />
@@ -311,7 +388,7 @@ export function AICampaignBuilder() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Industry (Optional)
+                    Industry
                   </label>
                   <select
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -324,6 +401,28 @@ export function AICampaignBuilder() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Landing Page Template (Optional)
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={landingPageTemplate}
+                    onChange={(e) => setLandingPageTemplate(e.target.value)}
+                  >
+                    {LANDING_PAGE_TEMPLATES.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  {landingPageTemplate !== 'none' && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      📄 {LANDING_PAGE_TEMPLATES.find(t => t.value === landingPageTemplate)?.description}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

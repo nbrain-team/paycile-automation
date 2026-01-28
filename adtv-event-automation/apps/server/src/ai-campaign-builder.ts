@@ -32,6 +32,8 @@ export interface CampaignBuilderRequest {
   campaignGoal?: string;
   tone?: string; // professional, casual, urgent, friendly
   industry?: string; // real estate, insurance, property management, etc.
+  targetPersona?: string; // cfo, controller, arap, property_finance, treasury, accountant, small_biz, auditor
+  landingPageUrl?: string; // URL to include in CTAs if provided
 }
 
 export interface GeneratedCampaignNode {
@@ -114,6 +116,19 @@ Use this context to make content specific, credible, and compelling for Paycile'
 `;
   }
 
+  // Build persona-specific guidance
+  const personaGuidance = request.targetPersona ? getPersonaGuidance(request.targetPersona) : '';
+  
+  // Build landing page CTA guidance
+  const landingPageGuidance = request.landingPageUrl 
+    ? `\n\nLANDING PAGE CTA:
+This campaign has a dedicated landing page at: ${request.landingPageUrl}
+Include this URL in email CTAs and SMS messages as appropriate. Example CTAs:
+- "Learn more: ${request.landingPageUrl}"
+- "Schedule your demo: ${request.landingPageUrl}"
+- "See how we can help: ${request.landingPageUrl}"`
+    : '';
+
   const systemPrompt = `You are an expert marketing automation strategist specializing in multi-channel campaigns for B2B financial technology and payment processing platforms. 
 You create highly effective, conversion-focused marketing sequences that combine emails, SMS, voicemails, and strategic timing.
 
@@ -122,11 +137,12 @@ Your campaigns should:
 - Use appropriate channels for each stage of the customer journey
 - Include compelling, benefit-driven copy that speaks to financial decision-makers
 - Have strategic wait times between touchpoints (typically 1-3 days)
-- Build urgency and value progressively
-- Include clear calls-to-action (demos, consultations, downloads)
+- Build urgency and value progressively with quantifiable ROI metrics
+- Include clear calls-to-action (demos, consultations, landing page visits)
 - Be personalized and conversational while maintaining professionalism
-- Reference specific pain points and quantifiable benefits
-- Match the company's established tone and voice${toneReference}${paycileContext}
+- Reference specific pain points and quantifiable benefits from the Paycile strategy
+- Match the company's established tone and voice
+- Use persona-specific messaging that resonates with their unique challenges${toneReference}${paycileContext}${personaGuidance}${landingPageGuidance}
 
 IMPORTANT: You must return ONLY valid JSON with no additional text, markdown formatting, or code blocks.`;
 
@@ -362,4 +378,189 @@ No markdown, no code blocks, just raw JSON array.`;
     console.error('[AI Campaign Builder] Variations error:', error);
     throw new Error(`Failed to generate variations: ${error.message}`);
   }
+}
+
+/**
+ * Get persona-specific messaging guidance
+ */
+function getPersonaGuidance(persona: string): string {
+  const personaMap: Record<string, string> = {
+    cfo: `
+PERSONA: CFO / Financial Executive
+TONE: Executive-level, strategic, ROI-focused
+KEY PAIN POINTS:
+- Data inconsistency across systems (emphasize "single source of truth")
+- Delayed financial insights ("50% faster cash visibility")
+- Audit exposure and compliance risk ("audit-ready automation")
+- Limited real-time visibility ("real-time dashboard")
+
+QUANTIFIABLE BENEFITS TO EMPHASIZE:
+- 50% faster cash visibility
+- Real-time financial dashboards
+- Reduced audit risk with complete traceability
+- Strategic time reallocation from reconciliation to growth initiatives
+
+MESSAGING HOOKS:
+- "Are you still waiting 10 days to know your true cash position?"
+- "Strategic decisions require real-time data—manual reconciliation can't deliver"
+- "The hidden cost of reconciliation chaos: delayed insights and missed opportunities"
+
+CTA STYLE: "Schedule executive demo", "See CFO dashboard", "Get strategic insights"`,
+
+    controller: `
+PERSONA: Finance Manager / Controller
+TONE: Operational efficiency, compliance-focused, team enablement
+KEY PAIN POINTS:
+- Manual workloads consuming 60-80% of time ("90% workload reduction")
+- Cross-entity reconciliations ("consolidated reporting")
+- Team morale from repetitive tasks ("focus on strategic analysis")
+- Period-end pressure ("96 days saved annually")
+
+QUANTIFIABLE BENEFITS TO EMPHASIZE:
+- 96 days saved annually on period-end close
+- 90% workload reduction on reconciliation
+- Traceable audit trails built automatically
+- Team efficiency and morale improvement
+
+MESSAGING HOOKS:
+- "Your team spends more time matching than analyzing—here's how to change that"
+- "Month-end close shouldn't require all-hands overtime"
+- "Audit-ready reconciliation: automated, traceable, compliant"
+
+CTA STYLE: "Book efficiency demo", "See workflow automation", "Transform your close process"`,
+
+    arap: `
+PERSONA: AR/AP Specialist
+TONE: Practical, efficiency-focused, results-oriented
+KEY PAIN POINTS:
+- Unapplied funds sitting in limbo ("automated recovery")
+- Dispute handling delays ("exception-based workflow")
+- Manual payment matching ("95% auto-match")
+- High write-off rates ("62% reduction")
+
+QUANTIFIABLE BENEFITS TO EMPHASIZE:
+- 90% automation on payment posting
+- 62% reduction in write-offs
+- Unapplied funds recovery automation
+- 95% auto-match accuracy
+
+MESSAGING HOOKS:
+- "Unapplied funds are lost revenue—recover them automatically"
+- "Stop manually matching payments: 95% auto-match accuracy"
+- "Reduce write-offs by 62% with intelligent payment reconciliation"
+
+CTA STYLE: "See automation demo", "Recover lost revenue", "Eliminate manual matching"`,
+
+    treasury: `
+PERSONA: Treasury / Cash Manager
+TONE: Data-driven, forecasting-focused, risk-aware
+KEY PAIN POINTS:
+- Multi-bank data lag (2-5 day delays)
+- Currency mismatch issues
+- Fraud detection gaps
+- Forecasting inaccuracy
+
+QUANTIFIABLE BENEFITS TO EMPHASIZE:
+- 50% faster cash visibility
+- Real-time multi-bank dashboard
+- Fraud detection and mitigation
+- Improved forecasting accuracy
+
+MESSAGING HOOKS:
+- "Multi-bank reconciliation in real-time, not next week"
+- "Cash flow surprises kill growth—eliminate them"
+- "Forecasting accuracy starts with reconciliation accuracy"
+
+CTA STYLE: "See treasury dashboard", "Improve forecasting", "Get real-time visibility"`,
+
+    property_finance: `
+PERSONA: Property Finance Manager (Yardi-Integrated)
+TONE: Operations-focused, property-specific, efficiency-driven
+KEY PAIN POINTS:
+- Tenant payment matching across multiple properties
+- Trust account reconciliation complexity
+- Yardi data sync issues
+- Security deposit tracking
+
+QUANTIFIABLE BENEFITS TO EMPHASIZE:
+- 90% less manual work on tenant payments
+- 0.8-1.8% error rates (down from 5-8%)
+- Yardi native integration
+- Trust account compliance automation
+
+MESSAGING HOOKS:
+- "Yardi + Paycile: The perfect reconciliation match"
+- "Trust account reconciliation in minutes, not days"
+- "Multi-property rollup with zero manual work"
+
+CTA STYLE: "See Yardi integration", "Book property demo", "Automate trust accounts"`,
+
+    accountant: `
+PERSONA: Accountant / GL Specialist
+TONE: Detail-oriented, accuracy-focused, practical
+KEY PAIN POINTS:
+- Spreadsheet dependency
+- High error rates (5-8%)
+- Manual data entry consuming entire day
+- Bank reconciliation backlogs
+
+QUANTIFIABLE BENEFITS TO EMPHASIZE:
+- 95% auto-matching of transactions
+- Error rates drop to <2%
+- Full ERP integration (no double entry)
+- Real-time bank reconciliation
+
+MESSAGING HOOKS:
+- "Spreadsheets are error-prone and unscalable"
+- "Manual reconciliation creates bottlenecks"
+- "Your accuracy shouldn't depend on caffeine levels"
+
+CTA STYLE: "Eliminate manual work", "See accuracy improvements", "Automate reconciliation"`,
+
+    small_biz: `
+PERSONA: Small Business Owner / CEO
+TONE: Growth-focused, accessible, empowering, ROI-driven
+KEY PAIN POINTS:
+- Lack of automation
+- Scalability limitations
+- Cash flow uncertainty
+- Limited finance resources
+
+QUANTIFIABLE BENEFITS TO EMPHASIZE:
+- ROI in 8-12 months
+- Centralized financial visibility
+- Scalable without hiring more staff
+- Enterprise-grade tools at SMB pricing
+
+MESSAGING HOOKS:
+- "You can't scale on spreadsheets—here's what works"
+- "Enterprise-grade reconciliation at small business prices"
+- "Free your team from manual work and focus on growth"
+
+CTA STYLE: "Start free trial", "See ROI calculator", "Schedule consultation"`,
+
+    auditor: `
+PERSONA: Auditor / Compliance Officer
+TONE: Risk-focused, compliance-oriented, evidence-based
+KEY PAIN POINTS:
+- Limited traceability in manual processes
+- Manual audit sampling
+- Fraud detection delays
+- Compliance documentation burden
+
+QUANTIFIABLE BENEFITS TO EMPHASIZE:
+- 25% audit cost reduction
+- 70% faster fraud detection
+- Complete audit trail automation
+- Real-time compliance monitoring
+
+MESSAGING HOOKS:
+- "Manual audits miss patterns"
+- "Fraud detection shouldn't be reactive"
+- "Compliance documentation is mission-critical"
+
+CTA STYLE: "See compliance features", "Schedule audit demo", "Review security"`,
+  };
+
+  return personaMap[persona] || '';
 }
