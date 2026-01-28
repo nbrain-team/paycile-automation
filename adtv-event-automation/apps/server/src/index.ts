@@ -2140,7 +2140,7 @@ app.post('/api/ai/campaign/generate', async (req, res) => {
             subject: true,
             body: true,
             text: true,
-            tts_script: true,
+            ttsScript: true,
           }
         });
         
@@ -2149,7 +2149,7 @@ app.post('/api/ai/campaign/generate', async (req, res) => {
           subject: t.subject || undefined,
           body: t.body || undefined,
           text: t.text || undefined,
-          ttsScript: t.tts_script || undefined,
+          ttsScript: t.ttsScript || undefined,
         }));
       } catch (err) {
         console.warn('[AI Campaign] Could not fetch existing templates:', err);

@@ -134,12 +134,12 @@ export function AICampaignBuilder() {
 
   const handleGenerate = async () => {
     if (!campaignDescription.trim()) {
-      addToast('Please describe your campaign', 'error');
+      addToast({ text: 'Please describe your campaign', type: 'error' });
       return;
     }
 
     if (selectedNodeTypes.length === 0) {
-      addToast('Please select at least one node type', 'error');
+      addToast({ text: 'Please select at least one node type', type: 'error' });
       return;
     }
 
@@ -171,10 +171,10 @@ export function AICampaignBuilder() {
       }
 
       setGeneratedCampaign(data.campaign);
-      addToast('Campaign generated successfully! ✨', 'success');
+      addToast({ text: 'Campaign generated successfully! ✨', type: 'success' });
     } catch (error: any) {
       console.error('Generation error:', error);
-      addToast(error.message || 'Failed to generate campaign', 'error');
+      addToast({ text: error.message || 'Failed to generate campaign', type: 'error' });
     } finally {
       setIsGenerating(false);
     }
@@ -216,10 +216,10 @@ export function AICampaignBuilder() {
       });
 
       setRefinementRequest('');
-      addToast('Content refined successfully! ✨', 'success');
+      addToast({ text: 'Content refined successfully! ✨', type: 'success' });
     } catch (error: any) {
       console.error('Refine error:', error);
-      addToast(error.message || 'Failed to refine content', 'error');
+      addToast({ text: error.message || 'Failed to refine content', type: 'error' });
     } finally {
       setIsRefining(false);
     }
@@ -245,7 +245,7 @@ export function AICampaignBuilder() {
         edges: generatedCampaign.edges.map((edge, index) => ({
           fromKey: edge.from,
           toKey: edge.to,
-          conditionJson: JSON.stringify(edge.condition || null),
+          conditionJson: JSON.stringify(null),
           order: index,
         })),
       };
@@ -258,14 +258,14 @@ export function AICampaignBuilder() {
 
       if (response.ok) {
         const data = await response.json();
-        addToast('Campaign saved as template! 🎉', 'success');
+        addToast({ text: 'Campaign saved as template! 🎉', type: 'success' });
         navigate(`/templates/${data.id}`);
       } else {
         throw new Error('Failed to save template');
       }
     } catch (error: any) {
       console.error('Save error:', error);
-      addToast(error.message || 'Failed to save campaign', 'error');
+      addToast({ text: error.message || 'Failed to save campaign', type: 'error' });
     }
   };
 
