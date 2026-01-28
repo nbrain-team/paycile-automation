@@ -6,6 +6,13 @@
 
 ## Current Week (January 27 - February 2, 2026)
 
+### AI Campaign Builder - Natural Language Funnel Generation
+- **Completed**: 2026-01-28
+- **Category**: Feature
+- **Client Impact**: Marketing teams can now generate complete multi-channel campaign funnels in seconds by describing their goals in natural language. The AI understands Paycile's business, target audiences, and value propositions to automatically create professional content for emails, SMS, and voicemails—reducing campaign creation time from hours to minutes.
+- **Details**: Built OpenAI GPT-4 powered campaign builder that generates entire marketing funnels with nodes, edges, and fully-written content from simple descriptions. Users describe a campaign (e.g., "5-step sequence for insurance CFOs highlighting cost savings"), select communication channels, and receive a complete workflow ready to deploy. System includes Paycile knowledge base for context-aware content that references specific services, pain points, and value propositions. Features content refinement with natural language requests ("make more urgent", "add deadline"), tone matching from existing templates, industry-specific messaging (insurance vs. property management), and one-click save to Funnel Templates. New "Builder" navigation item provides dedicated interface with campaign configuration panel, real-time preview, and iterative AI refinement. Integrates seamlessly with existing template system.
+- **Status**: ✅ Deployed
+
 ### Funnel Filter & Dynamic Signatures for Content Templates
 - **Completed**: 2026-01-28
 - **Category**: Feature
