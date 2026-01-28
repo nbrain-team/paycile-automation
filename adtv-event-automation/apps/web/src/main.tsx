@@ -23,6 +23,7 @@ import { CFOInsuranceLanding } from './pages/CFOInsuranceLanding';
 import { ARAPLanding } from './pages/ARAPLanding';
 import { ControllerLanding } from './pages/ControllerLanding';
 import { PropMgmtLanding } from './pages/PropMgmtLanding';
+import { AICampaignBuilder } from './pages/AICampaignBuilder';
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
       { path: 'templates/:id', element: <TemplateBuilder /> },
       { path: 'campaigns', element: <CampaignsLive /> },
       { path: 'campaigns/:id', element: <CampaignBuilder /> },
+      { path: 'builder', element: <AICampaignBuilder /> },
       // media and calendar removed per instruction
       { path: 'inbox', element: <Inbox /> },
       { path: 'analytics', element: <AnalyticsMaster /> },

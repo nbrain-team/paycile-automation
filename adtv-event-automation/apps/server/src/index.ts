@@ -2098,6 +2098,161 @@ app.post('/api/ai/inbox/generate-options', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// AI CAMPAIGN BUILDER
+// ═══════════════════════════════════════════════════════════════
+
+import { generateCampaign, refineContent, generateVariations } from './ai-campaign-builder';
+
+/**
+ * Generate a complete AI-powered marketing campaign
+ * POST /api/ai/campaign/generate
+ */
+app.post('/api/ai/campaign/generate', async (req, res) => {
+  try {
+    const {
+      campaignDescription,
+      numberOfSteps,
+      availableNodeTypes,
+      targetAudience,
+      campaignGoal,
+      tone,
+      industry,
+      includeExistingTemplates,
+    } = req.body;
+
+    // Validate inputs
+    if (!campaignDescription || !campaignDescription.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Campaign description is required' 
+      });
+    }
+
+    // Optionally fetch existing templates to match tone
+    let existingTemplates: any[] = [];
+    if (includeExistingTemplates) {
+      try {
+        const templates = await prisma.contentTemplate.findMany({
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            type: true,
+            subject: true,
+            body: true,
+            text: true,
+            tts_script: true,
+          }
+        });
+        
+        existingTemplates = templates.map(t => ({
+          type: t.type,
+          subject: t.subject || undefined,
+          body: t.body || undefined,
+          text: t.text || undefined,
+          ttsScript: t.tts_script || undefined,
+        }));
+      } catch (err) {
+        console.warn('[AI Campaign] Could not fetch existing templates:', err);
+      }
+    }
+
+    const campaign = await generateCampaign({
+      campaignDescription,
+      numberOfSteps: numberOfSteps || 5,
+      availableNodeTypes: availableNodeTypes || ['email_send', 'sms_send', 'wait', 'voicemail_drop'],
+      targetAudience,
+      campaignGoal,
+      tone,
+      industry,
+    }, existingTemplates);
+
+    console.log('✅ AI Campaign Generated:', campaign.name);
+
+    res.json({ success: true, campaign });
+  } catch (error: any) {
+    console.error('[AI Campaign Generate]', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to generate campaign' 
+    });
+  }
+});
+
+/**
+ * Refine specific campaign content with AI
+ * POST /api/ai/campaign/refine
+ */
+app.post('/api/ai/campaign/refine', async (req, res) => {
+  try {
+    const { nodeType, currentContent, refinementRequest, campaignContext } = req.body;
+
+    if (!nodeType || !currentContent) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'nodeType and currentContent are required' 
+      });
+    }
+
+    if (!refinementRequest || !refinementRequest.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'refinementRequest is required' 
+      });
+    }
+
+    const refinedContent = await refineContent(
+      nodeType,
+      currentContent,
+      refinementRequest,
+      campaignContext
+    );
+
+    console.log('✅ AI Content Refined for node type:', nodeType);
+
+    res.json({ success: true, content: refinedContent });
+  } catch (error: any) {
+    console.error('[AI Campaign Refine]', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to refine content' 
+    });
+  }
+});
+
+/**
+ * Generate A/B test variations of campaign content
+ * POST /api/ai/campaign/variations
+ */
+app.post('/api/ai/campaign/variations', async (req, res) => {
+  try {
+    const { nodeType, originalContent, numberOfVariations } = req.body;
+
+    if (!nodeType || !originalContent) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'nodeType and originalContent are required' 
+      });
+    }
+
+    const variations = await generateVariations(
+      nodeType,
+      originalContent,
+      numberOfVariations || 3
+    );
+
+    console.log(`✅ Generated ${variations.length} AI content variations`);
+
+    res.json({ success: true, variations });
+  } catch (error: any) {
+    console.error('[AI Campaign Variations]', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to generate variations' 
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
 // APOLLO.IO INTEGRATION
 // ═══════════════════════════════════════════════════════════════
 
@@ -2619,6 +2774,9 @@ app.listen(port, () => {
   console.log(`Server listening on :${port}`);
   console.log('✓ AI Inbox Response Generator: POST /api/ai/inbox/generate-response');
   console.log('✓ AI Response Options: POST /api/ai/inbox/generate-options');
+  console.log('✓ AI Campaign Builder: POST /api/ai/campaign/generate');
+  console.log('✓ AI Campaign Refine: POST /api/ai/campaign/refine');
+  console.log('✓ AI Campaign Variations: POST /api/ai/campaign/variations');
   console.log('✓ Check-in endpoint registered at POST /api/contacts/:id/checkin');
   console.log('✓ Check-out endpoint registered at POST /api/contacts/:id/checkout');
   console.log('✓ Apollo People Search: POST /api/apollo/people/search');

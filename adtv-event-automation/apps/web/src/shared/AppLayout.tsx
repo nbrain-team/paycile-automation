@@ -6,6 +6,7 @@ const navItems = [
   { to: '/', label: 'Dashboard' },
   { to: '/inbox', label: 'Inbox' },
   { to: '/campaigns', label: 'Campaigns' },
+  { to: '/builder', label: 'Builder' },
   { to: '/templates', label: 'Funnel Templates' },
   { to: '/analytics', label: 'Analytics' },
   { to: '/leads', label: 'Leads' },
