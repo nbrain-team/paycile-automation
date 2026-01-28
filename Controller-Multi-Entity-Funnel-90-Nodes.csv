@@ -1,9 +1,9 @@
 Node ID,Node Type,Node Name,Position X,Position Y,Template ID,Email Subject,Email Body,SMS Text,Voicemail Script,Config JSON,Edge From,Edge To,Edge Condition
-C000,start,Import: Controller Target List,100,500,,,,,,"{}",C000,C001,"{}"
-C001,filter,Filter: Multi-Entity Companies,300,500,,,,,,"{ ""criteria"": ""entities>=3"" }",C001,C002,"{}"
-C002,filter,Filter: Controller/Finance Manager,500,500,,,,,,"{ ""criteria"": ""title_contains=Controller,Finance Manager,Accounting Manager"" }",C002,C003,"{}"
-C003,tag,Tag: Controller-Multi-Entity,700,500,,,,,,"{ ""tag"": ""controller-target"" }",C003,C004,"{}"
-C004,stage,STAGE: Day 1 - Initial Contact,900,500,,,,,,"{}",C004,C005,"{}"
+C000,start,Import: Controller Target List,100,500,,,,,,{},C000,C001,{}
+C001,filter,Filter: Multi-Entity Companies,300,500,,,,,,"{ ""criteria"": ""entities>=3"" }",C001,C002,{}
+C002,filter,Filter: Controller/Finance Manager,500,500,,,,,,"{ ""criteria"": ""title_contains=Controller,Finance Manager,Accounting Manager"" }",C002,C003,{}
+C003,tag,Tag: Controller-Multi-Entity,700,500,,,,,,"{ ""tag"": ""controller-target"" }",C003,C004,{}
+C004,stage,STAGE: Day 1 - Initial Contact,900,500,,,,,,{},C004,C005,{}
 C005,email_send,Send: 90% Workload Reduction Email,1100,400,ctrl_email_01_intro,Reduce your period-end close workload by 90%,"Hi {{contact.first_name}},
 
 How long does your month-end close take? For most controllers managing multiple entities, it's 2-3 weeks of chaos.
@@ -25,36 +25,34 @@ One controller told me: *""I finally have time to analyze results instead of jus
 30-minute demo shows you exactly how we automate your process.
 
 Best,
-Jim Fitzgerald
-Paycile
-jim@paycile.com",,"","{ ""template_id"": ""ctrl_email_01_intro"", ""landing_page"": ""/landing/controller"" }",C005,C006,"{}"
-C006,wait,Wait: 90 Minutes,1300,400,,,,,,"{ ""duration"": ""PT90M"" }",C006,C007,"{}"
+Paycile",,,"{ ""template_id"": ""ctrl_email_01_intro"", ""landing_page"": ""/landing/controller"" }",C005,C006,{}
+C006,wait,Wait: 90 Minutes,1300,400,,,,,,"{ ""duration"": ""PT90M"" }",C006,C007,{}
 C007,decision,Check: Email Opened?,1500,400,,,,,,"{ ""condition"": ""email_opened"" }",C007,C008,"{ ""email_opened"": true }"
 C007,decision,Check: Email Opened?,1500,400,,,,,,"{ ""condition"": ""email_opened"" }",C007,C021,"{ ""email_opened"": false }"
-C008,tag,Tag: Opened-Initial,1700,300,,,,,,"{ ""tag"": ""email-engaged"", ""score"": 10 }",C008,C009,"{}"
+C008,tag,Tag: Opened-Initial,1700,300,,,,,,"{ ""tag"": ""email-engaged"", ""score"": 10 }",C008,C009,{}
 C009,decision,Check: Link Clicked?,1900,300,,,,,,"{ ""condition"": ""link_clicked"" }",C009,C010,"{ ""link_clicked"": true }"
 C009,decision,Check: Link Clicked?,1900,300,,,,,,"{ ""condition"": ""link_clicked"" }",C009,C026,"{ ""link_clicked"": false }"
-C010,tag,Tag: HIGH-INTEREST,2100,200,,,,,,"{ ""tag"": ""high-interest"", ""score"": 50 }",C010,C011,"{}"
-C011,sms_send,Send: SMS Quick Response,2300,200,ctrl_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. How long does your multi-entity close take? 2 weeks? 3? We help controllers close in 5 days with automated reconciliation. 30-min demo? {{landing_page_url}}",,"{ ""template_id"": ""ctrl_sms_01_intro"" }",C011,C012,"{}"
-C012,wait,Wait: 1 Hour,2500,200,,,,,,"{ ""duration"": ""PT1H"" }",C012,C013,"{}"
+C010,tag,Tag: HIGH-INTEREST,2100,200,,,,,,"{ ""tag"": ""high-interest"", ""score"": 50 }",C010,C011,{}
+C011,sms_send,Send: SMS Quick Response,2300,200,ctrl_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. How long does your multi-entity close take? 2 weeks? 3? We help controllers close in 5 days with automated reconciliation. 30-min demo? {{landing_page_url}}",,"{ ""template_id"": ""ctrl_sms_01_intro"" }",C011,C012,{}
+C012,wait,Wait: 1 Hour,2500,200,,,,,,"{ ""duration"": ""PT1H"" }",C012,C013,{}
 C013,decision,Check: SMS Reply?,2700,200,,,,,,"{ ""condition"": ""sms_reply"" }",C013,C014,"{ ""sms_reply"": true }"
 C013,decision,Check: SMS Reply?,2700,200,,,,,,"{ ""condition"": ""sms_reply"" }",C013,C015,"{ ""sms_reply"": false }"
-C014,task,TASK: Hot Lead - Call Now,2900,100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",C014,C066,"{}"
-C015,linkedin_connect,LinkedIn: Connection Request,1100,600,,,,,,"{ ""message"": ""Hi {{contact.first_name}}, helping controllers close 10x faster. Let's connect!"" }",C015,C016,"{}"
-C016,wait,Wait: 6 Hours,1300,600,,,,,,"{ ""duration"": ""PT6H"" }",C016,C017,"{}"
+C014,task,TASK: Hot Lead - Call Now,2900,100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",C014,C066,{}
+C015,linkedin_connect,LinkedIn: Connection Request,1100,600,,,,,,"{ ""message"": ""Hi {{contact.first_name}}, helping controllers close 10x faster. Let's connect!"" }",C015,C016,{}
+C016,wait,Wait: 6 Hours,1300,600,,,,,,"{ ""duration"": ""PT6H"" }",C016,C017,{}
 C017,decision,Check: Connection Accepted?,1500,600,,,,,,"{ ""condition"": ""linkedin_accepted"" }",C017,C018,"{ ""linkedin_accepted"": true }"
 C017,decision,Check: Connection Accepted?,1500,600,,,,,,"{ ""condition"": ""linkedin_accepted"" }",C017,C026,"{ ""linkedin_accepted"": false }"
-C018,tag,Tag: LinkedIn-Connected,1700,550,,,,,,"{ ""tag"": ""linkedin-connected"", ""score"": 15 }",C018,C019,"{}"
-C019,linkedin_message,LinkedIn: Value Message,1900,550,,,,,,"{ ""message"": ""Thanks for connecting! Quick question - how long does your month-end close take? Most controllers I talk to say 2-3 weeks. I can show you how to do it in 5 days."" }",C019,C020,"{}"
-C020,wait,Wait: 8 Hours,2100,550,,,,,,"{ ""duration"": ""PT8H"" }",C020,C026,"{}"
-C021,stage,STAGE: Not Opened - SMS Push,1700,500,,,,,,"{}",C021,C022,"{}"
-C022,wait,Wait: 4 Hours,1900,500,,,,,,"{ ""duration"": ""PT4H"" }",C022,C023,"{}"
-C023,sms_send,Send: SMS Attention Grab,2100,500,ctrl_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. How long does your multi-entity close take? 2 weeks? 3? We help controllers close in 5 days with automated reconciliation. 30-min demo? {{landing_page_url}}",,"{ ""template_id"": ""ctrl_sms_01_intro"" }",C023,C024,"{}"
-C024,wait,Wait: 2 Hours,2300,500,,,,,,"{ ""duration"": ""PT2H"" }",C024,C025,"{}"
+C018,tag,Tag: LinkedIn-Connected,1700,550,,,,,,"{ ""tag"": ""linkedin-connected"", ""score"": 15 }",C018,C019,{}
+C019,linkedin_message,LinkedIn: Value Message,1900,550,,,,,,"{ ""message"": ""Thanks for connecting! Quick question - how long does your month-end close take? Most controllers I talk to say 2-3 weeks. I can show you how to do it in 5 days."" }",C019,C020,{}
+C020,wait,Wait: 8 Hours,2100,550,,,,,,"{ ""duration"": ""PT8H"" }",C020,C026,{}
+C021,stage,STAGE: Not Opened - SMS Push,1700,500,,,,,,{},C021,C022,{}
+C022,wait,Wait: 4 Hours,1900,500,,,,,,"{ ""duration"": ""PT4H"" }",C022,C023,{}
+C023,sms_send,Send: SMS Attention Grab,2100,500,ctrl_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. How long does your multi-entity close take? 2 weeks? 3? We help controllers close in 5 days with automated reconciliation. 30-min demo? {{landing_page_url}}",,"{ ""template_id"": ""ctrl_sms_01_intro"" }",C023,C024,{}
+C024,wait,Wait: 2 Hours,2300,500,,,,,,"{ ""duration"": ""PT2H"" }",C024,C025,{}
 C025,decision,Check: SMS Response?,2500,500,,,,,,"{ ""condition"": ""sms_reply"" }",C025,C066,"{ ""sms_reply"": true }"
 C025,decision,Check: SMS Response?,2500,500,,,,,,"{ ""condition"": ""sms_reply"" }",C025,C026,"{ ""sms_reply"": false }"
-C026,stage,STAGE: Day 2 - Intercompany Focus,2300,650,,,,,,"{}",C026,C027,"{}"
-C027,wait,Wait: Until Day 2 9AM,2500,650,,,,,,"{ ""duration"": ""until_day_2_9am"" }",C027,C028,"{}"
+C026,stage,STAGE: Day 2 - Intercompany Focus,2300,650,,,,,,{},C026,C027,{}
+C027,wait,Wait: Until Day 2 9AM,2500,650,,,,,,"{ ""duration"": ""until_day_2_9am"" }",C027,C028,{}
 C028,email_send,Send: Intercompany Email,2700,650,ctrl_email_02_intercompany,Automated intercompany reconciliation in real-time,"{{contact.first_name}},
 
 Quick question: How long does it take your team to reconcile intercompany transactions at month-end?
@@ -77,19 +75,18 @@ Want to see how it works for your structure?
 
 **Demo here:** {{landing_page_url}}
 
-Jim Fitzgerald
-Paycile",,"","{ ""template_id"": ""ctrl_email_02_intercompany"" }",C028,C029,"{}"
-C029,wait,Wait: 3 Hours,2900,650,,,,,,"{ ""duration"": ""PT3H"" }",C029,C030,"{}"
+Paycile",,,"{ ""template_id"": ""ctrl_email_02_intercompany"" }",C028,C029,{}
+C029,wait,Wait: 3 Hours,2900,650,,,,,,"{ ""duration"": ""PT3H"" }",C029,C030,{}
 C030,decision,Check: Email Opened?,3100,650,,,,,,"{ ""condition"": ""email_opened"" }",C030,C031,"{ ""email_opened"": true }"
 C030,decision,Check: Email Opened?,3100,650,,,,,,"{ ""condition"": ""email_opened"" }",C030,C034,"{ ""email_opened"": false }"
 C031,decision,Check: Link Clicked?,3300,600,,,,,,"{ ""condition"": ""link_clicked"" }",C031,C032,"{ ""link_clicked"": true }"
 C031,decision,Check: Link Clicked?,3300,600,,,,,,"{ ""condition"": ""link_clicked"" }",C031,C034,"{ ""link_clicked"": false }"
-C032,tag,Tag: Case-Study-Engaged,3500,550,,,,,,"{ ""tag"": ""case-engaged"", ""score"": 30 }",C032,C033,"{}"
-C033,task,TASK: BDR Follow-up,3700,550,,,,,,"{ ""assign_to"": ""BDR"" }",C033,C066,"{}"
-C034,voicemail_drop,Drop: VM Intro,3300,700,ctrl_vm_01_intro,,,,"Hi {{contact.first_name}}, Jim Fitzgerald with Paycile. I help controllers automate multi-entity reconciliation. Our clients reduce their close time by 90 percent and eliminate reconciliation errors entirely. If you'd like to see how we automate your intercompany transactions and consolidation process, visit paycile.com/landing/controller to book a quick demo. Thanks!","{ ""template_id"": ""ctrl_vm_01_intro"" }",C034,C035,"{}"
-C035,wait,Wait: 5 Hours,3500,700,,,,,,"{ ""duration"": ""PT5H"" }",C035,C036,"{}"
-C036,stage,STAGE: Day 3 - Close Time ROI,100,1200,,,,,,"{}",C036,C037,"{}"
-C037,wait,Wait: Until Day 3 10AM,300,1200,,,,,,"{ ""duration"": ""until_day_3_10am"" }",C037,C038,"{}"
+C032,tag,Tag: Case-Study-Engaged,3500,550,,,,,,"{ ""tag"": ""case-engaged"", ""score"": 30 }",C032,C033,{}
+C033,task,TASK: BDR Follow-up,3700,550,,,,,,"{ ""assign_to"": ""BDR"" }",C033,C066,{}
+C034,voicemail_drop,Drop: VM Intro,3300,700,ctrl_vm_01_intro,,,,"Hi {{contact.first_name}}, {{sender.name}} with Paycile. I help controllers automate multi-entity reconciliation. Our clients reduce their close time by 90 percent and eliminate reconciliation errors entirely. If you'd like to see how we automate your intercompany transactions and consolidation process, visit paycile.com/landing/controller to book a quick demo. Thanks!","{ ""template_id"": ""ctrl_vm_01_intro"" }",C034,C035,{}
+C035,wait,Wait: 5 Hours,3500,700,,,,,,"{ ""duration"": ""PT5H"" }",C035,C036,{}
+C036,stage,STAGE: Day 3 - Close Time ROI,100,1200,,,,,,{},C036,C037,{}
+C037,wait,Wait: Until Day 3 10AM,300,1200,,,,,,"{ ""duration"": ""until_day_3_10am"" }",C037,C038,{}
 C038,email_send,Send: Close Time Reduction,500,1200,ctrl_email_03_close_time,Close in 5 days instead of 3 weeks,"{{contact.first_name}},
 
 What would it mean for your team to close the books in 5 days instead of 3 weeks?
@@ -113,26 +110,25 @@ I can show you exactly how in 30 minutes:
 **Book your demo:** {{landing_page_url}}
 
 Best,
-Jim Fitzgerald
-Paycile",,"","{ ""template_id"": ""ctrl_email_03_close_time"" }",C038,C039,"{}"
-C039,wait,Wait: 4 Hours,700,1200,,,,,,"{ ""duration"": ""PT4H"" }",C039,C040,"{}"
+Paycile",,,"{ ""template_id"": ""ctrl_email_03_close_time"" }",C038,C039,{}
+C039,wait,Wait: 4 Hours,700,1200,,,,,,"{ ""duration"": ""PT4H"" }",C039,C040,{}
 C040,decision,Check: Email Engagement?,900,1200,,,,,,"{ ""condition"": ""email_opened_or_clicked"" }",C040,C041,"{ ""email_opened_or_clicked"": true }"
 C040,decision,Check: Email Engagement?,900,1200,,,,,,"{ ""condition"": ""email_opened_or_clicked"" }",C040,C046,"{ ""email_opened_or_clicked"": false }"
-C041,sms_send,Send: SMS Close Week,1100,1150,ctrl_sms_03_close,,,"Hi {{contact.first_name}}, close week coming up? Imagine finishing in 5 days instead of 3 weeks. That's automated reconciliation. Quick demo? {{landing_page_url}}",,"{ ""template_id"": ""ctrl_sms_03_close"" }",C041,C042,"{}"
-C042,wait,Wait: 90 Minutes,1300,1150,,,,,,"{ ""duration"": ""PT90M"" }",C042,C043,"{}"
+C041,sms_send,Send: SMS Close Week,1100,1150,ctrl_sms_03_close,,,"Hi {{contact.first_name}}, close week coming up? Imagine finishing in 5 days instead of 3 weeks. That's automated reconciliation. Quick demo? {{landing_page_url}}",,"{ ""template_id"": ""ctrl_sms_03_close"" }",C041,C042,{}
+C042,wait,Wait: 90 Minutes,1300,1150,,,,,,"{ ""duration"": ""PT90M"" }",C042,C043,{}
 C043,decision,Check: Any Response?,1500,1150,,,,,,"{ ""condition"": ""any_response"" }",C043,C044,"{ ""any_response"": true }"
 C043,decision,Check: Any Response?,1500,1150,,,,,,"{ ""condition"": ""any_response"" }",C043,C046,"{ ""any_response"": false }"
-C044,tag,Tag: Engaged-Day3,1700,1100,,,,,,"{ ""tag"": ""engaged-day3"", ""score"": 25 }",C044,C045,"{}"
-C045,linkedin_message,LinkedIn: ROI Message,1900,1100,,,,,,"{ ""message"": ""Saw you checked out our close time info. Worth a quick call to discuss your specific close process?"" }",C045,C046,"{}"
-C046,stage,STAGE: Day 4 - Engagement Scoring,2100,1200,,,,,,"{}",C046,C047,"{}"
-C047,scoring,Calculate: Total Engagement Score,2300,1200,,,,,,"{ ""rules"": [{ ""action"": ""email_opened"", ""points"": 10 }, { ""action"": ""link_clicked"", ""points"": 25 }, { ""action"": ""email_reply"", ""points"": 75 }, { ""action"": ""sms_reply"", ""points"": 75 }, { ""action"": ""linkedin_accepted"", ""points"": 15 }, { ""action"": ""linkedin_reply"", ""points"": 40 }, { ""action"": ""phone_call"", ""points"": 100 }] }",C047,C048,"{}"
+C044,tag,Tag: Engaged-Day3,1700,1100,,,,,,"{ ""tag"": ""engaged-day3"", ""score"": 25 }",C044,C045,{}
+C045,linkedin_message,LinkedIn: ROI Message,1900,1100,,,,,,"{ ""message"": ""Saw you checked out our close time info. Worth a quick call to discuss your specific close process?"" }",C045,C046,{}
+C046,stage,STAGE: Day 4 - Engagement Scoring,2100,1200,,,,,,{},C046,C047,{}
+C047,scoring,Calculate: Total Engagement Score,2300,1200,,,,,,"{ ""rules"": [{ ""action"": ""email_opened"", ""points"": 10 }, { ""action"": ""link_clicked"", ""points"": 25 }, { ""action"": ""email_reply"", ""points"": 75 }, { ""action"": ""sms_reply"", ""points"": 75 }, { ""action"": ""linkedin_accepted"", ""points"": 15 }, { ""action"": ""linkedin_reply"", ""points"": 40 }, { ""action"": ""phone_call"", ""points"": 100 }] }",C047,C048,{}
 C048,decision,Route: Score >= 100?,2500,1200,,,,,,"{ ""condition"": ""score_gte_100"" }",C048,C049,"{ ""score_gte_100"": true }"
 C048,decision,Route: Score >= 100?,2500,1200,,,,,,"{ ""condition"": ""score_gte_100"" }",C048,C051,"{ ""score_gte_100"": false }"
-C049,tag,Tag: PRIORITY-LEAD,2700,1100,,,,,,"{ ""tag"": ""priority"", ""score"": 100 }",C049,C050,"{}"
-C050,task,TASK: Priority BDR Call,2900,1100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",C050,C066,"{}"
+C049,tag,Tag: PRIORITY-LEAD,2700,1100,,,,,,"{ ""tag"": ""priority"", ""score"": 100 }",C049,C050,{}
+C050,task,TASK: Priority BDR Call,2900,1100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",C050,C066,{}
 C051,decision,Route: Score 50-99?,2700,1200,,,,,,"{ ""condition"": ""score_50_to_99"" }",C051,C052,"{ ""score_50_to_99"": true }"
 C051,decision,Route: Score 50-99?,2700,1200,,,,,,"{ ""condition"": ""score_50_to_99"" }",C051,C054,"{ ""score_50_to_99"": false }"
-C052,tag,Tag: WARM,2900,1200,,,,,,"{ ""tag"": ""warm"", ""score"": 50 }",C052,C053,"{}"
+C052,tag,Tag: WARM,2900,1200,,,,,,"{ ""tag"": ""warm"", ""score"": 50 }",C052,C053,{}
 C053,email_send,Send: ROI Email,3100,1200,ctrl_email_04_roi,The real cost of manual reconciliation,"{{contact.first_name}},
 
 Let's talk numbers.
@@ -152,16 +148,15 @@ Paycile typically costs 15-20% of what you're spending on manual reconciliation.
 
 See the numbers for your operation: {{landing_page_url}}
 
-Jim Fitzgerald
-Paycile",,"","{ ""template_id"": ""ctrl_email_04_roi"" }",C053,C056,"{}"
-C054,decision,Route: Score < 50?,2700,1300,,,,,,"{ ""condition"": ""score_lt_50"" }",C054,C055,"{}"
-C055,tag,Tag: COLD,2900,1300,,,,,,"{ ""tag"": ""cold"" }",C055,C088,"{}"
-C056,stage,STAGE: Day 7 - Final Push,3300,1250,,,,,,"{}",C056,C057,"{}"
-C057,wait,Wait: Until Day 7,3500,1250,,,,,,"{ ""duration"": ""P3D"" }",C057,C058,"{}"
-C058,sms_send,Send: SMS Final Offer,3700,1250,ctrl_sms_02_intercompany,,,"{{contact.first_name}}, spent 5 days on intercompany reconciliation last close? Automate it. See real-time which entities owe what. Demo: {{landing_page_url}}",,"{ ""template_id"": ""ctrl_sms_02_intercompany"" }",C058,C059,"{}"
-C059,wait,Wait: 2 Hours,3900,1250,,,,,,"{ ""duration"": ""PT2H"" }",C059,C060,"{}"
-C060,voicemail_drop,Drop: VM Value Prop,4100,1250,ctrl_vm_02_value,,,,"Hi {{contact.first_name}}, this is Jim from Paycile following up. Quick question: how much time does your team spend on reconciliation during close? Most controllers tell me 2 to 3 weeks. We automate that entire process so you can close in days, not weeks. See a live demo at paycile.com/landing/controller. Thanks!","{ ""template_id"": ""ctrl_vm_02_value"" }",C060,C061,"{}"
-C061,wait,Wait: 4 Hours,4300,1250,,,,,,"{ ""duration"": ""PT4H"" }",C061,C062,"{}"
+Paycile",,,"{ ""template_id"": ""ctrl_email_04_roi"" }",C053,C056,{}
+C054,decision,Route: Score < 50?,2700,1300,,,,,,"{ ""condition"": ""score_lt_50"" }",C054,C055,{}
+C055,tag,Tag: COLD,2900,1300,,,,,,"{ ""tag"": ""cold"" }",C055,C088,{}
+C056,stage,STAGE: Day 7 - Final Push,3300,1250,,,,,,{},C056,C057,{}
+C057,wait,Wait: Until Day 7,3500,1250,,,,,,"{ ""duration"": ""P3D"" }",C057,C058,{}
+C058,sms_send,Send: SMS Final Offer,3700,1250,ctrl_sms_02_intercompany,,,"{{contact.first_name}}, spent 5 days on intercompany reconciliation last close? Automate it. See real-time which entities owe what. Demo: {{landing_page_url}}",,"{ ""template_id"": ""ctrl_sms_02_intercompany"" }",C058,C059,{}
+C059,wait,Wait: 2 Hours,3900,1250,,,,,,"{ ""duration"": ""PT2H"" }",C059,C060,{}
+C060,voicemail_drop,Drop: VM Value Prop,4100,1250,ctrl_vm_02_value,,,,"Hi {{contact.first_name}}, this is Jim from Paycile following up. Quick question: how much time does your team spend on reconciliation during close? Most controllers tell me 2 to 3 weeks. We automate that entire process so you can close in days, not weeks. See a live demo at paycile.com/landing/controller. Thanks!","{ ""template_id"": ""ctrl_vm_02_value"" }",C060,C061,{}
+C061,wait,Wait: 4 Hours,4300,1250,,,,,,"{ ""duration"": ""PT4H"" }",C061,C062,{}
 C062,email_send,Send: Final Outreach Email,4500,1250,ctrl_email_05_final,Last note on automating your close process,"{{contact.first_name}},
 
 This is my last note about automating your multi-entity reconciliation.
@@ -176,39 +171,41 @@ If not, no worries—I won't reach out again.
 
 Either way, best of luck with your close process.
 
-Jim Fitzgerald
-Paycile",,"","{ ""template_id"": ""ctrl_email_05_final"" }",C062,C063,"{}"
-C063,wait,Wait: 2 Days,4700,1250,,,,,,"{ ""duration"": ""P2D"" }",C063,C064,"{}"
+Paycile",,,"{ ""template_id"": ""ctrl_email_05_final"" }",C062,C063,{}
+C063,wait,Wait: 2 Days,4700,1250,,,,,,"{ ""duration"": ""P2D"" }",C063,C064,{}
 C064,decision,Check: Any Final Response?,4900,1250,,,,,,"{ ""condition"": ""any_activity"" }",C064,C065,"{ ""any_activity"": true }"
 C064,decision,Check: Any Final Response?,4900,1250,,,,,,"{ ""condition"": ""any_activity"" }",C064,C088,"{ ""any_activity"": false }"
-C065,task,TASK: Final BDR Attempt,5100,1200,,,,,,"{ ""assign_to"": ""BDR"" }",C065,C066,"{}"
-C066,stage,STAGE: Demo Booked,3100,100,,,,,,"{}",C066,C067,"{}"
-C067,tag,Tag: DEMO-SCHEDULED,3300,100,,,,,,"{ ""tag"": ""demo-scheduled"" }",C067,C068,"{}"
-C068,email_send,Send: Demo Confirmation,3500,100,,Your Controller Demo is Scheduled,"Thanks for booking! Demo details...",,"","{ ""subject"": ""Your Controller Demo is Scheduled"", ""body"": ""Thanks for booking! Demo details..."" }",C068,C069,"{}"
-C069,task,TASK: Add to Sales Calendar,3700,100,,,,,,"{ ""assign_to"": ""Sales"" }",C069,C070,"{}"
-C070,wait,Wait: Until 24hr Before Demo,3900,100,,,,,,"{ ""duration"": ""until_demo_minus_24h"" }",C070,C071,"{}"
-C071,email_send,Send: 24hr Reminder,4100,100,,Demo Tomorrow: {{demo_time}},"Looking forward to showing you...",,"","{ ""subject"": ""Demo Tomorrow: {{demo_time}}"", ""body"": ""Looking forward to showing you..."" }",C071,C072,"{}"
-C072,wait,Wait: Until 2hr Before,4300,100,,,,,,"{ ""duration"": ""until_demo_minus_2h"" }",C072,C073,"{}"
-C073,sms_send,Send: 2hr SMS Reminder,4500,100,,,,"Reminder: Your Paycile demo starts in 2 hours. See you soon!",,"{ ""text"": ""Reminder: Your Paycile demo starts in 2 hours. See you soon!"" }",C073,C074,"{}"
-C074,wait,Wait: Until Demo Time,4700,100,,,,,,"{ ""duration"": ""until_demo_time"" }",C074,C075,"{}"
+C065,task,TASK: Final BDR Attempt,5100,1200,,,,,,"{ ""assign_to"": ""BDR"" }",C065,C066,{}
+C066,stage,STAGE: Demo Booked,3100,100,,,,,,{},C066,C067,{}
+C067,tag,Tag: DEMO-SCHEDULED,3300,100,,,,,,"{ ""tag"": ""demo-scheduled"" }",C067,C068,{}
+C068,email_send,Send: Demo Confirmation,3500,100,,Your Controller Demo is Scheduled,Thanks for booking! Demo details...,,,"{ ""subject"": ""Your Controller Demo is Scheduled"", ""body"": ""Thanks for booking! Demo details..."" }",C068,C069,{}
+C069,task,TASK: Add to Sales Calendar,3700,100,,,,,,"{ ""assign_to"": ""Sales"" }",C069,C070,{}
+C070,wait,Wait: Until 24hr Before Demo,3900,100,,,,,,"{ ""duration"": ""until_demo_minus_24h"" }",C070,C071,{}
+C071,email_send,Send: 24hr Reminder,4100,100,,Demo Tomorrow: {{demo_time}},Looking forward to showing you...,,,"{ ""subject"": ""Demo Tomorrow: {{demo_time}}"", ""body"": ""Looking forward to showing you..."" }",C071,C072,{}
+C072,wait,Wait: Until 2hr Before,4300,100,,,,,,"{ ""duration"": ""until_demo_minus_2h"" }",C072,C073,{}
+C073,sms_send,Send: 2hr SMS Reminder,4500,100,,,,Reminder: Your Paycile demo starts in 2 hours. See you soon!,,"{ ""text"": ""Reminder: Your Paycile demo starts in 2 hours. See you soon!"" }",C073,C074,{}
+C074,wait,Wait: Until Demo Time,4700,100,,,,,,"{ ""duration"": ""until_demo_time"" }",C074,C075,{}
 C075,decision,Check: Demo Attended?,4900,100,,,,,,"{ ""condition"": ""demo_attended"" }",C075,C076,"{ ""demo_attended"": true }"
 C075,decision,Check: Demo Attended?,4900,100,,,,,,"{ ""condition"": ""demo_attended"" }",C075,C083,"{ ""demo_attended"": false }"
-C076,stage,STAGE: Post-Demo - Success Path,5100,50,,,,,,"{}",C076,C077,"{}"
-C077,email_send,Send: Thank You + Resources,5300,50,,Thanks {{contact.first_name}} - Next Steps,"Great connecting today...",,"","{ ""subject"": ""Thanks {{contact.first_name}} - Next Steps"", ""body"": ""Great connecting today..."" }",C077,C078,"{}"
-C078,task,TASK: Send Custom Proposal,5500,50,,,,,,"{ ""assign_to"": ""Sales"", ""priority"": ""high"" }",C078,C079,"{}"
-C079,wait,Wait: 2 Days,5700,50,,,,,,"{ ""duration"": ""P2D"" }",C079,C080,"{}"
-C080,email_send,Send: Proposal Check-in,5900,50,,Following up on proposal,"Questions on the proposal?",,"","{ ""subject"": ""Following up on proposal"", ""body"": ""Questions on the proposal?"" }",C080,C081,"{}"
-C081,task,TASK: Sales Follow-up Call,6100,50,,,,,,"{ ""assign_to"": ""Sales"" }",C081,C082,"{}"
-C082,goal,GOAL: Opportunity Won,6300,50,,,,,,"{}",,,
-C083,stage,STAGE: No-Show Recovery,5100,200,,,,,,"{}",C083,C084,"{}"
-C084,email_send,Send: Sorry We Missed You,5300,200,,Missed you at our demo,"No worries - want to reschedule?",,"","{ ""subject"": ""Missed you at our demo"", ""body"": ""No worries - want to reschedule?"" }",C084,C085,"{}"
-C085,sms_send,Send: Reschedule SMS,5500,200,,,,"Missed our demo? No problem! Reschedule: {{landing_page_url}}",,"{ ""text"": ""Missed our demo? No problem! Reschedule: {{landing_page_url}}"" }",C085,C086,"{}"
-C086,wait,Wait: 3 Days,5700,200,,,,,,"{ ""duration"": ""P3D"" }",C086,C087,"{}"
+C076,stage,STAGE: Post-Demo - Success Path,5100,50,,,,,,{},C076,C077,{}
+C077,email_send,Send: Thank You + Resources,5300,50,,Thanks {{contact.first_name}} - Next Steps,Great connecting today...,,,"{ ""subject"": ""Thanks {{contact.first_name}} - Next Steps"", ""body"": ""Great connecting today..."" }",C077,C078,{}
+C078,task,TASK: Send Custom Proposal,5500,50,,,,,,"{ ""assign_to"": ""Sales"", ""priority"": ""high"" }",C078,C079,{}
+C079,wait,Wait: 2 Days,5700,50,,,,,,"{ ""duration"": ""P2D"" }",C079,C080,{}
+C080,email_send,Send: Proposal Check-in,5900,50,,Following up on proposal,Questions on the proposal?,,,"{ ""subject"": ""Following up on proposal"", ""body"": ""Questions on the proposal?"" }",C080,C081,{}
+C081,task,TASK: Sales Follow-up Call,6100,50,,,,,,"{ ""assign_to"": ""Sales"" }",C081,C082,{}
+C082,goal,GOAL: Opportunity Won,6300,50,,,,,,{},,,
+C083,stage,STAGE: No-Show Recovery,5100,200,,,,,,{},C083,C084,{}
+C084,email_send,Send: Sorry We Missed You,5300,200,,Missed you at our demo,No worries - want to reschedule?,,,"{ ""subject"": ""Missed you at our demo"", ""body"": ""No worries - want to reschedule?"" }",C084,C085,{}
+C085,sms_send,Send: Reschedule SMS,5500,200,,,,Missed our demo? No problem! Reschedule: {{landing_page_url}},,"{ ""text"": ""Missed our demo? No problem! Reschedule: {{landing_page_url}}"" }",C085,C086,{}
+C086,wait,Wait: 3 Days,5700,200,,,,,,"{ ""duration"": ""P3D"" }",C086,C087,{}
 C087,decision,Check: Rescheduled?,5900,200,,,,,,"{ ""condition"": ""demo_rescheduled"" }",C087,C070,"{ ""demo_rescheduled"": true }"
 C087,decision,Check: Rescheduled?,5900,200,,,,,,"{ ""condition"": ""demo_rescheduled"" }",C087,C088,"{ ""demo_rescheduled"": false }"
-C088,stage,STAGE: 30-Day Nurture,5300,1350,,,,,,"{}",C088,C089,"{}"
-C089,wait,Wait: 30 Days,5500,1350,,,,,,"{ ""duration"": ""P30D"" }",C089,C090,"{}"
-C090,email_send,Send: Re-engagement,5700,1350,,Still closing in 3 weeks?,"Following up on multi-entity automation...",,"","{ ""subject"": ""Still closing in 3 weeks?"", ""body"": ""Following up on multi-entity automation..."" }",,,
+C088,stage,STAGE: 30-Day Nurture,5300,1350,,,,,,{},C088,C089,{}
+C089,wait,Wait: 30 Days,5500,1350,,,,,,"{ ""duration"": ""P30D"" }",C089,C090,{}
+C090,email_send,Send: Re-engagement,5700,1350,,Still closing in 3 weeks?,Following up on multi-entity automation...,,,"{ ""subject"": ""Still closing in 3 weeks?"", ""body"": ""Following up on multi-entity automation..."" }",,,
+
+
+
 
 
 

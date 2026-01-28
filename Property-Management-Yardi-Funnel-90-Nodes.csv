@@ -1,9 +1,9 @@
 Node ID,Node Type,Node Name,Position X,Position Y,Template ID,Email Subject,Email Body,SMS Text,Voicemail Script,Config JSON,Edge From,Edge To,Edge Condition
-P000,start,Import: PropMgmt Finance List,100,500,,,,,,"{}",P000,P001,"{}"
-P001,filter,Filter: Property Management,300,500,,,,,,"{ ""criteria"": ""industry=property_management"" }",P001,P002,"{}"
-P002,filter,Filter: Yardi Users,500,500,,,,,,"{ ""criteria"": ""uses_yardi=true"" }",P002,P003,"{}"
-P003,tag,Tag: PropMgmt-Yardi,700,500,,,,,,"{ ""tag"": ""propmgmt-yardi"" }",P003,P004,"{}"
-P004,stage,STAGE: Day 1 - Yardi Native Hook,900,500,,,,,,"{}",P004,P005,"{}"
+P000,start,Import: PropMgmt Finance List,100,500,,,,,,{},P000,P001,{}
+P001,filter,Filter: Property Management,300,500,,,,,,"{ ""criteria"": ""industry=property_management"" }",P001,P002,{}
+P002,filter,Filter: Yardi Users,500,500,,,,,,"{ ""criteria"": ""uses_yardi=true"" }",P002,P003,{}
+P003,tag,Tag: PropMgmt-Yardi,700,500,,,,,,"{ ""tag"": ""propmgmt-yardi"" }",P003,P004,{}
+P004,stage,STAGE: Day 1 - Yardi Native Hook,900,500,,,,,,{},P004,P005,{}
 P005,email_send,Send: Native Yardi Integration,1100,400,prop_email_01_intro,Native Yardi integration for payment reconciliation,"Hi {{contact.first_name}},
 
 If you're managing payment reconciliation across multiple properties in Yardi, you know the pain:
@@ -28,35 +28,34 @@ Our property management customers:
 
 30-minute demo shows how it works in your Yardi environment.
 
-Jim Fitzgerald
-Property Management Solutions - Paycile",,"","{ ""template_id"": ""prop_email_01_intro"", ""landing_page"": ""/landing/property-management"" }",P005,P006,"{}"
-P006,wait,Wait: 2 Hours,1300,400,,,,,,"{ ""duration"": ""PT2H"" }",P006,P007,"{}"
+Property Management Solutions - Paycile",,,"{ ""template_id"": ""prop_email_01_intro"", ""landing_page"": ""/landing/property-management"" }",P005,P006,{}
+P006,wait,Wait: 2 Hours,1300,400,,,,,,"{ ""duration"": ""PT2H"" }",P006,P007,{}
 P007,decision,Check: Email Opened?,1500,400,,,,,,"{ ""condition"": ""email_opened"" }",P007,P008,"{ ""email_opened"": true }"
 P007,decision,Check: Email Opened?,1500,400,,,,,,"{ ""condition"": ""email_opened"" }",P007,P021,"{ ""email_opened"": false }"
-P008,tag,Tag: Email-Engaged,1700,300,,,,,,"{ ""tag"": ""engaged"", ""score"": 10 }",P008,P009,"{}"
+P008,tag,Tag: Email-Engaged,1700,300,,,,,,"{ ""tag"": ""engaged"", ""score"": 10 }",P008,P009,{}
 P009,decision,Check: Link Clicked?,1900,300,,,,,,"{ ""condition"": ""link_clicked"" }",P009,P010,"{ ""link_clicked"": true }"
 P009,decision,Check: Link Clicked?,1900,300,,,,,,"{ ""condition"": ""link_clicked"" }",P009,P026,"{ ""link_clicked"": false }"
-P010,tag,Tag: HIGH-INTEREST,2100,200,,,,,,"{ ""tag"": ""high-interest"", ""score"": 50 }",P010,P011,"{}"
-P011,sms_send,Send: SMS Yardi Quick Pitch,2300,200,prop_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. Spending hours reconciling rent payments in Yardi? We automate it natively inside Yardi. Save 85% of time. Demo: {{landing_page_url}}",,"{ ""template_id"": ""prop_sms_01_intro"" }",P011,P012,"{}"
-P012,wait,Wait: 1 Hour,2500,200,,,,,,"{ ""duration"": ""PT1H"" }",P012,P013,"{}"
+P010,tag,Tag: HIGH-INTEREST,2100,200,,,,,,"{ ""tag"": ""high-interest"", ""score"": 50 }",P010,P011,{}
+P011,sms_send,Send: SMS Yardi Quick Pitch,2300,200,prop_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. Spending hours reconciling rent payments in Yardi? We automate it natively inside Yardi. Save 85% of time. Demo: {{landing_page_url}}",,"{ ""template_id"": ""prop_sms_01_intro"" }",P011,P012,{}
+P012,wait,Wait: 1 Hour,2500,200,,,,,,"{ ""duration"": ""PT1H"" }",P012,P013,{}
 P013,decision,Check: SMS Reply?,2700,200,,,,,,"{ ""condition"": ""sms_reply"" }",P013,P014,"{ ""sms_reply"": true }"
 P013,decision,Check: SMS Reply?,2700,200,,,,,,"{ ""condition"": ""sms_reply"" }",P013,P026,"{ ""sms_reply"": false }"
-P014,task,TASK: Hot Lead - Schedule Demo,2900,100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",P014,P066,"{}"
-P015,linkedin_connect,LinkedIn: Connect,1100,600,,,,,,"{ ""message"": ""Hi {{contact.first_name}}, I help property management teams automate reconciliation in Yardi. Let's connect!"" }",P015,P016,"{}"
-P016,wait,Wait: 4 Hours,1300,600,,,,,,"{ ""duration"": ""PT4H"" }",P016,P017,"{}"
+P014,task,TASK: Hot Lead - Schedule Demo,2900,100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",P014,P066,{}
+P015,linkedin_connect,LinkedIn: Connect,1100,600,,,,,,"{ ""message"": ""Hi {{contact.first_name}}, I help property management teams automate reconciliation in Yardi. Let's connect!"" }",P015,P016,{}
+P016,wait,Wait: 4 Hours,1300,600,,,,,,"{ ""duration"": ""PT4H"" }",P016,P017,{}
 P017,decision,Check: Connected?,1500,600,,,,,,"{ ""condition"": ""linkedin_accepted"" }",P017,P018,"{ ""linkedin_accepted"": true }"
 P017,decision,Check: Connected?,1500,600,,,,,,"{ ""condition"": ""linkedin_accepted"" }",P017,P026,"{ ""linkedin_accepted"": false }"
-P018,tag,Tag: LinkedIn-Connected,1700,550,,,,,,"{ ""tag"": ""linkedin"", ""score"": 15 }",P018,P019,"{}"
-P019,linkedin_message,LinkedIn: Yardi Message,1900,550,,,,,,"{ ""message"": ""Using Yardi Voyager? We integrate natively for automated reconciliation. Worth a quick demo?"" }",P019,P020,"{}"
-P020,wait,Wait: 1 Day,2100,550,,,,,,"{ ""duration"": ""P1D"" }",P020,P026,"{}"
-P021,stage,STAGE: Not Opened - Direct SMS,1700,500,,,,,,"{}",P021,P022,"{}"
-P022,wait,Wait: 5 Hours,1900,500,,,,,,"{ ""duration"": ""PT5H"" }",P022,P023,"{}"
-P023,sms_send,Send: SMS Direct,2100,500,prop_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. Spending hours reconciling rent payments in Yardi? We automate it natively inside Yardi. Save 85% of time. Demo: {{landing_page_url}}",,"{ ""template_id"": ""prop_sms_01_intro"" }",P023,P024,"{}"
-P024,wait,Wait: 2 Hours,2300,500,,,,,,"{ ""duration"": ""PT2H"" }",P024,P025,"{}"
+P018,tag,Tag: LinkedIn-Connected,1700,550,,,,,,"{ ""tag"": ""linkedin"", ""score"": 15 }",P018,P019,{}
+P019,linkedin_message,LinkedIn: Yardi Message,1900,550,,,,,,"{ ""message"": ""Using Yardi Voyager? We integrate natively for automated reconciliation. Worth a quick demo?"" }",P019,P020,{}
+P020,wait,Wait: 1 Day,2100,550,,,,,,"{ ""duration"": ""P1D"" }",P020,P026,{}
+P021,stage,STAGE: Not Opened - Direct SMS,1700,500,,,,,,{},P021,P022,{}
+P022,wait,Wait: 5 Hours,1900,500,,,,,,"{ ""duration"": ""PT5H"" }",P022,P023,{}
+P023,sms_send,Send: SMS Direct,2100,500,prop_sms_01_intro,,,"Hi {{contact.first_name}}, Jim from Paycile. Spending hours reconciling rent payments in Yardi? We automate it natively inside Yardi. Save 85% of time. Demo: {{landing_page_url}}",,"{ ""template_id"": ""prop_sms_01_intro"" }",P023,P024,{}
+P024,wait,Wait: 2 Hours,2300,500,,,,,,"{ ""duration"": ""PT2H"" }",P024,P025,{}
 P025,decision,Check: SMS Reply?,2500,500,,,,,,"{ ""condition"": ""sms_reply"" }",P025,P066,"{ ""sms_reply"": true }"
 P025,decision,Check: SMS Reply?,2500,500,,,,,,"{ ""condition"": ""sms_reply"" }",P025,P026,"{ ""sms_reply"": false }"
-P026,stage,STAGE: Day 2 - Portfolio View,2300,650,,,,,,"{}",P026,P027,"{}"
-P027,wait,Wait: Until Day 2,2500,650,,,,,,"{ ""duration"": ""until_day_2_9am"" }",P027,P028,"{}"
+P026,stage,STAGE: Day 2 - Portfolio View,2300,650,,,,,,{},P026,P027,{}
+P027,wait,Wait: Until Day 2,2500,650,,,,,,"{ ""duration"": ""until_day_2_9am"" }",P027,P028,{}
 P028,email_send,Send: Multi-Property Email,2700,650,prop_email_02_multi_property,Reconcile your entire portfolio from one dashboard,"{{contact.first_name}},
 
 Managing 20+ properties? 50? 100+?
@@ -77,19 +76,18 @@ One property manager with 85 properties told me: *""I used to spend 2 days getti
 
 **See your portfolio in real-time:** {{landing_page_url}}
 
-Jim Fitzgerald
-Paycile",,"","{ ""template_id"": ""prop_email_02_multi_property"" }",P028,P029,"{}"
-P029,wait,Wait: 3 Hours,2900,650,,,,,,"{ ""duration"": ""PT3H"" }",P029,P030,"{}"
+Paycile",,,"{ ""template_id"": ""prop_email_02_multi_property"" }",P028,P029,{}
+P029,wait,Wait: 3 Hours,2900,650,,,,,,"{ ""duration"": ""PT3H"" }",P029,P030,{}
 P030,decision,Check: Email Opened?,3100,650,,,,,,"{ ""condition"": ""email_opened"" }",P030,P031,"{ ""email_opened"": true }"
 P030,decision,Check: Email Opened?,3100,650,,,,,,"{ ""condition"": ""email_opened"" }",P030,P034,"{ ""email_opened"": false }"
 P031,decision,Check: Link Clicked?,3300,600,,,,,,"{ ""condition"": ""link_clicked"" }",P031,P032,"{ ""link_clicked"": true }"
 P031,decision,Check: Link Clicked?,3300,600,,,,,,"{ ""condition"": ""link_clicked"" }",P031,P034,"{ ""link_clicked"": false }"
-P032,tag,Tag: Portfolio-Interested,3500,550,,,,,,"{ ""tag"": ""portfolio-interest"", ""score"": 30 }",P032,P033,"{}"
-P033,task,TASK: BDR Call,3700,550,,,,,,"{ ""assign_to"": ""BDR"" }",P033,P066,"{}"
-P034,voicemail_drop,Drop: VM Intro,3300,700,prop_vm_01_intro,,,,"Hi {{contact.first_name}}, Jim Fitzgerald with Paycile. I help property management companies automate payment reconciliation directly in Yardi Voyager. Our clients save 85 percent of their reconciliation time and get real-time cash visibility across their entire portfolio. If you'd like to see the native Yardi integration, visit paycile.com/landing/property-management to book a demo. Thanks!","{ ""template_id"": ""prop_vm_01_intro"" }",P034,P035,"{}"
-P035,wait,Wait: 6 Hours,3500,700,,,,,,"{ ""duration"": ""PT6H"" }",P035,P036,"{}"
-P036,stage,STAGE: Day 3 - Native Integration,100,1200,,,,,,"{}",P036,P037,"{}"
-P037,wait,Wait: Until Day 3,300,1200,,,,,,"{ ""duration"": ""P1D"" }",P037,P038,"{}"
+P032,tag,Tag: Portfolio-Interested,3500,550,,,,,,"{ ""tag"": ""portfolio-interest"", ""score"": 30 }",P032,P033,{}
+P033,task,TASK: BDR Call,3700,550,,,,,,"{ ""assign_to"": ""BDR"" }",P033,P066,{}
+P034,voicemail_drop,Drop: VM Intro,3300,700,prop_vm_01_intro,,,,"Hi {{contact.first_name}}, {{sender.name}} with Paycile. I help property management companies automate payment reconciliation directly in Yardi Voyager. Our clients save 85 percent of their reconciliation time and get real-time cash visibility across their entire portfolio. If you'd like to see the native Yardi integration, visit paycile.com/landing/property-management to book a demo. Thanks!","{ ""template_id"": ""prop_vm_01_intro"" }",P034,P035,{}
+P035,wait,Wait: 6 Hours,3500,700,,,,,,"{ ""duration"": ""PT6H"" }",P035,P036,{}
+P036,stage,STAGE: Day 3 - Native Integration,100,1200,,,,,,{},P036,P037,{}
+P037,wait,Wait: Until Day 3,300,1200,,,,,,"{ ""duration"": ""P1D"" }",P037,P038,{}
 P038,email_send,Send: Yardi Native Benefits,500,1200,prop_email_03_yardi_native,Why Yardi-native integration matters,"{{contact.first_name}},
 
 You've probably seen ""Yardi integration"" before. Most tools mean:
@@ -113,19 +111,18 @@ One property finance director managing a 200-property portfolio said: *""It's li
 
 **See the native integration:** {{landing_page_url}}
 
-Jim Fitzgerald
-Paycile",,"","{ ""template_id"": ""prop_email_03_yardi_native"" }",P038,P039,"{}"
-P039,wait,Wait: 4 Hours,700,1200,,,,,,"{ ""duration"": ""PT4H"" }",P039,P040,"{}"
+Paycile",,,"{ ""template_id"": ""prop_email_03_yardi_native"" }",P038,P039,{}
+P039,wait,Wait: 4 Hours,700,1200,,,,,,"{ ""duration"": ""PT4H"" }",P039,P040,{}
 P040,decision,Check: Email Engagement?,900,1200,,,,,,"{ ""condition"": ""email_opened"" }",P040,P041,"{ ""email_opened"": true }"
 P040,decision,Check: Email Engagement?,900,1200,,,,,,"{ ""condition"": ""email_opened"" }",P040,P046,"{ ""email_opened"": false }"
-P041,sms_send,Send: SMS Portfolio Stats,1100,1150,prop_sms_02_portfolio,,,"{{contact.first_name}}, managing 20+ properties? Get real-time cash position across entire portfolio. Native Yardi integration. See demo: {{landing_page_url}}",,"{ ""template_id"": ""prop_sms_02_portfolio"" }",P041,P042,"{}"
-P042,wait,Wait: 2 Hours,1300,1150,,,,,,"{ ""duration"": ""PT2H"" }",P042,P043,"{}"
+P041,sms_send,Send: SMS Portfolio Stats,1100,1150,prop_sms_02_portfolio,,,"{{contact.first_name}}, managing 20+ properties? Get real-time cash position across entire portfolio. Native Yardi integration. See demo: {{landing_page_url}}",,"{ ""template_id"": ""prop_sms_02_portfolio"" }",P041,P042,{}
+P042,wait,Wait: 2 Hours,1300,1150,,,,,,"{ ""duration"": ""PT2H"" }",P042,P043,{}
 P043,decision,Check: Response?,1500,1150,,,,,,"{ ""condition"": ""any_response"" }",P043,P044,"{ ""any_response"": true }"
 P043,decision,Check: Response?,1500,1150,,,,,,"{ ""condition"": ""any_response"" }",P043,P046,"{ ""any_response"": false }"
-P044,tag,Tag: Engaged-Day3,1700,1100,,,,,,"{ ""tag"": ""engaged-d3"", ""score"": 25 }",P044,P045,"{}"
-P045,linkedin_message,LinkedIn: Integration Message,1900,1100,,,,,,"{ ""message"": ""Yardi user? Our native integration saves 85% of reconciliation time. Quick demo?"" }",P045,P046,"{}"
-P046,stage,STAGE: Day 5 - 500-Property Case,2100,1200,,,,,,"{}",P046,P047,"{}"
-P047,wait,Wait: Until Day 5,2300,1200,,,,,,"{ ""duration"": ""P2D"" }",P047,P048,"{}"
+P044,tag,Tag: Engaged-Day3,1700,1100,,,,,,"{ ""tag"": ""engaged-d3"", ""score"": 25 }",P044,P045,{}
+P045,linkedin_message,LinkedIn: Integration Message,1900,1100,,,,,,"{ ""message"": ""Yardi user? Our native integration saves 85% of reconciliation time. Quick demo?"" }",P045,P046,{}
+P046,stage,STAGE: Day 5 - 500-Property Case,2100,1200,,,,,,{},P046,P047,{}
+P047,wait,Wait: Until Day 5,2300,1200,,,,,,"{ ""duration"": ""P2D"" }",P047,P048,{}
 P048,email_send,Send: 500-Property Case Study,2500,1200,prop_email_04_case,How this PM company automated 500+ properties,"{{contact.first_name}},
 
 Sharing a recent success story:
@@ -150,56 +147,58 @@ The Finance Director: *""We finally have time to analyze our portfolio performan
 
 See the demo: {{landing_page_url}}
 
-Jim Fitzgerald
-Paycile",,"","{ ""template_id"": ""prop_email_04_case"" }",P048,P049,"{}"
-P049,wait,Wait: 3 Hours,2700,1200,,,,,,"{ ""duration"": ""PT3H"" }",P049,P050,"{}"
+Paycile",,,"{ ""template_id"": ""prop_email_04_case"" }",P048,P049,{}
+P049,wait,Wait: 3 Hours,2700,1200,,,,,,"{ ""duration"": ""PT3H"" }",P049,P050,{}
 P050,decision,Check: Opened/Clicked?,2900,1200,,,,,,"{ ""condition"": ""email_activity"" }",P050,P051,"{ ""email_activity"": true }"
 P050,decision,Check: Opened/Clicked?,2900,1200,,,,,,"{ ""condition"": ""email_activity"" }",P050,P055,"{ ""email_activity"": false }"
-P051,sms_send,Send: SMS Case Highlight,3100,1150,,,,"{{contact.first_name}}, PM company automated 500 properties with native Yardi integration. Save 85% of recon time. Demo? {{landing_page_url}}",,"{ ""text"": ""{{contact.first_name}}, PM company automated 500 properties with native Yardi integration. Save 85% of recon time. Demo? {{landing_page_url}}"" }",P051,P052,"{}"
-P052,wait,Wait: 2 Hours,3300,1150,,,,,,"{ ""duration"": ""PT2H"" }",P052,P053,"{}"
+P051,sms_send,Send: SMS Case Highlight,3100,1150,,,,"{{contact.first_name}}, PM company automated 500 properties with native Yardi integration. Save 85% of recon time. Demo? {{landing_page_url}}",,"{ ""text"": ""{{contact.first_name}}, PM company automated 500 properties with native Yardi integration. Save 85% of recon time. Demo? {{landing_page_url}}"" }",P051,P052,{}
+P052,wait,Wait: 2 Hours,3300,1150,,,,,,"{ ""duration"": ""PT2H"" }",P052,P053,{}
 P053,decision,Check: Response?,3500,1150,,,,,,"{ ""condition"": ""any_response"" }",P053,P054,"{ ""any_response"": true }"
 P053,decision,Check: Response?,3500,1150,,,,,,"{ ""condition"": ""any_response"" }",P053,P055,"{ ""any_response"": false }"
-P054,task,TASK: BDR Outreach,3700,1100,,,,,,"{ ""assign_to"": ""BDR"" }",P054,P066,"{}"
-P055,voicemail_drop,Drop: VM Case Study,3100,1250,,,,"Hi {{contact.first_name}}, Jim from Paycile. Just helped a property management company automate 500 properties in Yardi. Their reconciliation time dropped 85 percent. If you'd like to see the integration, book at paycile.com/landing/property-management. Thanks!","{ ""ttsScript"": ""Hi {{contact.first_name}}, Jim from Paycile. Just helped a property management company automate 500 properties in Yardi. Their reconciliation time dropped 85 percent. If you'd like to see the integration, book at paycile.com/landing/property-management. Thanks!"" }",P055,P056,"{}"
-P056,stage,STAGE: Day 7 - Scoring Checkpoint,3900,1200,,,,,,"{}",P056,P057,"{}"
-P057,scoring,Calculate: Total Engagement,4100,1200,,,,,,"{ ""rules"": [{ ""action"": ""email_opened"", ""points"": 10 }, { ""action"": ""landing_page_visit"", ""points"": 35 }, { ""action"": ""link_clicked"", ""points"": 25 }, { ""action"": ""email_reply"", ""points"": 100 }, { ""action"": ""sms_reply"", ""points"": 100 }, { ""action"": ""linkedin_accepted"", ""points"": 15 }] }",P057,P058,"{}"
+P054,task,TASK: BDR Outreach,3700,1100,,,,,,"{ ""assign_to"": ""BDR"" }",P054,P066,{}
+P055,voicemail_drop,Drop: VM Case Study,3100,1250,,,,"Hi {{contact.first_name}}, Jim from Paycile. Just helped a property management company automate 500 properties in Yardi. Their reconciliation time dropped 85 percent. If you'd like to see the integration, book at paycile.com/landing/property-management. Thanks!","{ ""ttsScript"": ""Hi {{contact.first_name}}, Jim from Paycile. Just helped a property management company automate 500 properties in Yardi. Their reconciliation time dropped 85 percent. If you'd like to see the integration, book at paycile.com/landing/property-management. Thanks!"" }",P055,P056,{}
+P056,stage,STAGE: Day 7 - Scoring Checkpoint,3900,1200,,,,,,{},P056,P057,{}
+P057,scoring,Calculate: Total Engagement,4100,1200,,,,,,"{ ""rules"": [{ ""action"": ""email_opened"", ""points"": 10 }, { ""action"": ""landing_page_visit"", ""points"": 35 }, { ""action"": ""link_clicked"", ""points"": 25 }, { ""action"": ""email_reply"", ""points"": 100 }, { ""action"": ""sms_reply"", ""points"": 100 }, { ""action"": ""linkedin_accepted"", ""points"": 15 }] }",P057,P058,{}
 P058,decision,Route: Score >= 75?,4300,1200,,,,,,"{ ""condition"": ""score_gte_75"" }",P058,P059,"{ ""score_gte_75"": true }"
 P058,decision,Route: Score >= 75?,4300,1200,,,,,,"{ ""condition"": ""score_gte_75"" }",P058,P061,"{ ""score_gte_75"": false }"
-P059,tag,Tag: HOT-YARDI-LEAD,4500,1100,,,,,,"{ ""tag"": ""hot"", ""score"": 100 }",P059,P060,"{}"
-P060,task,TASK: Priority Demo Booking,4700,1100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",P060,P066,"{}"
+P059,tag,Tag: HOT-YARDI-LEAD,4500,1100,,,,,,"{ ""tag"": ""hot"", ""score"": 100 }",P059,P060,{}
+P060,task,TASK: Priority Demo Booking,4700,1100,,,,,,"{ ""assign_to"": ""BDR"", ""priority"": ""urgent"" }",P060,P066,{}
 P061,decision,Route: Score 35-74?,4500,1200,,,,,,"{ ""condition"": ""score_35_to_74"" }",P061,P062,"{ ""score_35_to_74"": true }"
 P061,decision,Route: Score 35-74?,4500,1200,,,,,,"{ ""condition"": ""score_35_to_74"" }",P061,P064,"{ ""score_35_to_74"": false }"
-P062,tag,Tag: WARM,4700,1200,,,,,,"{ ""tag"": ""warm"", ""score"": 50 }",P062,P063,"{}"
-P063,sms_send,Send: Final SMS Push,4900,1200,,,,"Final offer {{contact.first_name}} - see native Yardi integration. Save 85% of recon time. {{landing_page_url}}",,"{ ""text"": ""Final offer {{contact.first_name}} - see native Yardi integration. Save 85% of recon time. {{landing_page_url}}"" }",P063,P088,"{}"
-P064,decision,Route: Score < 35?,4500,1300,,,,,,"{ ""condition"": ""score_lt_35"" }",P064,P065,"{}"
-P065,tag,Tag: COLD,4700,1300,,,,,,"{ ""tag"": ""cold"" }",P065,P088,"{}"
-P066,stage,STAGE: Yardi Demo Booked,3100,100,,,,,,"{}",P066,P067,"{}"
-P067,tag,Tag: DEMO-SCHEDULED,3300,100,,,,,,"{ ""tag"": ""demo-scheduled"" }",P067,P068,"{}"
-P068,email_send,Send: Demo Confirmation,3500,100,,Your Yardi Integration Demo,"Looking forward to showing you...",,"","{ ""subject"": ""Your Yardi Integration Demo"", ""body"": ""Looking forward to showing you..."" }",P068,P069,"{}"
-P069,task,TASK: Prep Yardi Demo Environment,3700,100,,,,,,"{ ""assign_to"": ""Sales"", ""note"": ""Set up Yardi demo instance"" }",P069,P070,"{}"
-P070,wait,Wait: Until 24hr Before,3900,100,,,,,,"{ ""duration"": ""until_demo_minus_24h"" }",P070,P071,"{}"
-P071,email_send,Send: Demo Prep Email,4100,100,,Tomorrow: Yardi Integration Demo,"Demo prep info...",,"","{ ""subject"": ""Tomorrow: Yardi Integration Demo"", ""body"": ""Demo prep info..."" }",P071,P072,"{}"
-P072,wait,Wait: Until 2hr Before,4300,100,,,,,,"{ ""duration"": ""until_demo_minus_2h"" }",P072,P073,"{}"
-P073,sms_send,Send: Demo Reminder SMS,4500,100,,,,"Demo starts in 2 hours! Ready to see native Yardi reconciliation automation.",,"{ ""text"": ""Demo starts in 2 hours! Ready to see native Yardi reconciliation automation."" }",P073,P074,"{}"
-P074,wait,Wait: Until Demo,4700,100,,,,,,"{ ""duration"": ""until_demo_time"" }",P074,P075,"{}"
+P062,tag,Tag: WARM,4700,1200,,,,,,"{ ""tag"": ""warm"", ""score"": 50 }",P062,P063,{}
+P063,sms_send,Send: Final SMS Push,4900,1200,,,,Final offer {{contact.first_name}} - see native Yardi integration. Save 85% of recon time. {{landing_page_url}},,"{ ""text"": ""Final offer {{contact.first_name}} - see native Yardi integration. Save 85% of recon time. {{landing_page_url}}"" }",P063,P088,{}
+P064,decision,Route: Score < 35?,4500,1300,,,,,,"{ ""condition"": ""score_lt_35"" }",P064,P065,{}
+P065,tag,Tag: COLD,4700,1300,,,,,,"{ ""tag"": ""cold"" }",P065,P088,{}
+P066,stage,STAGE: Yardi Demo Booked,3100,100,,,,,,{},P066,P067,{}
+P067,tag,Tag: DEMO-SCHEDULED,3300,100,,,,,,"{ ""tag"": ""demo-scheduled"" }",P067,P068,{}
+P068,email_send,Send: Demo Confirmation,3500,100,,Your Yardi Integration Demo,Looking forward to showing you...,,,"{ ""subject"": ""Your Yardi Integration Demo"", ""body"": ""Looking forward to showing you..."" }",P068,P069,{}
+P069,task,TASK: Prep Yardi Demo Environment,3700,100,,,,,,"{ ""assign_to"": ""Sales"", ""note"": ""Set up Yardi demo instance"" }",P069,P070,{}
+P070,wait,Wait: Until 24hr Before,3900,100,,,,,,"{ ""duration"": ""until_demo_minus_24h"" }",P070,P071,{}
+P071,email_send,Send: Demo Prep Email,4100,100,,Tomorrow: Yardi Integration Demo,Demo prep info...,,,"{ ""subject"": ""Tomorrow: Yardi Integration Demo"", ""body"": ""Demo prep info..."" }",P071,P072,{}
+P072,wait,Wait: Until 2hr Before,4300,100,,,,,,"{ ""duration"": ""until_demo_minus_2h"" }",P072,P073,{}
+P073,sms_send,Send: Demo Reminder SMS,4500,100,,,,Demo starts in 2 hours! Ready to see native Yardi reconciliation automation.,,"{ ""text"": ""Demo starts in 2 hours! Ready to see native Yardi reconciliation automation."" }",P073,P074,{}
+P074,wait,Wait: Until Demo,4700,100,,,,,,"{ ""duration"": ""until_demo_time"" }",P074,P075,{}
 P075,decision,Check: Attended?,4900,100,,,,,,"{ ""condition"": ""demo_attended"" }",P075,P076,"{ ""demo_attended"": true }"
 P075,decision,Check: Attended?,4900,100,,,,,,"{ ""condition"": ""demo_attended"" }",P075,P083,"{ ""demo_attended"": false }"
-P076,stage,STAGE: Post-Demo Success,5100,50,,,,,,"{}",P076,P077,"{}"
-P077,email_send,Send: Thank You + ROI Report,5300,50,,Your Yardi Integration ROI Report,"Based on our demo...",,"","{ ""subject"": ""Your Yardi Integration ROI Report"", ""body"": ""Based on our demo..."" }",P077,P078,"{}"
-P078,task,TASK: Send Custom Proposal,5500,50,,,,,,"{ ""assign_to"": ""Sales"" }",P078,P079,"{}"
-P079,wait,Wait: 2 Days,5700,50,,,,,,"{ ""duration"": ""P2D"" }",P079,P080,"{}"
-P080,email_send,Send: Proposal Check-in,5900,50,,Questions on the Yardi integration?,"Following up...",,"","{ ""subject"": ""Questions on the Yardi integration?"", ""body"": ""Following up..."" }",P080,P081,"{}"
-P081,task,TASK: Sales Call,6100,50,,,,,,"{ ""assign_to"": ""Sales"" }",P081,P082,"{}"
-P082,goal,GOAL: Deal Closed,6300,50,,,,,,"{}",,,
-P083,stage,STAGE: Demo No-Show,5100,200,,,,,,"{}",P083,P084,"{}"
-P084,email_send,Send: Sorry We Missed You,5300,200,,Missed the Yardi demo,"Want to reschedule?",,"","{ ""subject"": ""Missed the Yardi demo"", ""body"": ""Want to reschedule?"" }",P084,P085,"{}"
-P085,sms_send,Send: Reschedule SMS,5500,200,,,,"Missed our Yardi demo. Reschedule? {{landing_page_url}}",,"{ ""text"": ""Missed our Yardi demo. Reschedule? {{landing_page_url}}"" }",P085,P086,"{}"
-P086,wait,Wait: 3 Days,5700,200,,,,,,"{ ""duration"": ""P3D"" }",P086,P087,"{}"
+P076,stage,STAGE: Post-Demo Success,5100,50,,,,,,{},P076,P077,{}
+P077,email_send,Send: Thank You + ROI Report,5300,50,,Your Yardi Integration ROI Report,Based on our demo...,,,"{ ""subject"": ""Your Yardi Integration ROI Report"", ""body"": ""Based on our demo..."" }",P077,P078,{}
+P078,task,TASK: Send Custom Proposal,5500,50,,,,,,"{ ""assign_to"": ""Sales"" }",P078,P079,{}
+P079,wait,Wait: 2 Days,5700,50,,,,,,"{ ""duration"": ""P2D"" }",P079,P080,{}
+P080,email_send,Send: Proposal Check-in,5900,50,,Questions on the Yardi integration?,Following up...,,,"{ ""subject"": ""Questions on the Yardi integration?"", ""body"": ""Following up..."" }",P080,P081,{}
+P081,task,TASK: Sales Call,6100,50,,,,,,"{ ""assign_to"": ""Sales"" }",P081,P082,{}
+P082,goal,GOAL: Deal Closed,6300,50,,,,,,{},,,
+P083,stage,STAGE: Demo No-Show,5100,200,,,,,,{},P083,P084,{}
+P084,email_send,Send: Sorry We Missed You,5300,200,,Missed the Yardi demo,Want to reschedule?,,,"{ ""subject"": ""Missed the Yardi demo"", ""body"": ""Want to reschedule?"" }",P084,P085,{}
+P085,sms_send,Send: Reschedule SMS,5500,200,,,,Missed our Yardi demo. Reschedule? {{landing_page_url}},,"{ ""text"": ""Missed our Yardi demo. Reschedule? {{landing_page_url}}"" }",P085,P086,{}
+P086,wait,Wait: 3 Days,5700,200,,,,,,"{ ""duration"": ""P3D"" }",P086,P087,{}
 P087,decision,Check: Rescheduled?,5900,200,,,,,,"{ ""condition"": ""rescheduled"" }",P087,P070,"{ ""rescheduled"": true }"
 P087,decision,Check: Rescheduled?,5900,200,,,,,,"{ ""condition"": ""rescheduled"" }",P087,P088,"{ ""rescheduled"": false }"
-P088,stage,STAGE: 30-Day Nurture,4900,1350,,,,,,"{}",P088,P089,"{}"
-P089,wait,Wait: 30 Days,5100,1350,,,,,,"{ ""duration"": ""P30D"" }",P089,P090,"{}"
-P090,email_send,Send: Re-engagement,5300,1350,,Still reconciling manually in Yardi?,"Following up on native integration...",,"","{ ""subject"": ""Still reconciling manually in Yardi?"", ""body"": ""Following up on native integration..."" }",,,
+P088,stage,STAGE: 30-Day Nurture,4900,1350,,,,,,{},P088,P089,{}
+P089,wait,Wait: 30 Days,5100,1350,,,,,,"{ ""duration"": ""P30D"" }",P089,P090,{}
+P090,email_send,Send: Re-engagement,5300,1350,,Still reconciling manually in Yardi?,Following up on native integration...,,,"{ ""subject"": ""Still reconciling manually in Yardi?"", ""body"": ""Following up on native integration..."" }",,,
+
+
+
 
 
 

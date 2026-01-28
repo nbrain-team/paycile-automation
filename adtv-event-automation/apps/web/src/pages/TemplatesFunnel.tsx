@@ -8,6 +8,7 @@ export function TemplatesFunnel() {
   const { campaigns, contentTemplates, upsertContentTemplate, addToast, setCampaigns } = useStore() as any;
   const [open, setOpen] = useState(false);
   const [serverTemplates, setServerTemplates] = useState<any[]>([]);
+  const [selectedFunnelId, setSelectedFunnelId] = useState<string>('all');
   const loadServerTemplates = async () => {
     try { const list = await apiTemplates.list(); setServerTemplates(Array.isArray(list)?list:[]); } catch { setServerTemplates([]); }
   };
@@ -25,7 +26,7 @@ export function TemplatesFunnel() {
   const smsRef = useRef<HTMLTextAreaElement | null>(null);
   const vmRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const mergeTags = ['{{contact.first_name}}','{{contact.last_name}}','{{contact.email}}','{{contact.phone}}','{{contact.event_date}}','{{campaign.name}}','{{campaign.event_type}}'];
+  const mergeTags = ['{{contact.first_name}}','{{contact.last_name}}','{{contact.email}}','{{contact.phone}}','{{contact.event_date}}','{{campaign.name}}','{{campaign.event_type}}','{{sender.signature}}'];
 
   const insertAtCursor = <T extends HTMLInputElement | HTMLTextAreaElement>(
     ref: React.RefObject<T>,
@@ -155,12 +156,38 @@ export function TemplatesFunnel() {
 
       {contentTemplates.length > 0 && (
         <div className="space-y-3 mt-10">
-          <div>
-            <h2 className="text-xl font-semibold">Content Templates</h2>
-            <p className="text-sm text-gray-600">Click a template to view and update</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Content Templates</h2>
+              <p className="text-sm text-gray-600">Click a template to view and update</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Filter by Funnel:</label>
+              <select 
+                className="input w-64" 
+                value={selectedFunnelId} 
+                onChange={(e) => setSelectedFunnelId(e.target.value)}
+              >
+                <option value="all">All Content Templates</option>
+                {serverTemplates.map((tpl) => (
+                  <option key={tpl.id} value={tpl.id}>{tpl.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="grid md:grid-cols-2 gap-4 mt-2">
-            {contentTemplates.map((t: any) => (
+            {contentTemplates.filter((t: any) => {
+              if (selectedFunnelId === 'all') return true;
+              // Filter templates that are used in the selected funnel
+              const selectedFunnel = serverTemplates.find(f => f.id === selectedFunnelId);
+              if (!selectedFunnel || !selectedFunnel.nodes) return false;
+              // Check if any node in the funnel uses this content template
+              return selectedFunnel.nodes.some((node: any) => {
+                const config = node.configJson ? JSON.parse(node.configJson) : {};
+                return config.template_id === t.id || 
+                       (node.templateId && node.templateId === t.id);
+              });
+            }).map((t: any) => (
               <button
                 key={t.id}
                 className="card text-left hover:shadow-soft-xl transition border border-gray-200"
