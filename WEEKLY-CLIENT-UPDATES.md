@@ -6,12 +6,19 @@
 
 ## Current Week (January 27 - February 2, 2026)
 
+### Funnel Filter & Dynamic Signatures for Content Templates
+- **Completed**: 2026-01-28
+- **Category**: Feature
+- **Client Impact**: Campaign managers can now filter content templates by funnel for faster template management, and all templates now use dynamic sender signatures enabling multi-user support where each team member's messages automatically include their own name, contact info, and signature without editing templates.
+- **Details**: Added dropdown filter in Content Templates section that shows only templates used in selected funnel, reducing clutter and improving workflow efficiency. Replaced all hardcoded signatures (Jim Fitzgerald, Stanley, etc.) with dynamic merge tags: {{sender.name}}, {{sender.signature}}, {{sender.phone}}. Updated all 4 funnel CSV files and created database migration script. This enables scalable multi-user support where same templates work for entire sales team with personalized sender information. Each user's messages appear to come from them specifically, improving authenticity and response rates.
+- **Status**: ✅ Deployed
+
 ### Template Save Error Fix - Production API Configuration
 - **Completed**: 2026-01-28
 - **Category**: Bug Fix
 - **Client Impact**: Campaign managers can now successfully save edits to all content templates (email, SMS, voicemail) in production without encountering 400 errors, enabling real-time campaign message customization and unblocking template editing workflow.
 - **Details**: Fixed critical production configuration issue where frontend was not properly connecting to backend API. Implemented runtime configuration system that allows API URL to be set without rebuilding the application. Created `config.js` file that loads at startup and provides correct backend URL. Updated all API calls throughout the application to use runtime configuration with graceful fallback to build-time environment variables. This fix also resolves potential issues with campaign contact operations and SMS/voicemail testing. Build tested and verified successfully with config file included in output.
-- **Status**: ✅ Ready to Deploy
+- **Status**: ✅ Deployed
 
 ### Email Template Editing System Overhaul
 - **Completed**: 2026-01-28
