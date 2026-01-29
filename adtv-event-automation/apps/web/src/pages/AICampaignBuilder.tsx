@@ -134,12 +134,12 @@ export function AICampaignBuilder() {
 
   const handleGenerate = async () => {
     if (!campaignDescription.trim()) {
-      addToast({ text: 'Please describe your campaign', type: 'error' });
+      addToast({ title: 'Please describe your campaign', variant: 'error' });
       return;
     }
 
     if (selectedNodeTypes.length === 0) {
-      addToast({ text: 'Please select at least one node type', type: 'error' });
+      addToast({ title: 'Please select at least one node type', variant: 'error' });
       return;
     }
 
@@ -171,10 +171,10 @@ export function AICampaignBuilder() {
       }
 
       setGeneratedCampaign(data.campaign);
-      addToast({ text: 'Campaign generated successfully! ✨', type: 'success' });
+      addToast({ title: 'Campaign generated successfully! ✨', variant: 'success' });
     } catch (error: any) {
       console.error('Generation error:', error);
-      addToast({ text: error.message || 'Failed to generate campaign', type: 'error' });
+      addToast({ title: error.message || 'Failed to generate campaign', variant: 'error' });
     } finally {
       setIsGenerating(false);
     }
@@ -216,10 +216,10 @@ export function AICampaignBuilder() {
       });
 
       setRefinementRequest('');
-      addToast({ text: 'Content refined successfully! ✨', type: 'success' });
+      addToast({ title: 'Content refined successfully! ✨', variant: 'success' });
     } catch (error: any) {
       console.error('Refine error:', error);
-      addToast({ text: error.message || 'Failed to refine content', type: 'error' });
+      addToast({ title: error.message || 'Failed to refine content', variant: 'error' });
     } finally {
       setIsRefining(false);
     }
@@ -258,14 +258,14 @@ export function AICampaignBuilder() {
 
       if (response.ok) {
         const data = await response.json();
-        addToast({ text: 'Campaign saved as template! 🎉', type: 'success' });
+        addToast({ title: 'Campaign saved as template! 🎉', variant: 'success' });
         navigate(`/templates/${data.id}`);
       } else {
         throw new Error('Failed to save template');
       }
     } catch (error: any) {
       console.error('Save error:', error);
-      addToast({ text: error.message || 'Failed to save campaign', type: 'error' });
+      addToast({ title: error.message || 'Failed to save campaign', variant: 'error' });
     }
   };
 
