@@ -3,14 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '@lib/api';
 import { useStore } from '@store/useStore';
 
-const AVAILABLE_NODE_TYPES = [
+const AVAILABLE_CHANNELS = [
   { value: 'email_send', label: 'Email', description: 'Send email to contacts', icon: '📧' },
   { value: 'sms_send', label: 'SMS', description: 'Send text message', icon: '💬' },
   { value: 'voicemail_drop', label: 'Voicemail', description: 'Direct-to-voicemail drop', icon: '🎙️' },
-  { value: 'wait', label: 'Wait', description: 'Delay before next action', icon: '⏱️' },
-  { value: 'stage', label: 'Stage', description: 'Milestone marker', icon: '🎯' },
-  { value: 'decision', label: 'Decision', description: 'Conditional branching', icon: '🔀' },
-  { value: 'task', label: 'Task', description: 'Manual team task', icon: '✓' },
+  { value: 'linkedin_message', label: 'LinkedIn Message', description: 'Send LinkedIn direct message', icon: '💼' },
+  { value: 'linkedin_post', label: 'LinkedIn Post', description: 'Post to LinkedIn feed', icon: '📱' },
+];
+
+// AI will automatically add these workflow nodes as needed
+const AI_WORKFLOW_NODES = [
+  'wait',      // Strategic delays between touches
+  'decision',  // Conditional branching based on engagement
+  'stage',     // Milestone tracking
+  'task',      // Manual intervention points
 ];
 
 const TONE_OPTIONS = [
@@ -105,10 +111,9 @@ export function AICampaignBuilder() {
   // Form state
   const [campaignDescription, setCampaignDescription] = useState('');
   const [numberOfSteps, setNumberOfSteps] = useState(5);
-  const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([
     'email_send',
     'sms_send',
-    'wait',
   ]);
   const [targetAudience, setTargetAudience] = useState('');
   const [campaignGoal, setCampaignGoal] = useState('');
@@ -124,11 +129,11 @@ export function AICampaignBuilder() {
   const [refinementRequest, setRefinementRequest] = useState('');
   const [isRefining, setIsRefining] = useState(false);
 
-  const handleNodeTypeToggle = (type: string) => {
-    if (selectedNodeTypes.includes(type)) {
-      setSelectedNodeTypes(selectedNodeTypes.filter((t) => t !== type));
+  const handleChannelToggle = (channel: string) => {
+    if (selectedChannels.includes(channel)) {
+      setSelectedChannels(selectedChannels.filter((t) => t !== channel));
     } else {
-      setSelectedNodeTypes([...selectedNodeTypes, type]);
+      setSelectedChannels([...selectedChannels, channel]);
     }
   };
 
@@ -138,8 +143,8 @@ export function AICampaignBuilder() {
       return;
     }
 
-    if (selectedNodeTypes.length === 0) {
-      addToast({ title: 'Please select at least one node type', variant: 'error' });
+    if (selectedChannels.length === 0) {
+      addToast({ title: 'Please select at least one communication channel', variant: 'error' });
       return;
     }
 
@@ -151,7 +156,11 @@ export function AICampaignBuilder() {
         body: JSON.stringify({
           campaignDescription,
           numberOfSteps,
-          availableNodeTypes: selectedNodeTypes,
+          availableNodeTypes: [
+            ...selectedChannels,
+            ...AI_WORKFLOW_NODES  // AI can use these automatically
+          ],
+          selectedChannels: selectedChannels, // Just the communication channels
           targetAudience: targetAudience || undefined,
           campaignGoal: campaignGoal || undefined,
           tone,
@@ -430,36 +439,46 @@ export function AICampaignBuilder() {
 
           <div className="space-y-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Available Node Types *</h2>
+              <h2 className="text-xl font-semibold mb-4">Communication Channels *</h2>
               <p className="text-sm text-gray-600 mb-4">
-                Select which communication channels the AI can use
+                Select channels for the AI to use in the campaign. The AI will automatically add waits, decisions, and workflow logic.
               </p>
               
               <div className="space-y-2">
-                {AVAILABLE_NODE_TYPES.map((nodeType) => (
+                {AVAILABLE_CHANNELS.map((channel) => (
                   <label
-                    key={nodeType.value}
+                    key={channel.value}
                     className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
-                      selectedNodeTypes.includes(nodeType.value)
+                      selectedChannels.includes(channel.value)
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:bg-gray-50'
                     }`}
                   >
                     <input
                       type="checkbox"
-                      checked={selectedNodeTypes.includes(nodeType.value)}
-                      onChange={() => handleNodeTypeToggle(nodeType.value)}
+                      checked={selectedChannels.includes(channel.value)}
+                      onChange={() => handleChannelToggle(channel.value)}
                       className="mt-1"
                     />
                     <div className="flex-1">
                       <div className="font-medium flex items-center gap-2">
-                        <span>{nodeType.icon}</span>
-                        {nodeType.label}
+                        <span>{channel.icon}</span>
+                        {channel.label}
                       </div>
-                      <div className="text-sm text-gray-600">{nodeType.description}</div>
+                      <div className="text-sm text-gray-600">{channel.description}</div>
                     </div>
                   </label>
                 ))}
+              </div>
+              
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="text-xs font-medium text-gray-700 mb-1">✨ AI Will Automatically Add:</div>
+                <div className="text-xs text-gray-600">
+                  • Strategic Wait times between touches<br/>
+                  • Decision points for engagement-based routing<br/>
+                  • Stage markers for campaign tracking<br/>
+                  • Task reminders for manual follow-up
+                </div>
               </div>
             </div>
 

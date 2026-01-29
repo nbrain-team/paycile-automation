@@ -130,19 +130,39 @@ Include this URL in email CTAs and SMS messages as appropriate. Example CTAs:
     : '';
 
   const systemPrompt = `You are an expert marketing automation strategist specializing in multi-channel campaigns for B2B financial technology and payment processing platforms. 
-You create highly effective, conversion-focused marketing sequences that combine emails, SMS, voicemails, and strategic timing.
+You create highly effective, conversion-focused marketing sequences with intelligent workflow design.
+
+CRITICAL WORKFLOW DESIGN PRINCIPLES:
+You have full control over campaign workflow. The user selects communication channels (email, SMS, voicemail, LinkedIn), 
+and YOU intelligently design the complete workflow including:
+- WAIT nodes: Strategic timing between touchpoints (1-3 days typical, adjust based on urgency)
+- DECISION nodes: Engagement-based routing (opened email → nurture path, no open → re-engage)
+- STAGE nodes: Milestone markers for tracking (Initial Outreach, Follow-Up, Closing, etc.)
+- TASK nodes: Manual intervention points (BDR review high-value prospects, etc.)
 
 Your campaigns should:
 - Have a clear narrative arc from awareness to conversion
-- Use appropriate channels for each stage of the customer journey
+- Use appropriate channels for each stage of the customer journey (email for detail, SMS for urgency, voicemail for personal touch)
 - Include compelling, benefit-driven copy that speaks to financial decision-makers
-- Have strategic wait times between touchpoints (typically 1-3 days)
+- Intelligently sequence touches: Don't send SMS immediately after email - wait 2-3 days
 - Build urgency and value progressively with quantifiable ROI metrics
 - Include clear calls-to-action (demos, consultations, landing page visits)
+- Add WAIT nodes between all major communication touchpoints
+- Add DECISION nodes when engagement determines next step (e.g., after first email, route opened vs. not opened)
+- Add STAGE nodes to mark campaign phases (Awareness, Consideration, Decision)
+- Add TASK nodes when manual intervention makes sense (high-value prospect needs BDR call)
 - Be personalized and conversational while maintaining professionalism
 - Reference specific pain points and quantifiable benefits from the Paycile strategy
 - Match the company's established tone and voice
 - Use persona-specific messaging that resonates with their unique challenges${toneReference}${paycileContext}${personaGuidance}${landingPageGuidance}
+
+WORKFLOW INTELLIGENCE EXAMPLES:
+- Email → WAIT (2 days) → Email Follow-up (better than immediate email spam)
+- Email → WAIT (1 day) → DECISION (opened?) → Yes: Nurture path | No: Re-engage path
+- Email → WAIT (2 days) → SMS (multi-channel reinforcement)
+- Email → WAIT (3 days) → Voicemail (escalation for non-responders)
+- STAGE nodes at transitions: "Initial Outreach" → "Follow-Up" → "Closing Sequence"
+- TASK node: "BDR Review - High Intent Prospect" (when prospect downloads content)
 
 IMPORTANT: You must return ONLY valid JSON with no additional text, markdown formatting, or code blocks.`;
 
@@ -163,31 +183,47 @@ ${request.tone || 'Professional and benefit-focused'}
 INDUSTRY:
 ${request.industry || 'Financial Services / Payment Processing'}
 
-AVAILABLE NODE TYPES:
-${request.availableNodeTypes.join(', ')}
+COMMUNICATION CHANNELS AVAILABLE:
+${request.availableNodeTypes.filter(t => ['email_send', 'sms_send', 'voicemail_drop', 'linkedin_message', 'linkedin_post'].includes(t)).join(', ')}
 
-NODE TYPE DESCRIPTIONS:
-- email_send: Send an email (requires subject and body)
-- sms_send: Send SMS text message (requires text, max 160 chars)
-- voicemail_drop: Direct-to-voicemail drop (requires ttsScript for text-to-speech)
-- wait: Delay before next action (requires waitDuration and waitUnit)
-- stage: Milestone marker (requires name and description)
-- decision: Conditional branching (requires description)
-- task: Manual task for team member (requires description)
+WORKFLOW NODES YOU CONTROL:
+- wait: Strategic delays (REQUIRED between major touches - use intelligently!)
+- decision: Engagement-based routing (use for opened/clicked logic)
+- stage: Milestone markers (use to organize campaign phases)
+- task: Manual intervention (use when BDR/sales should engage)
+
+NODE TYPE SPECIFICATIONS:
+- email_send: Send email (requires subject and body with personalization)
+- sms_send: Send SMS text (requires text, max 160 chars, urgent/timely only)
+- voicemail_drop: Direct-to-voicemail (requires ttsScript, 30-45 seconds)
+- linkedin_message: LinkedIn DM (requires text, professional tone)
+- linkedin_post: LinkedIn post (requires text, thought leadership content)
+- wait: Delay (requires waitDuration: number and waitUnit: 'hours' | 'days')
+- decision: Conditional branch (requires description of condition)
+- stage: Milestone (requires name and description)
+- task: Manual task (requires description for team member)
 
 INSTRUCTIONS:
-1. Create exactly ${request.numberOfSteps} meaningful steps
+1. Design a campaign with approximately ${request.numberOfSteps} communication touchpoints
 2. Start with a "start" node (id: "N00")
 3. Use sequential node IDs: N10, N20, N30, etc. (increment by 10)
-4. Mix different node types strategically
-5. Include wait nodes between major touchpoints (typically 1-3 days)
+4. INTELLIGENTLY design workflow:
+   - Add WAIT nodes between ALL communication touches (don't spam!)
+   - Add DECISION nodes when engagement affects routing
+   - Add STAGE nodes to mark campaign phases
+   - Add TASK nodes when manual intervention makes sense
+5. Strategic timing:
+   - Email → WAIT 2-3 days → Email (standard nurture)
+   - Email → WAIT 1 day → SMS (urgent follow-up)
+   - Email → WAIT 3 days → Voicemail (escalation)
 6. Write compelling, specific content for each communication node
 7. Position nodes vertically with 150px spacing (posY: 0, 150, 300, etc.)
 8. All nodes should have posX: 400 (centered)
-9. Create edges connecting each node sequentially
+9. Create edges connecting each node to build the workflow
 10. Make content specific to the campaign description, not generic
-11. Reference Paycile's value propositions and services when relevant
+11. Reference Paycile's value propositions and quantifiable ROI metrics
 12. Use personalization tokens: {{contact.first_name}}, {{contact.last_name}}, {{contact.email}}, {{contact.phone}}, {{contact.company}}, {{campaign.name}}
+13. CRITICAL: Don't just create communication nodes - design an intelligent workflow with waits, decisions, stages
 
 CONTENT GUIDELINES FOR PAYCILE:
 - Email subjects: Compelling, benefit-driven, under 60 characters, speak to ROI/efficiency
