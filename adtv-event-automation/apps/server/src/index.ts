@@ -16,6 +16,7 @@ import { generateInboxResponse, generateResponseOptions } from './inbox-ai-gener
 import { searchPeople, searchOrganizations } from './services/apolloApi';
 import { sendGraphEmail, isGraphConfigured } from './services/graphEmailProvider';
 import { startEmailQueueWorker, queueBulkEmails, getQueueStats } from './services/emailQueue';
+import { generateCampaign, refineContent, generateVariations } from './ai-campaign-builder';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -2100,8 +2101,6 @@ app.post('/api/ai/inbox/generate-options', async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 // AI CAMPAIGN BUILDER
 // ═══════════════════════════════════════════════════════════════
-
-import { generateCampaign, refineContent, generateVariations } from './ai-campaign-builder';
 
 /**
  * Generate a complete AI-powered marketing campaign
