@@ -206,6 +206,7 @@ model EmailQueue {
   subject     String
   body        String
   userId      String?
+  smtpConfigId String? // Reference to SmtpConfig for rotation
   status      String   @default("pending") // pending | sent | failed
   scheduledFor DateTime
   sentAt      DateTime?
@@ -214,6 +215,21 @@ model EmailQueue {
   
   @@index([status, scheduledFor])
   @@index([campaignId])
+}
+
+model SmtpConfig {
+  id         String   @id @default(cuid())
+  email      String   @unique // From email address
+  smtpHost   String
+  smtpPort   Int
+  smtpUser   String
+  smtpPass   String   // Encrypted in production
+  smtpSecure Boolean  @default(true)
+  isActive   Boolean  @default(true)
+  dailySent  Int      @default(0) // Track daily send count
+  lastUsed   DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 

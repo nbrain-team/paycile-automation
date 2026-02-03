@@ -10,6 +10,32 @@ let workerRunning = false;
 let workerInterval: NodeJS.Timeout | null = null;
 
 /**
+ * Get next SMTP config for rotation (round-robin)
+ */
+async function getNextSmtpConfig(): Promise<any | null> {
+  try {
+    // Get all active SMTP configs, ordered by last used (oldest first)
+    const configs = await prisma.smtpConfig.findMany({
+      where: { isActive: true },
+      orderBy: [
+        { lastUsed: 'asc' }, // Null values (never used) come first
+        { createdAt: 'asc' }  // Then oldest first
+      ],
+    });
+    
+    if (configs.length === 0) {
+      return null; // Fall back to env vars
+    }
+    
+    // Return the first (least recently used) config
+    return configs[0];
+  } catch (e) {
+    console.error('[EmailQueue] Error getting SMTP config:', e);
+    return null;
+  }
+}
+
+/**
  * Add email to queue with random delay between 1-2.5 minutes from now
  */
 export async function queueEmail(params: {
@@ -33,6 +59,9 @@ export async function queueEmail(params: {
     scheduledFor = new Date(now.getTime() + delayMs);
   }
   
+  // Get next SMTP config for rotation
+  const smtpConfig = await getNextSmtpConfig();
+  
   const queued = await prisma.emailQueue.create({
     data: {
       campaignId: params.campaignId,
@@ -41,6 +70,7 @@ export async function queueEmail(params: {
       subject: params.subject,
       body: params.body,
       userId: params.userId || null,
+      smtpConfigId: smtpConfig?.id || null,
       status: 'pending',
       scheduledFor,
     },
@@ -184,9 +214,35 @@ async function processQueue() {
           let smtpUser = process.env.SMTP_USER;
           let smtpPass = process.env.SMTP_PASS;
           let smtpSecure = (process.env.SMTP_SECURE === 'true') || (smtpPort === 465);
+          let fromEmail = smtpUser;
           
-          // Try to get user-specific SMTP settings
-          if (email.userId) {
+          // SMTP ROTATION: Use the SMTP config assigned to this email
+          if (email.smtpConfigId) {
+            const smtpConfig = await prisma.smtpConfig.findUnique({
+              where: { id: email.smtpConfigId }
+            });
+            
+            if (smtpConfig && smtpConfig.isActive) {
+              smtpHost = smtpConfig.smtpHost;
+              smtpPort = smtpConfig.smtpPort;
+              smtpUser = smtpConfig.smtpUser;
+              smtpPass = smtpConfig.smtpPass;
+              smtpSecure = smtpConfig.smtpSecure;
+              fromEmail = smtpConfig.email;
+              provider = `smtp-${smtpConfig.email}`;
+              
+              // Update last used timestamp and daily count
+              await prisma.smtpConfig.update({
+                where: { id: smtpConfig.id },
+                data: {
+                  lastUsed: new Date(),
+                  dailySent: smtpConfig.dailySent + 1
+                }
+              });
+            }
+          }
+          // Try to get user-specific SMTP settings (legacy support)
+          else if (email.userId) {
             const user = await prisma.user.findUnique({ where: { id: email.userId } });
             if (user?.smtpHost && user?.smtpPort && user?.smtpUser && user?.smtpPass) {
               smtpHost = user.smtpHost;
@@ -194,6 +250,7 @@ async function processQueue() {
               smtpUser = user.smtpUser;
               smtpPass = user.smtpPass;
               smtpSecure = user.smtpSecure ?? true;
+              fromEmail = smtpUser;
             }
           }
           
@@ -209,14 +266,14 @@ async function processQueue() {
           });
           
           const info = await transporter.sendMail({
-            from: smtpUser,
+            from: fromEmail,
             to: email.to,
             subject: email.subject,
-            html: email.body,
+            html: emailBodyWithFooter,
           });
           
           messageId = info.messageId;
-          provider = 'smtp';
+          if (!provider || provider === 'unknown') provider = 'smtp';
         }
         
         // Log to conversation

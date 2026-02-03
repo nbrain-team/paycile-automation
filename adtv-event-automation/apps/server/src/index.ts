@@ -2552,7 +2552,10 @@ app.post('/api/leads/submit', async (req, res) => {
       company: leadData.company,
       phone: leadData.phone || '',
       jobtitle: leadData.jobTitle || '',
-      lifecyclestage: 'lead'
+      lifecyclestage: 'lead',
+      // Required PLG Campaign properties
+      hs_marketable_status: 'Marketing Contact', // MARKETING_CONTACT_STATUS
+      hs_lead_status: 'NEW'
     };
 
     // Add custom Paycile properties if available
@@ -2562,6 +2565,11 @@ app.post('/api/leads/submit', async (req, res) => {
     if (leadData.lead_score) hubspotProperties.paycile_lead_score = leadData.lead_score;
     if (leadData.companySize) hubspotProperties.company_size = leadData.companySize;
     if (leadData.message) hubspotProperties.message = leadData.message;
+    
+    // RECORD_SOURCE = PLG CAMPAIGN (required for PLG tracking)
+    hubspotProperties.hs_analytics_source = 'OFFLINE';
+    hubspotProperties.hs_analytics_source_data_1 = 'PLG CAMPAIGN';
+    hubspotProperties.hs_analytics_source_data_2 = leadData.source || 'Landing Page Form';
 
     // Try to find existing contact
     let hubspotContactId = null;
@@ -2698,6 +2706,232 @@ app.post('/api/leads/submit', async (req, res) => {
       error: 'Failed to submit lead',
       details: error.message 
     });
+  }
+});
+
+// =============================================================================
+// EMAIL REPLY TRACKING → HUBSPOT
+// =============================================================================
+
+// Webhook endpoint for email replies (configure in email provider)
+app.post('/api/email/reply-webhook', async (req, res) => {
+  try {
+    const { from, to, subject, body, messageId } = req.body;
+    
+    console.log('📬 Received email reply:', from);
+    
+    // Find contact by email
+    const contact = await prisma.contact.findFirst({
+      where: { email: from },
+      include: { campaign: true }
+    });
+    
+    if (!contact) {
+      console.log('⚠️ Email reply from unknown contact:', from);
+      return res.json({ ok: true, message: 'Contact not found, skipped' });
+    }
+    
+    // Log the reply to conversation
+    let convo = await prisma.conversation.findFirst({
+      where: { contactId: contact.id, channel: 'email' }
+    });
+    
+    if (!convo) {
+      convo = await prisma.conversation.create({
+        data: { contactId: contact.id, channel: 'email' }
+      });
+    }
+    
+    await prisma.message.create({
+      data: {
+        conversationId: convo.id,
+        direction: 'in',
+        text: body || '',
+        subject: subject || '',
+        providerMessageId: messageId || undefined,
+        rawJson: JSON.stringify(req.body)
+      }
+    });
+    
+    // Push reply to HubSpot with PLG tags
+    const HUBSPOT_ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN;
+    
+    if (HUBSPOT_ACCESS_TOKEN) {
+      try {
+        // Find or create HubSpot contact
+        const searchResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filterGroups: [{
+              filters: [{
+                propertyName: 'email',
+                operator: 'EQ',
+                value: from
+              }]
+            }]
+          })
+        });
+        
+        let hubspotContactId = null;
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          if (searchData.results && searchData.results.length > 0) {
+            hubspotContactId = searchData.results[0].id;
+          }
+        }
+        
+        // Update contact properties with PLG tags
+        const hubspotProperties: any = {
+          // RECORD_SOURCE = PLG CAMPAIGN
+          hs_analytics_source: 'OFFLINE',
+          hs_analytics_source_data_1: 'PLG CAMPAIGN',
+          hs_analytics_source_data_2: 'Email Reply',
+          // MARKETING_CONTACT_STATUS = Marketing Contact
+          hs_marketable_status: 'Marketing Contact',
+          hs_lead_status: 'OPEN',
+          lifecyclestage: 'lead'
+        };
+        
+        if (contact.campaign) {
+          hubspotProperties.paycile_campaign_name = contact.campaign.name;
+        }
+        
+        if (hubspotContactId) {
+          // Update existing contact
+          await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${hubspotContactId}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ properties: hubspotProperties })
+          });
+          
+          // Add note with email reply content
+          await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              properties: {
+                hs_timestamp: Date.now(),
+                hs_note_body: `<strong>Email Reply - ${contact.campaign?.name || 'Campaign'}</strong><br><br><strong>Subject:</strong> ${subject || 'No subject'}<br><br>${body || 'No body'}`
+              },
+              associations: [{
+                to: { id: hubspotContactId },
+                types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }]
+              }]
+            })
+          });
+          
+          console.log(`✅ Pushed email reply to HubSpot (Contact ID: ${hubspotContactId})`);
+        }
+      } catch (hubspotError) {
+        console.error('❌ Failed to push to HubSpot:', hubspotError);
+      }
+    }
+    
+    res.json({ ok: true, message: 'Reply logged successfully' });
+    
+  } catch (error: any) {
+    console.error('❌ Email reply webhook error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =============================================================================
+// SMTP CONFIGURATION MANAGEMENT
+// =============================================================================
+
+// Get all SMTP configurations
+app.get('/api/smtp/configs', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const configs = await prisma.smtpConfig.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    // Don't return passwords to frontend
+    res.json(configs.map(c => ({
+      id: c.id,
+      email: c.email,
+      smtpHost: c.smtpHost,
+      smtpPort: c.smtpPort,
+      smtpUser: c.smtpUser,
+      smtpSecure: c.smtpSecure,
+      dailySent: c.dailySent,
+      lastUsed: c.lastUsed,
+      createdAt: c.createdAt
+    })));
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'fetch error' });
+  }
+});
+
+// Create SMTP configuration
+app.post('/api/smtp/configs', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const body = z.object({
+      email: z.string().email(),
+      smtpHost: z.string(),
+      smtpPort: z.number(),
+      smtpUser: z.string(),
+      smtpPass: z.string(),
+      smtpSecure: z.boolean()
+    }).parse(req.body);
+    
+    const config = await prisma.smtpConfig.create({
+      data: {
+        email: body.email,
+        smtpHost: body.smtpHost,
+        smtpPort: body.smtpPort,
+        smtpUser: body.smtpUser,
+        smtpPass: body.smtpPass, // TODO: Encrypt in production
+        smtpSecure: body.smtpSecure
+      }
+    });
+    
+    res.json({
+      id: config.id,
+      email: config.email,
+      smtpHost: config.smtpHost,
+      smtpPort: config.smtpPort,
+      smtpUser: config.smtpUser,
+      smtpSecure: config.smtpSecure
+    });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'create error' });
+  }
+});
+
+// Delete SMTP configuration
+app.delete('/api/smtp/configs/:id', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    await prisma.smtpConfig.delete({
+      where: { id: req.params.id }
+    });
+    
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'delete error' });
   }
 });
 

@@ -3,9 +3,88 @@ import { apiAuth, apiGoogle, getApiUrl } from '../lib/api';
 
 export function Settings() {
   const [me, setMe] = useState<any>(null);
+  const [smtpConfigs, setSmtpConfigs] = useState<any[]>([]);
+  const [showSmtpForm, setShowSmtpForm] = useState(false);
+  const [smtpForm, setSmtpForm] = useState({
+    email: '',
+    smtpHost: 'smtp.gmail.com',
+    smtpPort: 465,
+    smtpUser: '',
+    smtpPass: '',
+    smtpSecure: true
+  });
+  
   useEffect(() => {
     apiAuth.me().then(setMe).catch(() => setMe(null));
+    loadSmtpConfigs();
   }, []);
+  
+  const loadSmtpConfigs = async () => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/smtp/configs`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSmtpConfigs(data);
+      }
+    } catch (e) {
+      console.error('Failed to load SMTP configs:', e);
+    }
+  };
+  
+  const saveSmtpConfig = async () => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/smtp/configs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify(smtpForm)
+      });
+      
+      if (response.ok) {
+        alert('SMTP configuration added successfully!');
+        setShowSmtpForm(false);
+        setSmtpForm({
+          email: '',
+          smtpHost: 'smtp.gmail.com',
+          smtpPort: 465,
+          smtpUser: '',
+          smtpPass: '',
+          smtpSecure: true
+        });
+        loadSmtpConfigs();
+      } else {
+        alert('Failed to save SMTP configuration');
+      }
+    } catch (e) {
+      alert('Error saving SMTP configuration');
+    }
+  };
+  
+  const deleteSmtpConfig = async (id: string) => {
+    if (!confirm('Delete this SMTP configuration?')) return;
+    
+    try {
+      const response = await fetch(`${getApiUrl()}/api/smtp/configs/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      
+      if (response.ok) {
+        alert('SMTP configuration deleted');
+        loadSmtpConfigs();
+      }
+    } catch (e) {
+      alert('Failed to delete SMTP configuration');
+    }
+  };
   const testSend = async () => {
     const num = window.prompt('Enter phone number (E.164 or US local)');
     if (!num) return;
@@ -77,6 +156,117 @@ export function Settings() {
           {!me && <button className="btn-primary btn-sm" onClick={doLogin}>Login</button>}
           {me && <span className="text-sm text-gray-700">Logged in as {me.email}</span>}
         </div>
+      </div>
+
+      {/* SMTP Configuration Section */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">SMTP Email Configurations</h2>
+          <button className="btn-primary btn-sm" onClick={() => setShowSmtpForm(!showSmtpForm)}>
+            + Add SMTP Account
+          </button>
+        </div>
+        
+        <p className="text-sm text-gray-600 mb-4">
+          Configure multiple SMTP accounts for email rotation. The system will automatically rotate between accounts when sending emails to distribute load.
+        </p>
+        
+        {showSmtpForm && (
+          <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
+            <h3 className="font-semibold text-sm">Add New SMTP Configuration</h3>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div>
+                <label className="label">From Email *</label>
+                <input
+                  className="input"
+                  type="email"
+                  value={smtpForm.email}
+                  onChange={(e) => setSmtpForm({...smtpForm, email: e.target.value})}
+                  placeholder="sender@company.com"
+                />
+              </div>
+              <div>
+                <label className="label">SMTP Host *</label>
+                <input
+                  className="input"
+                  value={smtpForm.smtpHost}
+                  onChange={(e) => setSmtpForm({...smtpForm, smtpHost: e.target.value})}
+                  placeholder="smtp.gmail.com"
+                />
+              </div>
+              <div>
+                <label className="label">SMTP Username *</label>
+                <input
+                  className="input"
+                  value={smtpForm.smtpUser}
+                  onChange={(e) => setSmtpForm({...smtpForm, smtpUser: e.target.value})}
+                  placeholder="username@gmail.com"
+                />
+              </div>
+              <div>
+                <label className="label">SMTP Port *</label>
+                <input
+                  className="input"
+                  type="number"
+                  value={smtpForm.smtpPort}
+                  onChange={(e) => setSmtpForm({...smtpForm, smtpPort: parseInt(e.target.value)})}
+                  placeholder="465"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="label">SMTP Password / App Password *</label>
+              <input
+                className="input"
+                type="password"
+                value={smtpForm.smtpPass}
+                onChange={(e) => setSmtpForm({...smtpForm, smtpPass: e.target.value})}
+                placeholder="App password for Gmail"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                For Gmail, use an App Password (Settings → Security → 2-Step Verification → App passwords)
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="smtpSecure"
+                checked={smtpForm.smtpSecure}
+                onChange={(e) => setSmtpForm({...smtpForm, smtpSecure: e.target.checked})}
+              />
+              <label htmlFor="smtpSecure" className="text-sm">Use SSL/TLS (recommended for Gmail)</label>
+            </div>
+            <div className="flex gap-2">
+              <button className="btn-primary btn-sm" onClick={saveSmtpConfig}>Save SMTP Config</button>
+              <button className="btn-outline btn-sm" onClick={() => setShowSmtpForm(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
+        
+        {smtpConfigs.length > 0 ? (
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm mb-2">Active SMTP Accounts ({smtpConfigs.length})</h3>
+            {smtpConfigs.map((config) => (
+              <div key={config.id} className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                <div>
+                  <p className="font-medium text-sm">{config.email}</p>
+                  <p className="text-xs text-gray-600">{config.smtpHost}:{config.smtpPort}</p>
+                </div>
+                <button 
+                  className="btn-outline btn-xs text-red-600"
+                  onClick={() => deleteSmtpConfig(config.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+            <p className="text-xs text-gray-600 mt-2">
+              ℹ️ System will rotate emails across these accounts when sending campaigns (round-robin distribution)
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No SMTP configurations yet. Click "+ Add SMTP Account" to get started.</p>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
