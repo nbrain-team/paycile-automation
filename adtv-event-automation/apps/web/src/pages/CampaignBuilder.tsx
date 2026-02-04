@@ -413,7 +413,7 @@ function ContactsTab({ contacts }: ContactsTabProps) {
   const [query, setQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'All' | typeof CONTACT_STATUSES[number]>('All');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const { addToast, liveCampaigns, setContactsForCampaign } = useStore();
+  const { addToast, liveCampaigns, setContactsForCampaign, contactsByCampaignId } = useStore();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showSms, setShowSms] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
@@ -422,7 +422,6 @@ function ContactsTab({ contacts }: ContactsTabProps) {
   const [emailBody, setEmailBody] = useState('');
   const [showImportFromCampaign, setShowImportFromCampaign] = useState(false);
   const [sourceCampaignId, setSourceCampaignId] = useState('');
-  const { contactsByCampaignId, setContactsForCampaign } = useStore();
   const params = useParams();
   const campaignId = params.id as string;
   const [stagesLocal, setStagesLocal] = useState<Array<{ id: string; name: string }>>([]);
