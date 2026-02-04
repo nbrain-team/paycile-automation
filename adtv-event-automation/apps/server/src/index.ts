@@ -2301,26 +2301,30 @@ app.post('/api/ai/campaign/save-as-template', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: name, nodes, edges' });
     }
     
-    // Create template
+    // Create template - handle both AI format and frontend format
     const created = await prisma.template.create({
       data: {
         name,
         status: 'draft',
         nodes: {
           create: nodes.map((n: any) => ({
-            key: n.id,
+            // Handle both formats: {id, type, name} and {key, type, name}
+            key: n.key || n.id,
             type: n.type,
             name: n.name,
-            configJson: n.config ? JSON.stringify(n.config) : null,
+            // Handle both {config: obj} and {configJson: string}
+            configJson: n.configJson || (n.config ? JSON.stringify(n.config) : null),
             posX: n.posX ?? null,
             posY: n.posY ?? null
           }))
         },
         edges: {
           create: edges.map((e: any) => ({
-            fromKey: e.from,
-            toKey: e.to,
-            conditionJson: e.condition ? JSON.stringify(e.condition) : null
+            // Handle both {from, to} and {fromKey, toKey}
+            fromKey: e.fromKey || e.from,
+            toKey: e.toKey || e.to,
+            // Handle both {condition: obj} and {conditionJson: string}
+            conditionJson: e.conditionJson || (e.condition ? JSON.stringify(e.condition) : null)
           }))
         }
       },
