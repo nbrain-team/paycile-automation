@@ -422,6 +422,19 @@ function ContactsTab({ contacts }: ContactsTabProps) {
   const [emailBody, setEmailBody] = useState('');
   const [showImportFromCampaign, setShowImportFromCampaign] = useState(false);
   const [sourceCampaignId, setSourceCampaignId] = useState('');
+  const [availableCampaigns, setAvailableCampaigns] = useState<any[]>([]);
+  
+  // Load all campaigns when import modal opens
+  useEffect(() => {
+    if (showImportFromCampaign) {
+      fetch(`${getApiUrl()}/api/campaigns`)
+        .then(r => r.json())
+        .then(campaigns => {
+          setAvailableCampaigns(Array.isArray(campaigns) ? campaigns : []);
+        })
+        .catch(() => setAvailableCampaigns([]));
+    }
+  }, [showImportFromCampaign]);
   const params = useParams();
   const campaignId = params.id as string;
   const [stagesLocal, setStagesLocal] = useState<Array<{ id: string; name: string }>>([]);
@@ -796,15 +809,18 @@ function ContactsTab({ contacts }: ContactsTabProps) {
               value={sourceCampaignId} 
               onChange={(e) => setSourceCampaignId(e.target.value)}
             >
-              <option value="">Select a campaign...</option>
-              {liveCampaigns
+              <option value="">Select a source campaign...</option>
+              {availableCampaigns
                 .filter(c => c.id !== window.location.pathname.split('/').pop())
                 .map(c => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({(contactsByCampaignId as any)[c.id]?.length || 0} contacts)
+                    {c.name} ({c.totalContacts || c.contacts?.length || 0} contacts)
                   </option>
                 ))}
             </select>
+            {availableCampaigns.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">Loading campaigns...</p>
+            )}
           </div>
           
           <div className="flex gap-2 justify-end">
