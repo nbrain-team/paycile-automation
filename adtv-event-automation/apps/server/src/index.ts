@@ -2562,7 +2562,9 @@ app.post('/api/leads/submit', async (req, res) => {
       company: leadData.company,
       phone: leadData.phone || '',
       jobtitle: leadData.jobTitle || '',
-      lifecyclestage: 'lead'
+      lifecyclestage: 'lead',
+      // Use hs_analytics_source for tracking (this is writable on contact creation)
+      hs_analytics_source: 'OFFLINE'
     };
 
     // Add standard properties that are safe
@@ -2570,19 +2572,16 @@ app.post('/api/leads/submit', async (req, res) => {
       hubspotProperties.company_size = leadData.companySize;
     }
     
-    // Add PLG Campaign tracking via standard fields
-    // Use 'hs_analytics_source' and 'hs_analytics_source_data_1' for tracking
-    hubspotProperties.hs_analytics_source = 'OFFLINE';
-    hubspotProperties.hs_analytics_source_data_1 = 'PLG_CAMPAIGN';
-    hubspotProperties.hs_analytics_source_data_2 = leadData.source || 'Landing_Page_Form';
-    
-    // Store additional data in notes instead of custom properties
+    // Store PLG Campaign data in notes instead of read-only properties
     const additionalData = {
+      source: leadData.source || 'Landing Page',
       persona: leadData.persona,
       campaign_name: leadData.campaign_name,
       status: leadData.status,
       lead_score: leadData.lead_score,
-      message: leadData.message
+      message: leadData.message,
+      record_source: 'PLG CAMPAIGN', // Store in note for tracking
+      marketing_contact_status: 'Marketing Contact' // Store in note
     };
 
     // Try to find existing contact
@@ -2654,18 +2653,24 @@ app.post('/api/leads/submit', async (req, res) => {
       throw new Error(`Failed to sync with HubSpot: ${errorData.message || hubspotResponse.statusText}`);
     }
 
-    // Create a note with all the additional data
+    // Create a note with all the additional data including PLG Campaign tags
     if (hubspotContactId) {
       try {
         const noteBody = `
-          <strong>🎯 PLG Campaign - Lead Form Submission</strong><br><br>
-          <strong>Source:</strong> ${leadData.source || 'Landing Page'}<br>
+          <div style="background: #f0f9ff; padding: 12px; border-left: 4px solid #0891b2; margin-bottom: 16px;">
+            <strong>🎯 PLG CAMPAIGN LEAD</strong>
+          </div>
+          
+          <strong>📊 Lead Information:</strong><br>
+          <strong>RECORD_SOURCE:</strong> PLG CAMPAIGN<br>
+          <strong>MARKETING_CONTACT_STATUS:</strong> Marketing Contact<br>
+          <strong>Source:</strong> ${additionalData.source}<br>
           <strong>Campaign:</strong> ${additionalData.campaign_name || 'N/A'}<br>
           <strong>Persona:</strong> ${additionalData.persona || 'N/A'}<br>
           <strong>Lead Score:</strong> ${additionalData.lead_score || 'N/A'}<br>
           <strong>Status:</strong> ${additionalData.status || 'new'}<br>
           <strong>Company Size:</strong> ${leadData.companySize || 'N/A'}<br><br>
-          ${additionalData.message ? `<strong>Message:</strong><br>${additionalData.message}` : ''}
+          ${additionalData.message ? `<strong>💬 Message from Lead:</strong><br><div style="background: #f9fafb; padding: 8px; border-radius: 4px; margin-top: 8px;">${additionalData.message}</div>` : ''}
         `;
         
         await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
