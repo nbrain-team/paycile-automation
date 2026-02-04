@@ -1,0 +1,3222 @@
+{
+  "id": "funnel_cfo_insurance_v2",
+  "name": "CFO Insurance - Multi-Channel 90-Node",
+  "status": "published",
+  "version": 2,
+  "createdAt": "2025-11-25T18:57:45.592Z",
+  "updatedAt": "2025-11-25T18:58:58.776Z",
+  "nodes": [
+    {
+      "id": "cmiexvzve0001f0zayqbz2m7l",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N000",
+      "type": "start",
+      "name": "Import: Insurance CFO List",
+      "configJson": "{}",
+      "posX": 100,
+      "posY": 500
+    },
+    {
+      "id": "cmiexvzvh0003f0zaffa15r5c",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N001",
+      "type": "filter",
+      "name": "Filter: Insurance Industry Only",
+      "configJson": "{\"criteria\":\"industry=insurance\"}",
+      "posX": 300,
+      "posY": 500
+    },
+    {
+      "id": "cmiexvzvi0005f0za80i0ltno",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N002",
+      "type": "filter",
+      "name": "Filter: Title = CFO/VP Finance/Finance Director",
+      "configJson": "{\"criteria\":\"title_contains=CFO,VP Finance,Finance Director\"}",
+      "posX": 500,
+      "posY": 500
+    },
+    {
+      "id": "cmiexvzvk0007f0zaxy48qrjw",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N003",
+      "type": "tag",
+      "name": "Tag: CFO-Insurance-Vertical",
+      "configJson": "{\"tag\":\"cfo-insurance\"}",
+      "posX": 700,
+      "posY": 500
+    },
+    {
+      "id": "cmiexvzvl0009f0zanutcubud",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N004",
+      "type": "stage",
+      "name": "STAGE: Day 1 - Initial Outreach",
+      "configJson": "{}",
+      "posX": 900,
+      "posY": 500
+    },
+    {
+      "id": "cmiexvzvn000bf0zaudu5pns8",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N005",
+      "type": "email_send",
+      "name": "Send: Initial CFO Email (96 Days)",
+      "configJson": "{\"template_id\":\"cfo_ins_email_01_intro\",\"landing_page\":\"/landing/cfo-insurance\"}",
+      "posX": 1100,
+      "posY": 400
+    },
+    {
+      "id": "cmiexvzvo000df0zadx0zvpvo",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N006",
+      "type": "wait",
+      "name": "Wait: 2 Hours",
+      "configJson": "{\"duration\":\"PT2H\"}",
+      "posX": 1300,
+      "posY": 400
+    },
+    {
+      "id": "cmiexvzvq000ff0zatnrfgjvd",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N007",
+      "type": "decision",
+      "name": "Check: Email Opened?",
+      "configJson": "{\"condition\":\"email_opened\"}",
+      "posX": 1500,
+      "posY": 400
+    },
+    {
+      "id": "cmiexvzvr000hf0za4w9wd7vl",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N008",
+      "type": "tag",
+      "name": "Tag: Email-Engaged",
+      "configJson": "{\"tag\":\"email-engaged\"}",
+      "posX": 1700,
+      "posY": 300
+    },
+    {
+      "id": "cmiexvzvt000jf0zafpf8ga4o",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N009",
+      "type": "tag",
+      "name": "Tag: Email-Not-Opened",
+      "configJson": "{\"tag\":\"email-not-opened\"}",
+      "posX": 1700,
+      "posY": 500
+    },
+    {
+      "id": "cmiexvzvu000lf0za6lygy5tz",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N010",
+      "type": "linkedin_connect",
+      "name": "LinkedIn: Send Connection Request",
+      "configJson": "{\"message\":\"Hi {{contact.first_name}}, I help insurance CFOs automate payment reconciliation. Would love to connect!\"}",
+      "posX": 1100,
+      "posY": 600
+    },
+    {
+      "id": "cmiexvzvw000nf0zayt0lgkk6",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N011",
+      "type": "wait",
+      "name": "Wait: 4 Hours",
+      "configJson": "{\"duration\":\"PT4H\"}",
+      "posX": 1300,
+      "posY": 600
+    },
+    {
+      "id": "cmiexvzvx000pf0zakgq5ib2p",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N012",
+      "type": "decision",
+      "name": "Check: LinkedIn Accepted?",
+      "configJson": "{\"condition\":\"linkedin_accepted\"}",
+      "posX": 1500,
+      "posY": 600
+    },
+    {
+      "id": "cmiexvzvz000rf0zadngzve7q",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N013",
+      "type": "stage",
+      "name": "STAGE: High Engagement Path",
+      "configJson": "{}",
+      "posX": 1900,
+      "posY": 250
+    },
+    {
+      "id": "cmiexvzw0000tf0zazm5ok8f3",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N014",
+      "type": "wait",
+      "name": "Wait: 3 Hours",
+      "configJson": "{\"duration\":\"PT3H\"}",
+      "posX": 2100,
+      "posY": 250
+    },
+    {
+      "id": "cmiexvzw2000vf0za2ptdj3pg",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N015",
+      "type": "decision",
+      "name": "Check: Link Clicked?",
+      "configJson": "{\"condition\":\"link_clicked\"}",
+      "posX": 2300,
+      "posY": 250
+    },
+    {
+      "id": "cmiexvzw3000xf0za9a8sdf9x",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N016",
+      "type": "tag",
+      "name": "Tag: HOT-LEAD",
+      "configJson": "{\"tag\":\"hot-lead\",\"score\":100}",
+      "posX": 2500,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzw5000zf0zal4wgyaxd",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N017",
+      "type": "sms_send",
+      "name": "Send: SMS Intro",
+      "configJson": "{\"template_id\":\"cfo_ins_sms_01_intro\"}",
+      "posX": 2700,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzw60011f0zagech8gyh",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N018",
+      "type": "wait",
+      "name": "Wait: 30 Minutes",
+      "configJson": "{\"duration\":\"PT30M\"}",
+      "posX": 2900,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzw70013f0zaymq21nks",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N019",
+      "type": "decision",
+      "name": "Check: SMS Reply?",
+      "configJson": "{\"condition\":\"sms_reply\"}",
+      "posX": 3100,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzw90015f0zauym07hh7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N020",
+      "type": "task",
+      "name": "TASK: BDR Call - Hot Lead",
+      "configJson": "{\"assign_to\":\"BDR\",\"priority\":\"urgent\"}",
+      "posX": 3300,
+      "posY": 50
+    },
+    {
+      "id": "cmiexvzwa0017f0zanzdrnyid",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N021",
+      "type": "stage",
+      "name": "STAGE: Medium Engagement",
+      "configJson": "{}",
+      "posX": 2500,
+      "posY": 350
+    },
+    {
+      "id": "cmiexvzwc0019f0za0l9zohb7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N022",
+      "type": "wait",
+      "name": "Wait: 6 Hours",
+      "configJson": "{\"duration\":\"PT6H\"}",
+      "posX": 2700,
+      "posY": 350
+    },
+    {
+      "id": "cmiexvzwd001bf0zaxzh2q3dp",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N023",
+      "type": "linkedin_message",
+      "name": "LinkedIn: Send Message",
+      "configJson": "{\"message\":\"Thanks for connecting! I help insurance CFOs save 96 days/year on reconciliation. Worth a quick call?\"}",
+      "posX": 2900,
+      "posY": 350
+    },
+    {
+      "id": "cmiexvzwf001df0zagyuqs657",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N024",
+      "type": "wait",
+      "name": "Wait: 12 Hours",
+      "configJson": "{\"duration\":\"PT12H\"}",
+      "posX": 3100,
+      "posY": 350
+    },
+    {
+      "id": "cmiexvzwg001ff0zaqirnsz2y",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N025",
+      "type": "decision",
+      "name": "Check: LinkedIn Reply?",
+      "configJson": "{\"condition\":\"linkedin_reply\"}",
+      "posX": 3300,
+      "posY": 350
+    },
+    {
+      "id": "cmiexvzwi001hf0za32zr3dwj",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N026",
+      "type": "tag",
+      "name": "Tag: Warm-Lead",
+      "configJson": "{\"tag\":\"warm-lead\",\"score\":50}",
+      "posX": 3500,
+      "posY": 300
+    },
+    {
+      "id": "cmiexvzwj001jf0zamw7sy5my",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N027",
+      "type": "task",
+      "name": "TASK: BDR Follow-up Call",
+      "configJson": "{\"assign_to\":\"BDR\",\"priority\":\"normal\"}",
+      "posX": 3700,
+      "posY": 300
+    },
+    {
+      "id": "cmiexvzwl001lf0zaqmjfa1mr",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N028",
+      "type": "email_send",
+      "name": "Send: Value Prop Email",
+      "configJson": "{\"template_id\":\"cfo_ins_email_02_value\"}",
+      "posX": 3500,
+      "posY": 400
+    },
+    {
+      "id": "cmiexvzwm001nf0za2s7c7r6f",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N029",
+      "type": "wait",
+      "name": "Wait: 1 Day",
+      "configJson": "{\"duration\":\"P1D\"}",
+      "posX": 3700,
+      "posY": 400
+    },
+    {
+      "id": "cmiexvzwo001pf0za1l9hpo6x",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N030",
+      "type": "decision",
+      "name": "Check: Email Response?",
+      "configJson": "{\"condition\":\"email_reply\"}",
+      "posX": 3900,
+      "posY": 400
+    },
+    {
+      "id": "cmiexvzwp001rf0zasu7m170b",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N031",
+      "type": "stage",
+      "name": "STAGE: Day 3 - Re-engagement",
+      "configJson": "{}",
+      "posX": 1900,
+      "posY": 550
+    },
+    {
+      "id": "cmiexvzxq001tf0zawqr8n2t9",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N032",
+      "type": "wait",
+      "name": "Wait: Until Day 3",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 2100,
+      "posY": 550
+    },
+    {
+      "id": "cmiexvzxs001vf0zaivptyu1c",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N033",
+      "type": "sms_send",
+      "name": "Send: SMS Value Prop",
+      "configJson": "{\"template_id\":\"cfo_ins_sms_02_value\"}",
+      "posX": 2300,
+      "posY": 550
+    },
+    {
+      "id": "cmiexvzxt001xf0za9yukw4ol",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N034",
+      "type": "wait",
+      "name": "Wait: 2 Hours",
+      "configJson": "{\"duration\":\"PT2H\"}",
+      "posX": 2500,
+      "posY": 550
+    },
+    {
+      "id": "cmiexvzxv001zf0za9vt1bswu",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N035",
+      "type": "decision",
+      "name": "Check: SMS Response?",
+      "configJson": "{\"condition\":\"sms_reply\"}",
+      "posX": 2700,
+      "posY": 550
+    },
+    {
+      "id": "cmiexvzxx0021f0za52gb358c",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N036",
+      "type": "voicemail_drop",
+      "name": "Drop: Voicemail Intro",
+      "configJson": "{\"template_id\":\"cfo_ins_vm_01_intro\"}",
+      "posX": 2900,
+      "posY": 650
+    },
+    {
+      "id": "cmiexvzxy0023f0zagsbif3xs",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N037",
+      "type": "wait",
+      "name": "Wait: 4 Hours",
+      "configJson": "{\"duration\":\"PT4H\"}",
+      "posX": 3100,
+      "posY": 650
+    },
+    {
+      "id": "cmiexvzy00025f0zat310ds6n",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N038",
+      "type": "decision",
+      "name": "Check: Voicemail Callback?",
+      "configJson": "{\"condition\":\"inbound_call\"}",
+      "posX": 3300,
+      "posY": 650
+    },
+    {
+      "id": "cmiexvzy10027f0zaqm9saih2",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N039",
+      "type": "email_send",
+      "name": "Send: Case Study Email",
+      "configJson": "{\"template_id\":\"cfo_ins_email_03_case_study\"}",
+      "posX": 2900,
+      "posY": 500
+    },
+    {
+      "id": "cmiexvzy30029f0zaonagywo2",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N040",
+      "type": "wait",
+      "name": "Wait: 1 Day",
+      "configJson": "{\"duration\":\"P1D\"}",
+      "posX": 3100,
+      "posY": 500
+    },
+    {
+      "id": "cmiexvzy5002bf0zayuudea5u",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N041",
+      "type": "stage",
+      "name": "STAGE: Day 5 - Engagement Scoring",
+      "configJson": "{}",
+      "posX": 100,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzy6002df0za6dvwf2w7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N042",
+      "type": "scoring",
+      "name": "Calculate: Engagement Score",
+      "configJson": "{\"rules\":[{\"action\":\"email_opened\",\"points\":10},{\"action\":\"link_clicked\",\"points\":25},{\"action\":\"email_reply\",\"points\":50},{\"action\":\"sms_reply\",\"points\":50},{\"action\":\"linkedin_accepted\",\"points\":15},{\"action\":\"linkedin_reply\",\"points\":30}]}",
+      "posX": 300,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzy8002ff0za98mgrk38",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N043",
+      "type": "decision",
+      "name": "Decision: Score >= 75?",
+      "configJson": "{\"condition\":\"score_gte_75\"}",
+      "posX": 500,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzy9002hf0zadlw80tv9",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N044",
+      "type": "tag",
+      "name": "Tag: VERY-HOT",
+      "configJson": "{\"tag\":\"very-hot\",\"score\":100}",
+      "posX": 700,
+      "posY": 800
+    },
+    {
+      "id": "cmiexvzyb002jf0za9yt9m6y2",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N045",
+      "type": "task",
+      "name": "TASK: Immediate BDR Outreach",
+      "configJson": "{\"assign_to\":\"BDR\",\"priority\":\"urgent\",\"note\":\"High engagement - call ASAP\"}",
+      "posX": 900,
+      "posY": 800
+    },
+    {
+      "id": "cmiexvzyc002lf0zag29ng6qk",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N046",
+      "type": "decision",
+      "name": "Decision: Score 40-74?",
+      "configJson": "{\"condition\":\"score_40_to_74\"}",
+      "posX": 700,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzye002nf0za3dj72kog",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N047",
+      "type": "tag",
+      "name": "Tag: Warm",
+      "configJson": "{\"tag\":\"warm\",\"score\":50}",
+      "posX": 900,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyf002pf0zag7dgj5er",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N048",
+      "type": "email_send",
+      "name": "Send: Demo Follow-up",
+      "configJson": "{\"template_id\":\"cfo_ins_email_04_demo_follow\"}",
+      "posX": 1100,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyh002rf0zaeapw9o5w",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N049",
+      "type": "decision",
+      "name": "Decision: Score < 40?",
+      "configJson": "{\"condition\":\"score_lt_40\"}",
+      "posX": 700,
+      "posY": 1000
+    },
+    {
+      "id": "cmiexvzyi002tf0zaj6dmx79u",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N050",
+      "type": "tag",
+      "name": "Tag: Cold",
+      "configJson": "{\"tag\":\"cold\"}",
+      "posX": 900,
+      "posY": 1000
+    },
+    {
+      "id": "cmiexvzyk002vf0za2hj6w6x7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N051",
+      "type": "stage",
+      "name": "STAGE: Day 7 - Final Push",
+      "configJson": "{}",
+      "posX": 1300,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyl002xf0zaaqvgtxn5",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N052",
+      "type": "wait",
+      "name": "Wait: Until Day 7",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 1500,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyn002zf0za9b3elkio",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N053",
+      "type": "sms_send",
+      "name": "Send: SMS Urgency",
+      "configJson": "{\"template_id\":\"cfo_ins_sms_03_urgency\"}",
+      "posX": 1700,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyp0031f0zad4avl0oo",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N054",
+      "type": "wait",
+      "name": "Wait: 3 Hours",
+      "configJson": "{\"duration\":\"PT3H\"}",
+      "posX": 1900,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyq0033f0za4d5vrjsq",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N055",
+      "type": "voicemail_drop",
+      "name": "Drop: VM Value Prop",
+      "configJson": "{\"template_id\":\"cfo_ins_vm_02_value\"}",
+      "posX": 2100,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzys0035f0zalyp3w1m5",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N056",
+      "type": "wait",
+      "name": "Wait: 4 Hours",
+      "configJson": "{\"duration\":\"PT4H\"}",
+      "posX": 2300,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyu0037f0zaeqlh7ivr",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N057",
+      "type": "email_send",
+      "name": "Send: Objection Handler Email",
+      "configJson": "{\"template_id\":\"cfo_ins_email_05_objection\"}",
+      "posX": 2500,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyv0039f0zalgvjgi93",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N058",
+      "type": "wait",
+      "name": "Wait: 2 Days",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 2700,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyx003bf0zaj0d90wk2",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N059",
+      "type": "decision",
+      "name": "Check: Any Engagement?",
+      "configJson": "{\"condition\":\"any_activity\"}",
+      "posX": 2900,
+      "posY": 900
+    },
+    {
+      "id": "cmiexvzyz003df0zatum8d15k",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N060",
+      "type": "task",
+      "name": "TASK: BDR Last Attempt Call",
+      "configJson": "{\"assign_to\":\"BDR\"}",
+      "posX": 3100,
+      "posY": 850
+    },
+    {
+      "id": "cmiexvzz1003ff0za5krf9k77",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N061",
+      "type": "stage",
+      "name": "STAGE: Positive Response Received",
+      "configJson": "{}",
+      "posX": 3500,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzz3003hf0zadhpjnsjk",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N062",
+      "type": "tag",
+      "name": "Tag: DEMO-REQUESTED",
+      "configJson": "{\"tag\":\"demo-requested\"}",
+      "posX": 3700,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzz5003jf0zapvsioja4",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N063",
+      "type": "task",
+      "name": "TASK: Schedule Demo",
+      "configJson": "{\"assign_to\":\"BDR\",\"priority\":\"urgent\",\"note\":\"Schedule CFO demo ASAP\"}",
+      "posX": 3900,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzz7003lf0zapnmrh19g",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N064",
+      "type": "wait",
+      "name": "Wait: 1 Hour",
+      "configJson": "{\"duration\":\"PT1H\"}",
+      "posX": 4100,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzz8003nf0zaiwe46xik",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N065",
+      "type": "email_send",
+      "name": "Send: Demo Confirmation",
+      "configJson": "{\"template_id\":\"demo_confirmation\",\"subject\":\"Your Paycile Demo - {{demo_date}}\"}",
+      "posX": 4300,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzzc003pf0zatf55zfyo",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N066",
+      "type": "wait",
+      "name": "Wait: Until 1 Day Before Demo",
+      "configJson": "{\"duration\":\"until_demo_minus_1d\"}",
+      "posX": 4500,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzzd003rf0zai6ce24cb",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N067",
+      "type": "sms_send",
+      "name": "Send: Demo Reminder SMS",
+      "configJson": "{\"template_id\":\"demo_reminder\",\"text\":\"Hi {{contact.first_name}}, reminder: Your Paycile demo is tomorrow at {{demo_time}}. Looking forward to it!\"}",
+      "posX": 4700,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzzf003tf0zadtgakkba",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N068",
+      "type": "wait",
+      "name": "Wait: Until Demo Time",
+      "configJson": "{\"duration\":\"until_demo_time\"}",
+      "posX": 4900,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzzg003vf0zar24u0po1",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N069",
+      "type": "task",
+      "name": "TASK: Demo Conducted",
+      "configJson": "{\"assign_to\":\"Sales\",\"note\":\"Mark demo as completed\"}",
+      "posX": 5100,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzzi003xf0za5ms7apv7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N070",
+      "type": "decision",
+      "name": "Check: Demo Attended?",
+      "configJson": "{\"condition\":\"demo_attended\"}",
+      "posX": 5300,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzzj003zf0za9a1waqkq",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N071",
+      "type": "stage",
+      "name": "STAGE: Post-Demo Follow-up",
+      "configJson": "{}",
+      "posX": 5500,
+      "posY": 100
+    },
+    {
+      "id": "cmiexvzzl0041f0zal829jo1p",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N072",
+      "type": "wait",
+      "name": "Wait: 2 Hours After Demo",
+      "configJson": "{\"duration\":\"PT2H\"}",
+      "posX": 5700,
+      "posY": 100
+    },
+    {
+      "id": "cmiexvzzm0043f0zai5dctra9",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N073",
+      "type": "email_send",
+      "name": "Send: Thank You + Next Steps",
+      "configJson": "{\"template_id\":\"demo_thank_you\",\"subject\":\"Thanks for your time today {{contact.first_name}}\"}",
+      "posX": 5900,
+      "posY": 100
+    },
+    {
+      "id": "cmiexvzzr0045f0za6zctxp2t",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N074",
+      "type": "wait",
+      "name": "Wait: 1 Day",
+      "configJson": "{\"duration\":\"P1D\"}",
+      "posX": 6100,
+      "posY": 100
+    },
+    {
+      "id": "cmiexvzzt0047f0zas5z494s2",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N075",
+      "type": "task",
+      "name": "TASK: Send Proposal",
+      "configJson": "{\"assign_to\":\"Sales\",\"note\":\"Send custom proposal\"}",
+      "posX": 6300,
+      "posY": 100
+    },
+    {
+      "id": "cmiexvzzu0049f0zapnz0ylml",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N076",
+      "type": "wait",
+      "name": "Wait: 2 Days",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 6500,
+      "posY": 100
+    },
+    {
+      "id": "cmiexvzzw004bf0za0h3tdn1v",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N077",
+      "type": "decision",
+      "name": "Check: Proposal Response?",
+      "configJson": "{\"condition\":\"proposal_response\"}",
+      "posX": 6700,
+      "posY": 100
+    },
+    {
+      "id": "cmiexvzzx004df0za1ta21o2b",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N078",
+      "type": "email_send",
+      "name": "Send: Proposal Follow-up",
+      "configJson": "{\"template_id\":\"proposal_follow_up\"}",
+      "posX": 6900,
+      "posY": 150
+    },
+    {
+      "id": "cmiexvzzy004ff0zamo9z2uxi",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N079",
+      "type": "task",
+      "name": "TASK: Sales Call",
+      "configJson": "{\"assign_to\":\"Sales\"}",
+      "posX": 7100,
+      "posY": 150
+    },
+    {
+      "id": "cmiexw000004hf0zawqzeqoc7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N080",
+      "type": "goal",
+      "name": "GOAL: Opportunity Created",
+      "configJson": "{}",
+      "posX": 7300,
+      "posY": 50
+    },
+    {
+      "id": "cmiexw00j004jf0zanvmnw2n7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N081",
+      "type": "stage",
+      "name": "STAGE: Demo No-Show Recovery",
+      "configJson": "{}",
+      "posX": 5500,
+      "posY": 250
+    },
+    {
+      "id": "cmiexw00l004lf0zajkp1okb7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N082",
+      "type": "email_send",
+      "name": "Send: Sorry We Missed You",
+      "configJson": "{\"template_id\":\"demo_no_show\",\"subject\":\"We missed you at today's demo\"}",
+      "posX": 5700,
+      "posY": 250
+    },
+    {
+      "id": "cmiexw00m004nf0za2mcnwz5l",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N083",
+      "type": "sms_send",
+      "name": "Send: Reschedule SMS",
+      "configJson": "{\"text\":\"Hi {{contact.first_name}}, we missed you at the demo. Want to reschedule? {{landing_page_url}}\"}",
+      "posX": 5900,
+      "posY": 250
+    },
+    {
+      "id": "cmiexw00o004pf0zam7qq6b96",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N084",
+      "type": "wait",
+      "name": "Wait: 2 Days",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 6100,
+      "posY": 250
+    },
+    {
+      "id": "cmiexw00p004rf0zanac9gxwi",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N085",
+      "type": "decision",
+      "name": "Check: Rescheduled?",
+      "configJson": "{\"condition\":\"demo_rescheduled\"}",
+      "posX": 6300,
+      "posY": 250
+    },
+    {
+      "id": "cmiexw00r004tf0zatgk0ypbe",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N086",
+      "type": "stage",
+      "name": "STAGE: Long-term Nurture",
+      "configJson": "{}",
+      "posX": 3100,
+      "posY": 1000
+    },
+    {
+      "id": "cmiexw00s004vf0zagtp29gfo",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N087",
+      "type": "wait",
+      "name": "Wait: 30 Days",
+      "configJson": "{\"duration\":\"P30D\"}",
+      "posX": 3300,
+      "posY": 1000
+    },
+    {
+      "id": "cmiexw00u004xf0zaz2prd2i5",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N088",
+      "type": "email_send",
+      "name": "Send: Re-engagement Email",
+      "configJson": "{\"template_id\":\"reengagement_30d\",\"subject\":\"Still struggling with manual reconciliation?\"}",
+      "posX": 3500,
+      "posY": 1000
+    },
+    {
+      "id": "cmiexw00v004zf0zaej3hccdl",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N089",
+      "type": "decision",
+      "name": "Check: Re-engaged?",
+      "configJson": "{\"condition\":\"email_opened\"}",
+      "posX": 3700,
+      "posY": 1000
+    },
+    {
+      "id": "cmiexw00x0051f0zadblr0k4g",
+      "templateId": "funnel_cfo_insurance_v2",
+      "key": "N090",
+      "type": "exit",
+      "name": "EXIT: End Campaign",
+      "configJson": "{}",
+      "posX": 3900,
+      "posY": 1050
+    }
+  ],
+  "edges": [
+    {
+      "id": "cmiexw00y0053f0za0nvtve2t",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N000",
+      "toKey": "N001",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw0100055f0zakb7rqrws",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N001",
+      "toKey": "N002",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw0120057f0za83n5yzl6",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N002",
+      "toKey": "N003",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw0130059f0zan3g1m5c3",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N003",
+      "toKey": "N004",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw015005bf0za3mxp8j27",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N004",
+      "toKey": "N005",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw016005df0zazjc4qqeh",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N004",
+      "toKey": "N010",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw018005ff0zaiqvbd78a",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N005",
+      "toKey": "N006",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw019005hf0zaechzv2gf",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N006",
+      "toKey": "N007",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01b005jf0zaqd65n2me",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N007",
+      "toKey": "N008",
+      "conditionJson": "{\"email_opened\":true}"
+    },
+    {
+      "id": "cmiexw01c005lf0zaxn7b7i3s",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N007",
+      "toKey": "N009",
+      "conditionJson": "{\"email_opened\":false}"
+    },
+    {
+      "id": "cmiexw01e005nf0zaylt64ov3",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N010",
+      "toKey": "N011",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01f005pf0za8nfhv300",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N011",
+      "toKey": "N012",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01h005rf0zaotkb4la7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N008",
+      "toKey": "N013",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01i005tf0zajmbm9xl0",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N013",
+      "toKey": "N014",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01j005vf0zap703wz5w",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N014",
+      "toKey": "N015",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01l005xf0zazgt8lpql",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N015",
+      "toKey": "N016",
+      "conditionJson": "{\"link_clicked\":true}"
+    },
+    {
+      "id": "cmiexw01m005zf0zabom17853",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N016",
+      "toKey": "N017",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01o0061f0za0m7bnwwk",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N017",
+      "toKey": "N018",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01p0063f0zalizrfmbz",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N018",
+      "toKey": "N019",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01q0065f0zauworbtsi",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N019",
+      "toKey": "N020",
+      "conditionJson": "{\"sms_reply\":true}"
+    },
+    {
+      "id": "cmiexw01s0067f0za11zovrxg",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N020",
+      "toKey": "N061",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01t0069f0za0j1oe788",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N015",
+      "toKey": "N021",
+      "conditionJson": "{\"link_clicked\":false}"
+    },
+    {
+      "id": "cmiexw01v006bf0za42kcftfl",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N012",
+      "toKey": "N021",
+      "conditionJson": "{\"linkedin_accepted\":true}"
+    },
+    {
+      "id": "cmiexw01w006df0za3v7ow9se",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N021",
+      "toKey": "N022",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01y006ff0za8mf47tgv",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N022",
+      "toKey": "N023",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw01z006hf0zaakbesg2d",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N023",
+      "toKey": "N024",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw020006jf0zay71hr703",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N024",
+      "toKey": "N025",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw022006lf0zahhgx8w33",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N025",
+      "toKey": "N026",
+      "conditionJson": "{\"linkedin_reply\":true}"
+    },
+    {
+      "id": "cmiexw023006nf0zax7ml942b",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N026",
+      "toKey": "N027",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw025006pf0zaxknhq1bv",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N027",
+      "toKey": "N061",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw026006rf0zatymftrwm",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N025",
+      "toKey": "N028",
+      "conditionJson": "{\"linkedin_reply\":false}"
+    },
+    {
+      "id": "cmiexw028006tf0zaelb78e3h",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N028",
+      "toKey": "N029",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw029006vf0za7q5pamec",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N029",
+      "toKey": "N030",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw02b006xf0zav1lbj433",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N030",
+      "toKey": "N061",
+      "conditionJson": "{\"email_reply\":true}"
+    },
+    {
+      "id": "cmiexw02c006zf0za6eh9az17",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N009",
+      "toKey": "N031",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw02d0071f0za53jsbi9x",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N012",
+      "toKey": "N031",
+      "conditionJson": "{\"linkedin_accepted\":false}"
+    },
+    {
+      "id": "cmiexw02f0073f0zaxwjrl5y6",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N030",
+      "toKey": "N031",
+      "conditionJson": "{\"email_reply\":false}"
+    },
+    {
+      "id": "cmiexw03a0075f0zabahl6jfc",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N031",
+      "toKey": "N032",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03c0077f0zawvve2j1d",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N032",
+      "toKey": "N033",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03d0079f0zal5sdtfgg",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N033",
+      "toKey": "N034",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03e007bf0zajef5cqvr",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N034",
+      "toKey": "N035",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03g007df0zamuocxvfa",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N035",
+      "toKey": "N061",
+      "conditionJson": "{\"sms_reply\":true}"
+    },
+    {
+      "id": "cmiexw03h007ff0zakvlc3qdz",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N035",
+      "toKey": "N036",
+      "conditionJson": "{\"sms_reply\":false}"
+    },
+    {
+      "id": "cmiexw03j007hf0zayyf664o1",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N036",
+      "toKey": "N037",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03k007jf0zanlz10kbj",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N037",
+      "toKey": "N038",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03m007lf0za2k9byum0",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N038",
+      "toKey": "N061",
+      "conditionJson": "{\"inbound_call\":true}"
+    },
+    {
+      "id": "cmiexw03n007nf0zahp5wwqpi",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N038",
+      "toKey": "N039",
+      "conditionJson": "{\"inbound_call\":false}"
+    },
+    {
+      "id": "cmiexw03p007pf0za12l306nn",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N039",
+      "toKey": "N040",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03q007rf0zaqkvoiqu4",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N040",
+      "toKey": "N041",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03s007tf0zaw8oquw3p",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N041",
+      "toKey": "N042",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03t007vf0zavitfjdoo",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N042",
+      "toKey": "N043",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03u007xf0zalvau65a0",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N043",
+      "toKey": "N044",
+      "conditionJson": "{\"score_gte_75\":true}"
+    },
+    {
+      "id": "cmiexw03w007zf0zadedpba7v",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N044",
+      "toKey": "N045",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03x0081f0zanwv52uo9",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N045",
+      "toKey": "N061",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw03z0083f0za8h8n7t18",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N043",
+      "toKey": "N046",
+      "conditionJson": "{\"score_gte_75\":false}"
+    },
+    {
+      "id": "cmiexw0400085f0zadr29f2gk",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N046",
+      "toKey": "N047",
+      "conditionJson": "{\"score_40_to_74\":true}"
+    },
+    {
+      "id": "cmiexw0420087f0zateagci9i",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N047",
+      "toKey": "N048",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw0440089f0zao49vq7j0",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N048",
+      "toKey": "N051",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw045008bf0zan2rkk6xy",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N046",
+      "toKey": "N049",
+      "conditionJson": "{\"score_40_to_74\":false}"
+    },
+    {
+      "id": "cmiexw047008df0zawyg0qmsr",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N049",
+      "toKey": "N050",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw048008ff0zax3gjs6i3",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N050",
+      "toKey": "N086",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw049008hf0zavx1m21gv",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N051",
+      "toKey": "N052",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04b008jf0zayabiqby7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N052",
+      "toKey": "N053",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04c008lf0zaou32y102",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N053",
+      "toKey": "N054",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04e008nf0za55yf1q7t",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N054",
+      "toKey": "N055",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04f008pf0za56juix6b",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N055",
+      "toKey": "N056",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04h008rf0zaj6hnswsv",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N056",
+      "toKey": "N057",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04i008tf0zak1e6mdwm",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N057",
+      "toKey": "N058",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04j008vf0zanbx54lt0",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N058",
+      "toKey": "N059",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04l008xf0zap4u0ntx7",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N059",
+      "toKey": "N060",
+      "conditionJson": "{\"any_activity\":true}"
+    },
+    {
+      "id": "cmiexw04m008zf0zavnp21e0b",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N060",
+      "toKey": "N061",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04o0091f0zam9csjyzq",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N059",
+      "toKey": "N086",
+      "conditionJson": "{\"any_activity\":false}"
+    },
+    {
+      "id": "cmiexw04p0093f0za6dk3j9i3",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N061",
+      "toKey": "N062",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04r0095f0zajbsem4o9",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N062",
+      "toKey": "N063",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04s0097f0zajwylv2da",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N063",
+      "toKey": "N064",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04u0099f0zakfiy9fsr",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N064",
+      "toKey": "N065",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04v009bf0zan99ocq0e",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N065",
+      "toKey": "N066",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04w009df0zai8iiy281",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N066",
+      "toKey": "N067",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04y009ff0zatoiq5w56",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N067",
+      "toKey": "N068",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw04z009hf0zar8r9856u",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N068",
+      "toKey": "N069",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw051009jf0za7f9bmefv",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N069",
+      "toKey": "N070",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw052009lf0zaddptzkba",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N070",
+      "toKey": "N071",
+      "conditionJson": "{\"demo_attended\":true}"
+    },
+    {
+      "id": "cmiexw054009nf0za2uivxfcf",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N070",
+      "toKey": "N081",
+      "conditionJson": "{\"demo_attended\":false}"
+    },
+    {
+      "id": "cmiexw055009pf0zavle0xzld",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N071",
+      "toKey": "N072",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw057009rf0zajshwhg4e",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N072",
+      "toKey": "N073",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw058009tf0za45rqdb4v",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N073",
+      "toKey": "N074",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw05a009vf0zap1wjaaj4",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N074",
+      "toKey": "N075",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw05b009xf0zavmm08orc",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N075",
+      "toKey": "N076",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw05c009zf0zaksimmtbq",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N076",
+      "toKey": "N077",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw05e00a1f0zakcgpfblc",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N077",
+      "toKey": "N080",
+      "conditionJson": "{\"proposal_response\":true}"
+    },
+    {
+      "id": "cmiexw05f00a3f0zaghgbrbay",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N077",
+      "toKey": "N078",
+      "conditionJson": "{\"proposal_response\":false}"
+    },
+    {
+      "id": "cmiexw06100a5f0zadw0fl38m",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N078",
+      "toKey": "N079",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06300a7f0zakc2utyxg",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N079",
+      "toKey": "N080",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06400a9f0zanzngkk1b",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N081",
+      "toKey": "N082",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06600abf0zaszp6ux4w",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N082",
+      "toKey": "N083",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06700adf0zaxjiox5ic",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N083",
+      "toKey": "N084",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06900aff0zasmts9b8f",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N084",
+      "toKey": "N085",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06a00ahf0zatyljbhvg",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N085",
+      "toKey": "N066",
+      "conditionJson": "{\"demo_rescheduled\":true}"
+    },
+    {
+      "id": "cmiexw06c00ajf0zaz9725igq",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N085",
+      "toKey": "N086",
+      "conditionJson": "{\"demo_rescheduled\":false}"
+    },
+    {
+      "id": "cmiexw06d00alf0zangw7r4ue",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N086",
+      "toKey": "N087",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06e00anf0za5l1kduhd",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N087",
+      "toKey": "N088",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06g00apf0za78bjcbdr",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N088",
+      "toKey": "N089",
+      "conditionJson": "{}"
+    },
+    {
+      "id": "cmiexw06i00arf0zahvtz0bz2",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N089",
+      "toKey": "N004",
+      "conditionJson": "{\"email_opened\":true}"
+    },
+    {
+      "id": "cmiexw06j00atf0zaqvrujgu1",
+      "templateId": "funnel_cfo_insurance_v2",
+      "fromKey": "N089",
+      "toKey": "N090",
+      "conditionJson": "{\"email_opened\":false}"
+    }
+  ]
+}
+{
+  "id": "cmk4g9s1b0000cq0xsa507s23",
+  "name": "CFO Insurance - Non SMS",
+  "status": "published",
+  "version": 1,
+  "createdAt": "2026-01-21T20:46:57.589Z",
+  "updatedAt": "2026-01-21T20:46:57.589Z",
+  "nodes": [
+    {
+      "id": "cmkohueyg0001yeg22h49f15m",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N000",
+      "type": "start",
+      "name": "Import: Insurance CFO List",
+      "configJson": "{}",
+      "posX": 100,
+      "posY": 500
+    },
+    {
+      "id": "cmkohueyj0003yeg29iypgcao",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N001",
+      "type": "filter",
+      "name": "Filter: Insurance Industry Only",
+      "configJson": "{\"criteria\":\"industry=insurance\"}",
+      "posX": 300,
+      "posY": 500
+    },
+    {
+      "id": "cmkohueyk0005yeg2ymexbrt5",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N002",
+      "type": "filter",
+      "name": "Filter: Title = CFO/VP Finance/Finance Director",
+      "configJson": "{\"criteria\":\"title_contains=CFO,VP Finance,Finance Director\"}",
+      "posX": 500,
+      "posY": 500
+    },
+    {
+      "id": "cmkohueym0007yeg2q8g8ba0m",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N003",
+      "type": "tag",
+      "name": "Tag: CFO-Insurance-Vertical",
+      "configJson": "{\"tag\":\"cfo-insurance\"}",
+      "posX": 700,
+      "posY": 500
+    },
+    {
+      "id": "cmkohueyo0009yeg23q8yd2so",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N004",
+      "type": "stage",
+      "name": "STAGE: Day 1 - Initial Outreach",
+      "configJson": "{}",
+      "posX": 900,
+      "posY": 500
+    },
+    {
+      "id": "cmkohueyp000byeg2wjswxxz9",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N005",
+      "type": "email_send",
+      "name": "Send: Initial CFO Email (96 Days)",
+      "configJson": "{\"template_id\":\"cfo_ins_email_01_intro\",\"landing_page\":\"/landing/cfo-insurance\"}",
+      "posX": 1100,
+      "posY": 400
+    },
+    {
+      "id": "cmkohueyr000dyeg21hpu4zes",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N006",
+      "type": "wait",
+      "name": "Wait: 2 Hours",
+      "configJson": "{\"duration\":\"PT2H\"}",
+      "posX": 1300,
+      "posY": 400
+    },
+    {
+      "id": "cmkohueys000fyeg25jbzbvax",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N007",
+      "type": "decision",
+      "name": "Check: Email Opened?",
+      "configJson": "{\"condition\":\"email_opened\"}",
+      "posX": 1500,
+      "posY": 400
+    },
+    {
+      "id": "cmkohueyu000hyeg2a56z7jup",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N008",
+      "type": "tag",
+      "name": "Tag: Email-Engaged",
+      "configJson": "{\"tag\":\"email-engaged\"}",
+      "posX": 1700,
+      "posY": 300
+    },
+    {
+      "id": "cmkohueyw000jyeg2k5u0zb8p",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N009",
+      "type": "tag",
+      "name": "Tag: Email-Not-Opened",
+      "configJson": "{\"tag\":\"email-not-opened\"}",
+      "posX": 1700,
+      "posY": 500
+    },
+    {
+      "id": "cmkohueyx000lyeg26wpm10jk",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N010",
+      "type": "linkedin_connect",
+      "name": "LinkedIn: Send Connection Request",
+      "configJson": "{\"message\":\"Hi {{contact.first_name}}, I help insurance CFOs automate payment reconciliation. Would love to connect!\"}",
+      "posX": 1100,
+      "posY": 600
+    },
+    {
+      "id": "cmkohueyz000nyeg218qzsw0l",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N011",
+      "type": "wait",
+      "name": "Wait: 4 Hours",
+      "configJson": "{\"duration\":\"PT4H\"}",
+      "posX": 1300,
+      "posY": 600
+    },
+    {
+      "id": "cmkohuez0000pyeg2wq7tm5dj",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N012",
+      "type": "decision",
+      "name": "Check: LinkedIn Accepted?",
+      "configJson": "{\"condition\":\"linkedin_accepted\"}",
+      "posX": 1500,
+      "posY": 600
+    },
+    {
+      "id": "cmkohuez1000ryeg2p1fb2j9v",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N013",
+      "type": "stage",
+      "name": "STAGE: High Engagement Path",
+      "configJson": "{}",
+      "posX": 1900,
+      "posY": 250
+    },
+    {
+      "id": "cmkohuez3000tyeg2bfes85mo",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N014",
+      "type": "wait",
+      "name": "Wait: 3 Hours",
+      "configJson": "{\"duration\":\"PT3H\"}",
+      "posX": 2100,
+      "posY": 250
+    },
+    {
+      "id": "cmkohuez4000vyeg2p5586je2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N015",
+      "type": "decision",
+      "name": "Check: Link Clicked?",
+      "configJson": "{\"condition\":\"link_clicked\"}",
+      "posX": 2300,
+      "posY": 250
+    },
+    {
+      "id": "cmkohuez5000xyeg2u5ubhsag",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N016",
+      "type": "tag",
+      "name": "Tag: HOT-LEAD",
+      "configJson": "{\"tag\":\"hot-lead\",\"score\":100}",
+      "posX": 2500,
+      "posY": 150
+    },
+    {
+      "id": "cmkohuez7000zyeg2y29uuyng",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N018",
+      "type": "wait",
+      "name": "Wait: 30 Minutes",
+      "configJson": "{\"duration\":\"PT30M\"}",
+      "posX": 2700,
+      "posY": 150
+    },
+    {
+      "id": "cmkohuez80011yeg2pvcbv7h1",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N019",
+      "type": "decision",
+      "name": "Check: Email Reply?",
+      "configJson": "{\"condition\":\"email_reply\"}",
+      "posX": 2900,
+      "posY": 150
+    },
+    {
+      "id": "cmkohueza0013yeg2mph6b82x",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N020",
+      "type": "task",
+      "name": "TASK: BDR Call - Hot Lead",
+      "configJson": "{\"assign_to\":\"BDR\",\"priority\":\"urgent\"}",
+      "posX": 3100,
+      "posY": 50
+    },
+    {
+      "id": "cmkohuezb0015yeg2w6bmsr50",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N021",
+      "type": "stage",
+      "name": "STAGE: Medium Engagement",
+      "configJson": "{}",
+      "posX": 2500,
+      "posY": 350
+    },
+    {
+      "id": "cmkohuezc0017yeg28o9m8zxy",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N022",
+      "type": "wait",
+      "name": "Wait: 6 Hours",
+      "configJson": "{\"duration\":\"PT6H\"}",
+      "posX": 2700,
+      "posY": 350
+    },
+    {
+      "id": "cmkohueze0019yeg2t19oelf2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N023",
+      "type": "linkedin_message",
+      "name": "LinkedIn: Send Message",
+      "configJson": "{\"message\":\"Thanks for connecting! I help insurance CFOs save 96 days/year on reconciliation. Worth a quick call?\"}",
+      "posX": 2900,
+      "posY": 350
+    },
+    {
+      "id": "cmkohuezg001byeg2p6fnu8dn",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N024",
+      "type": "wait",
+      "name": "Wait: 12 Hours",
+      "configJson": "{\"duration\":\"PT12H\"}",
+      "posX": 3100,
+      "posY": 350
+    },
+    {
+      "id": "cmkohuezh001dyeg2clca0box",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N025",
+      "type": "decision",
+      "name": "Check: LinkedIn Reply?",
+      "configJson": "{\"condition\":\"linkedin_reply\"}",
+      "posX": 3300,
+      "posY": 350
+    },
+    {
+      "id": "cmkohuezj001fyeg2htamx698",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N026",
+      "type": "tag",
+      "name": "Tag: Warm-Lead",
+      "configJson": "{\"tag\":\"warm-lead\",\"score\":50}",
+      "posX": 3500,
+      "posY": 300
+    },
+    {
+      "id": "cmkohuf0d001hyeg236vmb3n6",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N027",
+      "type": "task",
+      "name": "TASK: BDR Follow-up Call",
+      "configJson": "{\"assign_to\":\"BDR\",\"priority\":\"normal\"}",
+      "posX": 3700,
+      "posY": 300
+    },
+    {
+      "id": "cmkohuf0e001jyeg22cablzqt",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N028",
+      "type": "email_send",
+      "name": "Send: Value Prop Email",
+      "configJson": "{\"template_id\":\"cfo_ins_email_02_value\"}",
+      "posX": 3500,
+      "posY": 400
+    },
+    {
+      "id": "cmkohuf0f001lyeg27yk4zb1e",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N029",
+      "type": "wait",
+      "name": "Wait: 1 Day",
+      "configJson": "{\"duration\":\"P1D\"}",
+      "posX": 3700,
+      "posY": 400
+    },
+    {
+      "id": "cmkohuf0h001nyeg2n8d4vf63",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N030",
+      "type": "decision",
+      "name": "Check: Email Response?",
+      "configJson": "{\"condition\":\"email_reply\"}",
+      "posX": 3900,
+      "posY": 400
+    },
+    {
+      "id": "cmkohuf0i001pyeg2nri5dpou",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N031",
+      "type": "stage",
+      "name": "STAGE: Day 3 - Re-engagement",
+      "configJson": "{}",
+      "posX": 1900,
+      "posY": 550
+    },
+    {
+      "id": "cmkohuf0j001ryeg2gwrsa5y7",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N032",
+      "type": "wait",
+      "name": "Wait: Until Day 3",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 2100,
+      "posY": 550
+    },
+    {
+      "id": "cmkohuf0l001tyeg2ve4rs8rd",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N034",
+      "type": "wait",
+      "name": "Wait: 2 Hours",
+      "configJson": "{\"duration\":\"PT2H\"}",
+      "posX": 2300,
+      "posY": 550
+    },
+    {
+      "id": "cmkohuf0m001vyeg2o3lfvfl0",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N035",
+      "type": "decision",
+      "name": "Check: Any Activity?",
+      "configJson": "{\"condition\":\"any_activity\"}",
+      "posX": 2500,
+      "posY": 550
+    },
+    {
+      "id": "cmkohuf0o001xyeg2578e7ub8",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N036",
+      "type": "voicemail_drop",
+      "name": "Drop: Voicemail Intro",
+      "configJson": "{\"template_id\":\"cfo_ins_vm_01_intro\"}",
+      "posX": 2700,
+      "posY": 650
+    },
+    {
+      "id": "cmkohuf34001zyeg2pkky2aws",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N037",
+      "type": "wait",
+      "name": "Wait: 4 Hours",
+      "configJson": "{\"duration\":\"PT4H\"}",
+      "posX": 2900,
+      "posY": 650
+    },
+    {
+      "id": "cmkohuf360021yeg2fi5euem9",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N038",
+      "type": "decision",
+      "name": "Check: Voicemail Callback?",
+      "configJson": "{\"condition\":\"inbound_call\"}",
+      "posX": 3100,
+      "posY": 650
+    },
+    {
+      "id": "cmkohuf370023yeg24v34rb3z",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N039",
+      "type": "email_send",
+      "name": "Send: Case Study Email",
+      "configJson": "{\"template_id\":\"cfo_ins_email_03_case_study\"}",
+      "posX": 2700,
+      "posY": 500
+    },
+    {
+      "id": "cmkohuf390025yeg2093qbmsb",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N040",
+      "type": "wait",
+      "name": "Wait: 1 Day",
+      "configJson": "{\"duration\":\"P1D\"}",
+      "posX": 2900,
+      "posY": 500
+    },
+    {
+      "id": "cmkohuf3a0027yeg2gkrmyjdi",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N041",
+      "type": "stage",
+      "name": "STAGE: Day 5 - Engagement Scoring",
+      "configJson": "{}",
+      "posX": 100,
+      "posY": 900
+    },
+    {
+      "id": "cmkohuf5x0029yeg2ohzvfh9j",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N042",
+      "type": "scoring",
+      "name": "Calculate: Engagement Score",
+      "configJson": "{\"rules\":[{\"action\":\"email_opened\",\"points\":10},{\"action\":\"link_clicked\",\"points\":25},{\"action\":\"email_reply\",\"points\":50},{\"action\":\"linkedin_accepted\",\"points\":15},{\"action\":\"linkedin_reply\",\"points\":30}]}",
+      "posX": 300,
+      "posY": 900
+    },
+    {
+      "id": "cmkohuf5y002byeg2ff2tnsrt",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N043",
+      "type": "decision",
+      "name": "Decision: Score >= 75?",
+      "configJson": "{\"condition\":\"score_gte_75\"}",
+      "posX": 500,
+      "posY": 900
+    },
+    {
+      "id": "cmkohuf60002dyeg2ir8mndp9",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N044",
+      "type": "tag",
+      "name": "Tag: VERY-HOT",
+      "configJson": "{\"tag\":\"very-hot\",\"score\":100}",
+      "posX": 700,
+      "posY": 800
+    },
+    {
+      "id": "cmkohuf61002fyeg2lfd6xd40",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N045",
+      "type": "task",
+      "name": "TASK: Immediate BDR Outreach",
+      "configJson": "{\"assign_to\":\"BDR\",\"priority\":\"urgent\",\"note\":\"High engagement - call ASAP\"}",
+      "posX": 900,
+      "posY": 800
+    },
+    {
+      "id": "cmkohuf8p002hyeg2heqenstr",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N046",
+      "type": "decision",
+      "name": "Decision: Score 40-74?",
+      "configJson": "{\"condition\":\"score_40_to_74\"}",
+      "posX": 700,
+      "posY": 900
+    },
+    {
+      "id": "cmkohuf8r002jyeg27ney9h0s",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N047",
+      "type": "tag",
+      "name": "Tag: Warm",
+      "configJson": "{\"tag\":\"warm\",\"score\":50}",
+      "posX": 900,
+      "posY": 900
+    },
+    {
+      "id": "cmkohuf8t002lyeg26zmd3025",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N048",
+      "type": "email_send",
+      "name": "Send: Demo Follow-up",
+      "configJson": "{\"template_id\":\"cfo_ins_email_04_demo_follow\"}",
+      "posX": 1100,
+      "posY": 900
+    },
+    {
+      "id": "cmkohuf8u002nyeg2vp3l1gur",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N049",
+      "type": "decision",
+      "name": "Decision: Score < 40?",
+      "configJson": "{\"condition\":\"score_lt_40\"}",
+      "posX": 700,
+      "posY": 1000
+    },
+    {
+      "id": "cmkohuf8v002pyeg2wgfpso10",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N050",
+      "type": "tag",
+      "name": "Tag: Cold",
+      "configJson": "{\"tag\":\"cold\"}",
+      "posX": 900,
+      "posY": 1000
+    },
+    {
+      "id": "cmkohuf8x002ryeg2lpdqfqcu",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N051",
+      "type": "stage",
+      "name": "STAGE: Day 7 - Final Push",
+      "configJson": "{}",
+      "posX": 1300,
+      "posY": 900
+    },
+    {
+      "id": "cmkohuf8y002tyeg2ixzem0cj",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N052",
+      "type": "wait",
+      "name": "Wait: Until Day 7",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 1500,
+      "posY": 900
+    },
+    {
+      "id": "cmkohuf90002vyeg2y03j3whs",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N054",
+      "type": "wait",
+      "name": "Wait: 3 Hours",
+      "configJson": "{\"duration\":\"PT3H\"}",
+      "posX": 1700,
+      "posY": 900
+    },
+    {
+      "id": "cmkohufbh002xyeg21in8hmqd",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N055",
+      "type": "voicemail_drop",
+      "name": "Drop: VM Value Prop",
+      "configJson": "{\"template_id\":\"cfo_ins_vm_02_value\"}",
+      "posX": 1900,
+      "posY": 900
+    },
+    {
+      "id": "cmkohufbi002zyeg2j0wobci4",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N056",
+      "type": "wait",
+      "name": "Wait: 4 Hours",
+      "configJson": "{\"duration\":\"PT4H\"}",
+      "posX": 2100,
+      "posY": 900
+    },
+    {
+      "id": "cmkohufbk0031yeg2lisiwsnb",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N057",
+      "type": "email_send",
+      "name": "Send: Objection Handler Email",
+      "configJson": "{\"template_id\":\"cfo_ins_email_05_objection\"}",
+      "posX": 2300,
+      "posY": 900
+    },
+    {
+      "id": "cmkohufbm0033yeg2t1dbwnj1",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N058",
+      "type": "wait",
+      "name": "Wait: 2 Days",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 2500,
+      "posY": 900
+    },
+    {
+      "id": "cmkohufbn0035yeg25qs36bh6",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N059",
+      "type": "decision",
+      "name": "Check: Any Engagement?",
+      "configJson": "{\"condition\":\"any_activity\"}",
+      "posX": 2700,
+      "posY": 900
+    },
+    {
+      "id": "cmkohufbq0037yeg25o9633r9",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N060",
+      "type": "task",
+      "name": "TASK: BDR Last Attempt Call",
+      "configJson": "{\"assign_to\":\"BDR\"}",
+      "posX": 2900,
+      "posY": 850
+    },
+    {
+      "id": "cmkohufbs0039yeg2y0yiowvy",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N061",
+      "type": "stage",
+      "name": "STAGE: Positive Response Received",
+      "configJson": "{}",
+      "posX": 3300,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufe9003byeg21nx975f2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N062",
+      "type": "tag",
+      "name": "Tag: DEMO-REQUESTED",
+      "configJson": "{\"tag\":\"demo-requested\"}",
+      "posX": 3500,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufeb003dyeg2nyj0afcl",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N063",
+      "type": "task",
+      "name": "TASK: Schedule Demo",
+      "configJson": "{\"assign_to\":\"BDR\",\"priority\":\"urgent\",\"note\":\"Schedule CFO demo ASAP\"}",
+      "posX": 3700,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufec003fyeg279cg4mwh",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N064",
+      "type": "wait",
+      "name": "Wait: 1 Hour",
+      "configJson": "{\"duration\":\"PT1H\"}",
+      "posX": 3900,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufee003hyeg2e1d1db26",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N065",
+      "type": "email_send",
+      "name": "Send: Demo Confirmation",
+      "configJson": "{\"template_id\":\"demo_confirmation\",\"subject\":\"Your Paycile Demo - {{demo_date}}\"}",
+      "posX": 4100,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufef003jyeg28n92if27",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N066",
+      "type": "wait",
+      "name": "Wait: Until 1 Day Before Demo",
+      "configJson": "{\"duration\":\"until_demo_minus_1d\"}",
+      "posX": 4300,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufeh003lyeg2csk0m96m",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N068",
+      "type": "wait",
+      "name": "Wait: Until Demo Time",
+      "configJson": "{\"duration\":\"until_demo_time\"}",
+      "posX": 4500,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufei003nyeg2m0gpr71x",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N069",
+      "type": "task",
+      "name": "TASK: Demo Conducted",
+      "configJson": "{\"assign_to\":\"Sales\",\"note\":\"Mark demo as completed\"}",
+      "posX": 4700,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufej003pyeg24me35hhe",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N070",
+      "type": "decision",
+      "name": "Check: Demo Attended?",
+      "configJson": "{\"condition\":\"demo_attended\"}",
+      "posX": 4900,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufh2003ryeg2utfjo63y",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N071",
+      "type": "stage",
+      "name": "STAGE: Post-Demo Follow-up",
+      "configJson": "{}",
+      "posX": 5100,
+      "posY": 100
+    },
+    {
+      "id": "cmkohufh4003tyeg2317xlvu2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N072",
+      "type": "wait",
+      "name": "Wait: 2 Hours After Demo",
+      "configJson": "{\"duration\":\"PT2H\"}",
+      "posX": 5300,
+      "posY": 100
+    },
+    {
+      "id": "cmkohufh5003vyeg2zq9yev4g",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N073",
+      "type": "email_send",
+      "name": "Send: Thank You + Next Steps",
+      "configJson": "{\"template_id\":\"demo_thank_you\",\"subject\":\"Thanks for your time today {{contact.first_name}}\"}",
+      "posX": 5500,
+      "posY": 100
+    },
+    {
+      "id": "cmkohufh7003xyeg273yl2wce",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N074",
+      "type": "wait",
+      "name": "Wait: 1 Day",
+      "configJson": "{\"duration\":\"P1D\"}",
+      "posX": 5700,
+      "posY": 100
+    },
+    {
+      "id": "cmkohufha003zyeg2dn4t9qcv",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N075",
+      "type": "task",
+      "name": "TASK: Send Proposal",
+      "configJson": "{\"assign_to\":\"Sales\",\"note\":\"Send custom proposal\"}",
+      "posX": 5900,
+      "posY": 100
+    },
+    {
+      "id": "cmkohufhb0041yeg2xw00i2ec",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N076",
+      "type": "wait",
+      "name": "Wait: 2 Days",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 6100,
+      "posY": 100
+    },
+    {
+      "id": "cmkohufhd0043yeg29p24eq0j",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N077",
+      "type": "decision",
+      "name": "Check: Proposal Response?",
+      "configJson": "{\"condition\":\"proposal_response\"}",
+      "posX": 6300,
+      "posY": 100
+    },
+    {
+      "id": "cmkohufjt0045yeg2s33utxbx",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N078",
+      "type": "email_send",
+      "name": "Send: Proposal Follow-up",
+      "configJson": "{\"template_id\":\"proposal_follow_up\"}",
+      "posX": 6500,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufjv0047yeg2plz0sngk",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N079",
+      "type": "task",
+      "name": "TASK: Sales Call",
+      "configJson": "{\"assign_to\":\"Sales\"}",
+      "posX": 6700,
+      "posY": 150
+    },
+    {
+      "id": "cmkohufjw0049yeg2uacpdmka",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N080",
+      "type": "goal",
+      "name": "GOAL: Opportunity Created",
+      "configJson": "{}",
+      "posX": 6900,
+      "posY": 50
+    },
+    {
+      "id": "cmkohufjy004byeg2xh9n44hj",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N081",
+      "type": "stage",
+      "name": "STAGE: Demo No-Show Recovery",
+      "configJson": "{}",
+      "posX": 5100,
+      "posY": 250
+    },
+    {
+      "id": "cmkohufjz004dyeg2oovgp9tt",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N082",
+      "type": "email_send",
+      "name": "Send: Sorry We Missed You",
+      "configJson": "{\"template_id\":\"demo_no_show\",\"subject\":\"We missed you at today's demo\"}",
+      "posX": 5300,
+      "posY": 250
+    },
+    {
+      "id": "cmkohufk1004fyeg2x08xwnbx",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N084",
+      "type": "wait",
+      "name": "Wait: 2 Days",
+      "configJson": "{\"duration\":\"P2D\"}",
+      "posX": 5500,
+      "posY": 250
+    },
+    {
+      "id": "cmkohufk2004hyeg2iq6pkf5f",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N085",
+      "type": "decision",
+      "name": "Check: Rescheduled?",
+      "configJson": "{\"condition\":\"demo_rescheduled\"}",
+      "posX": 5700,
+      "posY": 250
+    },
+    {
+      "id": "cmkohufml004jyeg279oubqjh",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N086",
+      "type": "stage",
+      "name": "STAGE: Long-term Nurture",
+      "configJson": "{}",
+      "posX": 2900,
+      "posY": 1000
+    },
+    {
+      "id": "cmkohufmn004lyeg22gmk8w8j",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N087",
+      "type": "wait",
+      "name": "Wait: 30 Days",
+      "configJson": "{\"duration\":\"P30D\"}",
+      "posX": 3100,
+      "posY": 1000
+    },
+    {
+      "id": "cmkohufmp004nyeg281xrxm65",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N088",
+      "type": "email_send",
+      "name": "Send: Re-engagement Email",
+      "configJson": "{\"template_id\":\"reengagement_30d\",\"subject\":\"Still struggling with manual reconciliation?\"}",
+      "posX": 3300,
+      "posY": 1000
+    },
+    {
+      "id": "cmkohufms004pyeg24kzmp0on",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N089",
+      "type": "decision",
+      "name": "Check: Re-engaged?",
+      "configJson": "{\"condition\":\"email_opened\"}",
+      "posX": 3500,
+      "posY": 1000
+    },
+    {
+      "id": "cmkohufmu004ryeg2lke95u9e",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "key": "N090",
+      "type": "exit",
+      "name": "EXIT: End Campaign",
+      "configJson": "{}",
+      "posX": 3700,
+      "posY": 1050
+    }
+  ],
+  "edges": [
+    {
+      "id": "cmkohufmw004tyeg2f0tupx9k",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N000",
+      "toKey": "N001",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufmy004vyeg2b1koof4p",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N001",
+      "toKey": "N002",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpd004xyeg23p4mggd3",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N002",
+      "toKey": "N003",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpf004zyeg2d1eqhu9m",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N003",
+      "toKey": "N004",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpg0051yeg23onu4yq9",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N004",
+      "toKey": "N005",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpi0053yeg2jo1q5nhr",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N004",
+      "toKey": "N010",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpk0055yeg2ztmpj0xd",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N005",
+      "toKey": "N006",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpl0057yeg2webu6p41",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N006",
+      "toKey": "N007",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpm0059yeg2sxqgizd3",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N007",
+      "toKey": "N008",
+      "conditionJson": "{\"email_opened\":true}"
+    },
+    {
+      "id": "cmkohufpo005byeg2br678n02",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N007",
+      "toKey": "N009",
+      "conditionJson": "{\"email_opened\":false}"
+    },
+    {
+      "id": "cmkohufpp005dyeg2td032k0r",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N010",
+      "toKey": "N011",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpr005fyeg2wxsq8mtp",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N011",
+      "toKey": "N012",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufps005hyeg2qhzr0al3",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N008",
+      "toKey": "N013",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpt005jyeg23rnjqb60",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N013",
+      "toKey": "N014",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpv005lyeg27y2e3bw1",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N014",
+      "toKey": "N015",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpw005nyeg29y80agdi",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N015",
+      "toKey": "N016",
+      "conditionJson": "{\"link_clicked\":true}"
+    },
+    {
+      "id": "cmkohufpy005pyeg2q0qmbsc4",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N016",
+      "toKey": "N018",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufpz005ryeg238cxqye6",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N018",
+      "toKey": "N019",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufq0005tyeg2nipixiq6",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N019",
+      "toKey": "N020",
+      "conditionJson": "{\"email_reply\":true}"
+    },
+    {
+      "id": "cmkohufq2005vyeg2c277uwoo",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N020",
+      "toKey": "N061",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufq3005xyeg2i9534fma",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N015",
+      "toKey": "N021",
+      "conditionJson": "{\"link_clicked\":false}"
+    },
+    {
+      "id": "cmkohufq5005zyeg2qp2ijaa1",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N012",
+      "toKey": "N021",
+      "conditionJson": "{\"linkedin_accepted\":true}"
+    },
+    {
+      "id": "cmkohufq60061yeg2swxpwtyf",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N021",
+      "toKey": "N022",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufq80063yeg2q2o7sck5",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N022",
+      "toKey": "N023",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufq90065yeg2drre2ndz",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N023",
+      "toKey": "N024",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqa0067yeg25v8r4ul5",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N024",
+      "toKey": "N025",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqc0069yeg2f23w0w2s",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N025",
+      "toKey": "N026",
+      "conditionJson": "{\"linkedin_reply\":true}"
+    },
+    {
+      "id": "cmkohufqd006byeg27hhppkml",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N026",
+      "toKey": "N027",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqf006dyeg2xsubd6j2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N027",
+      "toKey": "N061",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqg006fyeg27wldto9d",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N025",
+      "toKey": "N028",
+      "conditionJson": "{\"linkedin_reply\":false}"
+    },
+    {
+      "id": "cmkohufqi006hyeg2gafagzyu",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N028",
+      "toKey": "N029",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqk006jyeg2zanonlsi",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N029",
+      "toKey": "N030",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufql006lyeg2klrm5g5t",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N030",
+      "toKey": "N061",
+      "conditionJson": "{\"email_reply\":true}"
+    },
+    {
+      "id": "cmkohufqn006nyeg2cc59pnno",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N009",
+      "toKey": "N031",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqo006pyeg228mmag1y",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N012",
+      "toKey": "N031",
+      "conditionJson": "{\"linkedin_accepted\":false}"
+    },
+    {
+      "id": "cmkohufqq006ryeg2t3dj8jcf",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N030",
+      "toKey": "N031",
+      "conditionJson": "{\"email_reply\":false}"
+    },
+    {
+      "id": "cmkohufqr006tyeg2r837vaqo",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N019",
+      "toKey": "N031",
+      "conditionJson": "{\"email_reply\":false}"
+    },
+    {
+      "id": "cmkohufqs006vyeg2oxd88gvj",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N031",
+      "toKey": "N032",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqu006xyeg282c4uoff",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N032",
+      "toKey": "N034",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqv006zyeg2465ps2qd",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N034",
+      "toKey": "N035",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufqw0071yeg29gl3ffjg",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N035",
+      "toKey": "N061",
+      "conditionJson": "{\"any_activity\":true}"
+    },
+    {
+      "id": "cmkohufqx0073yeg2tkcts004",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N035",
+      "toKey": "N036",
+      "conditionJson": "{\"any_activity\":false}"
+    },
+    {
+      "id": "cmkohufqz0075yeg26euol8ed",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N036",
+      "toKey": "N037",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufr00077yeg2bm060min",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N037",
+      "toKey": "N038",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufr20079yeg2gnn1f9bs",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N038",
+      "toKey": "N061",
+      "conditionJson": "{\"inbound_call\":true}"
+    },
+    {
+      "id": "cmkohufr3007byeg2m08vvviw",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N038",
+      "toKey": "N039",
+      "conditionJson": "{\"inbound_call\":false}"
+    },
+    {
+      "id": "cmkohufr4007dyeg2rnzbj18p",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N039",
+      "toKey": "N040",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufr6007fyeg2ffz9aj58",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N040",
+      "toKey": "N041",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufr7007hyeg2e2z1rgty",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N041",
+      "toKey": "N042",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufr9007jyeg2p3sk2ukl",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N042",
+      "toKey": "N043",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufs4007lyeg2vguw13bu",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N043",
+      "toKey": "N044",
+      "conditionJson": "{\"score_gte_75\":true}"
+    },
+    {
+      "id": "cmkohufs6007nyeg21a66mtlq",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N044",
+      "toKey": "N045",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufs7007pyeg2odo37p5y",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N045",
+      "toKey": "N061",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufs9007ryeg2yszxyse3",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N043",
+      "toKey": "N046",
+      "conditionJson": "{\"score_gte_75\":false}"
+    },
+    {
+      "id": "cmkohufsa007tyeg21glso86h",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N046",
+      "toKey": "N047",
+      "conditionJson": "{\"score_40_to_74\":true}"
+    },
+    {
+      "id": "cmkohufsc007vyeg2dn4kcbt2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N047",
+      "toKey": "N048",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsd007xyeg2k06v1jiv",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N048",
+      "toKey": "N051",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsf007zyeg2ahbwpf76",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N046",
+      "toKey": "N049",
+      "conditionJson": "{\"score_40_to_74\":false}"
+    },
+    {
+      "id": "cmkohufsg0081yeg2evl03y2w",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N049",
+      "toKey": "N050",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsi0083yeg24um22a7w",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N050",
+      "toKey": "N086",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsj0085yeg2bxl1cenf",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N051",
+      "toKey": "N052",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsk0087yeg204hxa9s1",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N052",
+      "toKey": "N054",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsm0089yeg2z3hbetgz",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N054",
+      "toKey": "N055",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsn008byeg2qp3tdy9k",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N055",
+      "toKey": "N056",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsp008dyeg2st7gla7g",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N056",
+      "toKey": "N057",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsq008fyeg2q2fcwvvf",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N057",
+      "toKey": "N058",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsr008hyeg2astrss0p",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N058",
+      "toKey": "N059",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufst008jyeg24wmoboce",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N059",
+      "toKey": "N060",
+      "conditionJson": "{\"any_activity\":true}"
+    },
+    {
+      "id": "cmkohufsu008lyeg29zsf8way",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N060",
+      "toKey": "N061",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsw008nyeg2kugpiwol",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N059",
+      "toKey": "N086",
+      "conditionJson": "{\"any_activity\":false}"
+    },
+    {
+      "id": "cmkohufsx008pyeg2f3q903iw",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N061",
+      "toKey": "N062",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufsz008ryeg2vipkyaf2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N062",
+      "toKey": "N063",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuft0008tyeg2xvhh080a",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N063",
+      "toKey": "N064",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuft2008vyeg2d6et2e6j",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N064",
+      "toKey": "N065",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuft3008xyeg2l12xtnti",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N065",
+      "toKey": "N066",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuft5008zyeg2mf7uf2yd",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N066",
+      "toKey": "N068",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuft60091yeg28qyw51n7",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N068",
+      "toKey": "N069",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuft80093yeg2168af943",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N069",
+      "toKey": "N070",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuft90095yeg2jqgwmrp5",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N070",
+      "toKey": "N071",
+      "conditionJson": "{\"demo_attended\":true}"
+    },
+    {
+      "id": "cmkohuftb0097yeg2mfmrmae2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N070",
+      "toKey": "N081",
+      "conditionJson": "{\"demo_attended\":false}"
+    },
+    {
+      "id": "cmkohuftc0099yeg24l5x85lx",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N071",
+      "toKey": "N072",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufte009byeg2j1fc0kfj",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N072",
+      "toKey": "N073",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuftf009dyeg28rownkcl",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N073",
+      "toKey": "N074",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufth009fyeg2wfeyukvk",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N074",
+      "toKey": "N075",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufti009hyeg29lks76yw",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N075",
+      "toKey": "N076",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuftj009jyeg20j1l25fi",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N076",
+      "toKey": "N077",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuftl009lyeg2xfqmjkk4",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N077",
+      "toKey": "N080",
+      "conditionJson": "{\"proposal_response\":true}"
+    },
+    {
+      "id": "cmkohuftm009nyeg2rqa98tx0",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N077",
+      "toKey": "N078",
+      "conditionJson": "{\"proposal_response\":false}"
+    },
+    {
+      "id": "cmkohuftn009pyeg23rooi3xt",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N078",
+      "toKey": "N079",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuftp009ryeg26cnagri2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N079",
+      "toKey": "N080",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuftr009tyeg2ggr0p6m1",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N081",
+      "toKey": "N082",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufts009vyeg25igoqvwu",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N082",
+      "toKey": "N084",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuftu009xyeg2nzp9h4gf",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N084",
+      "toKey": "N085",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohuftw009zyeg2d2s3mksb",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N085",
+      "toKey": "N068",
+      "conditionJson": "{\"demo_rescheduled\":true}"
+    },
+    {
+      "id": "cmkohuftx00a1yeg23036bejk",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N085",
+      "toKey": "N086",
+      "conditionJson": "{\"demo_rescheduled\":false}"
+    },
+    {
+      "id": "cmkohuftz00a3yeg2uomvsqcl",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N086",
+      "toKey": "N087",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufu100a5yeg2wyyufhq2",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N087",
+      "toKey": "N088",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufu200a7yeg2asj7dj1v",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N088",
+      "toKey": "N089",
+      "conditionJson": null
+    },
+    {
+      "id": "cmkohufu400a9yeg21kzm9le6",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N089",
+      "toKey": "N004",
+      "conditionJson": "{\"email_opened\":true}"
+    },
+    {
+      "id": "cmkohufu500abyeg2e9strwcl",
+      "templateId": "cmk4g9s1b0000cq0xsa507s23",
+      "fromKey": "N089",
+      "toKey": "N090",
+      "conditionJson": "{\"email_opened\":false}"
+    }
+  ]
+}

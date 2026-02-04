@@ -33,6 +33,8 @@ declare global {
 }
 
 const app = express();
+
+// CORS configuration - must be before other middleware
 app.use(cors({
   origin: [
     'https://paycile-automation.onrender.com',
@@ -42,7 +44,27 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Additional CORS headers for all responses
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://paycile-automation.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  next();
+});
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 const prisma = new PrismaClient();
