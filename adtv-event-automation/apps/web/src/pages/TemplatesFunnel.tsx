@@ -177,10 +177,22 @@ export function TemplatesFunnel() {
           </div>
           <div className="grid md:grid-cols-2 gap-4 mt-2">
             {contentTemplates.filter((t: any) => {
-              // Temporarily disabled: Filter is disabled because template IDs were regenerated
-              // and funnel nodes still reference old IDs. Filter will work again after
-              // funnel templates are reloaded with new template IDs.
-              return true;
+              // Filter by selected funnel
+              if (selectedFunnelId === 'all') return true;
+              
+              // Find the selected funnel template
+              const selectedFunnel = serverTemplates.find((tpl: any) => tpl.id === selectedFunnelId);
+              if (!selectedFunnel || !Array.isArray(selectedFunnel.nodes)) return false;
+              
+              // Check if any node in this funnel references this content template
+              return selectedFunnel.nodes.some((node: any) => {
+                try {
+                  const config = node.configJson ? JSON.parse(node.configJson) : {};
+                  return config.template_id === t.id;
+                } catch {
+                  return false;
+                }
+              });
             }).map((t: any) => (
               <button
                 key={t.id}
