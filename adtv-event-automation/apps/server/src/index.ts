@@ -2878,8 +2878,49 @@ app.post('/api/email/reply-webhook', async (req, res) => {
 });
 
 // =============================================================================
-// ADMIN: DATABASE MIGRATION ENDPOINT
+// ADMIN: DATABASE MANAGEMENT ENDPOINTS
 // =============================================================================
+
+// Clear all funnel templates and content templates
+app.post('/api/admin/clear-all-templates', async (req, res) => {
+  try {
+    console.log('🗑️ Clearing all templates...');
+    
+    // Delete all funnel template nodes and edges first (foreign key constraints)
+    const nodesDeleted = await prisma.node.deleteMany({});
+    const edgesDeleted = await prisma.edge.deleteMany({});
+    
+    // Delete all template versions
+    const versionsDeleted = await prisma.templateVersion.deleteMany({});
+    
+    // Delete all funnel templates
+    const templatesDeleted = await prisma.template.deleteMany({});
+    
+    // Delete all content templates
+    const contentTemplatesDeleted = await prisma.contentTemplate.deleteMany({});
+    
+    console.log('✅ Cleanup complete');
+    
+    res.json({
+      ok: true,
+      message: 'All templates cleared successfully',
+      deleted: {
+        funnelTemplates: templatesDeleted.count,
+        nodes: nodesDeleted.count,
+        edges: edgesDeleted.count,
+        templateVersions: versionsDeleted.count,
+        contentTemplates: contentTemplatesDeleted.count
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('❌ Clear templates error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      hint: 'Check database constraints'
+    });
+  }
+});
 
 app.post('/api/admin/run-migration', async (req, res) => {
   try {
