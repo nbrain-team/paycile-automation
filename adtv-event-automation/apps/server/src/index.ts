@@ -2554,6 +2554,7 @@ app.post('/api/leads/submit', async (req, res) => {
       return res.status(500).json({ error: 'HubSpot integration not configured' });
     }
 
+    // Use only standard HubSpot properties that definitely exist
     const hubspotProperties: any = {
       email: leadData.email,
       firstname: leadData.firstName,
@@ -2561,24 +2562,28 @@ app.post('/api/leads/submit', async (req, res) => {
       company: leadData.company,
       phone: leadData.phone || '',
       jobtitle: leadData.jobTitle || '',
-      lifecyclestage: 'lead',
-      // Required PLG Campaign properties
-      hs_marketable_status: 'Marketing Contact', // MARKETING_CONTACT_STATUS
-      hs_lead_status: 'NEW'
+      lifecyclestage: 'lead'
     };
 
-    // Add custom Paycile properties if available
-    if (leadData.persona) hubspotProperties.paycile_persona = leadData.persona;
-    if (leadData.campaign_name) hubspotProperties.paycile_campaign_name = leadData.campaign_name;
-    if (leadData.status) hubspotProperties.paycile_status = leadData.status;
-    if (leadData.lead_score) hubspotProperties.paycile_lead_score = leadData.lead_score;
-    if (leadData.companySize) hubspotProperties.company_size = leadData.companySize;
-    if (leadData.message) hubspotProperties.message = leadData.message;
+    // Add standard properties that are safe
+    if (leadData.companySize) {
+      hubspotProperties.company_size = leadData.companySize;
+    }
     
-    // RECORD_SOURCE = PLG CAMPAIGN (required for PLG tracking)
+    // Add PLG Campaign tracking via standard fields
+    // Use 'hs_analytics_source' and 'hs_analytics_source_data_1' for tracking
     hubspotProperties.hs_analytics_source = 'OFFLINE';
-    hubspotProperties.hs_analytics_source_data_1 = 'PLG CAMPAIGN';
-    hubspotProperties.hs_analytics_source_data_2 = leadData.source || 'Landing Page Form';
+    hubspotProperties.hs_analytics_source_data_1 = 'PLG_CAMPAIGN';
+    hubspotProperties.hs_analytics_source_data_2 = leadData.source || 'Landing_Page_Form';
+    
+    // Store additional data in notes instead of custom properties
+    const additionalData = {
+      persona: leadData.persona,
+      campaign_name: leadData.campaign_name,
+      status: leadData.status,
+      lead_score: leadData.lead_score,
+      message: leadData.message
+    };
 
     // Try to find existing contact
     let hubspotContactId = null;
@@ -2642,14 +2647,27 @@ app.post('/api/leads/submit', async (req, res) => {
     }
 
     if (!hubspotResponse.ok) {
-      const errorData = await hubspotResponse.json();
-      console.error('❌ HubSpot API error:', errorData);
-      throw new Error('Failed to sync with HubSpot');
+      const errorData = await hubspotResponse.json().catch(() => ({}));
+      console.error('❌ HubSpot API error:', JSON.stringify(errorData, null, 2));
+      console.error('❌ HubSpot status:', hubspotResponse.status);
+      console.error('❌ Properties sent:', JSON.stringify(hubspotProperties, null, 2));
+      throw new Error(`Failed to sync with HubSpot: ${errorData.message || hubspotResponse.statusText}`);
     }
 
-    // Create a note with the message if provided
-    if (leadData.message && hubspotContactId) {
+    // Create a note with all the additional data
+    if (hubspotContactId) {
       try {
+        const noteBody = `
+          <strong>🎯 PLG Campaign - Lead Form Submission</strong><br><br>
+          <strong>Source:</strong> ${leadData.source || 'Landing Page'}<br>
+          <strong>Campaign:</strong> ${additionalData.campaign_name || 'N/A'}<br>
+          <strong>Persona:</strong> ${additionalData.persona || 'N/A'}<br>
+          <strong>Lead Score:</strong> ${additionalData.lead_score || 'N/A'}<br>
+          <strong>Status:</strong> ${additionalData.status || 'new'}<br>
+          <strong>Company Size:</strong> ${leadData.companySize || 'N/A'}<br><br>
+          ${additionalData.message ? `<strong>Message:</strong><br>${additionalData.message}` : ''}
+        `;
+        
         await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
           method: 'POST',
           headers: {
@@ -2659,7 +2677,7 @@ app.post('/api/leads/submit', async (req, res) => {
           body: JSON.stringify({
             properties: {
               hs_timestamp: Date.now(),
-              hs_note_body: `<strong>Lead Form Submission - ${leadData.source || 'Landing Page'}</strong><br><br>${leadData.message}`
+              hs_note_body: noteBody
             },
             associations: [{
               to: { id: hubspotContactId },
