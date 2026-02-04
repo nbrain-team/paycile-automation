@@ -23,6 +23,15 @@ import path from 'path';
 import Papa from 'papaparse';
 dotenv.config();
 
+// Extend Express Request type to include user property from JWT
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+    }
+  }
+}
+
 const app = express();
 app.use(cors({
   origin: [
