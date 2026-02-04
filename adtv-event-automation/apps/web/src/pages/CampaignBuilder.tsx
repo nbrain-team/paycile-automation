@@ -413,13 +413,15 @@ function ContactsTab({ contacts }: ContactsTabProps) {
   const [query, setQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'All' | typeof CONTACT_STATUSES[number]>('All');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const { addToast } = useStore();
+  const { addToast, liveCampaigns, setContactsForCampaign } = useStore();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showSms, setShowSms] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [smsText, setSmsText] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
+  const [showImportFromCampaign, setShowImportFromCampaign] = useState(false);
+  const [sourceCampaignId, setSourceCampaignId] = useState('');
   const { contactsByCampaignId, setContactsForCampaign } = useStore();
   const params = useParams();
   const campaignId = params.id as string;
@@ -509,6 +511,75 @@ function ContactsTab({ contacts }: ContactsTabProps) {
 
   const openSms = () => { if (selectedIds.size===0) return; setSmsText(''); setShowSms(true); };
   const openEmail = () => { if (selectedIds.size===0) return; setEmailSubject(''); setEmailBody(''); setShowEmail(true); };
+  
+  const importFromCampaign = async () => {
+    if (!sourceCampaignId) {
+      addToast({ title: 'Select a campaign', description: 'Please select a source campaign', variant: 'error' });
+      return;
+    }
+    
+    try {
+      const currentCampaignId = window.location.pathname.split('/').pop() || '';
+      
+      // Fetch contacts from source campaign
+      const response = await fetch(`${getApiUrl()}/api/campaigns/${sourceCampaignId}/contacts`);
+      if (!response.ok) throw new Error('Failed to fetch contacts');
+      
+      const sourceContacts = await response.json();
+      
+      if (!Array.isArray(sourceContacts) || sourceContacts.length === 0) {
+        addToast({ title: 'No contacts', description: 'Source campaign has no contacts', variant: 'error' });
+        return;
+      }
+      
+      // Copy contacts to current campaign
+      const copyResponse = await fetch(`${getApiUrl()}/api/campaigns/${currentCampaignId}/contacts/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          contacts: sourceContacts.map((c: any) => ({
+            name: c.name,
+            company: c.company,
+            email: c.email,
+            phone: c.phone,
+            city: c.city,
+            state: c.state,
+            url: c.url,
+            status: 'No Activity',
+            stageId: null,
+            raw: null
+          }))
+        })
+      });
+      
+      if (!copyResponse.ok) throw new Error('Failed to copy contacts');
+      
+      const result = await copyResponse.json();
+      
+      // Reload contacts
+      const reloadResponse = await fetch(`${getApiUrl()}/api/campaigns/${currentCampaignId}/contacts`);
+      const reloadedContacts = await reloadResponse.json();
+      const mapped = reloadedContacts.map((c: any) => ({ 
+        id: c.id, name: c.name, company: c.company, email: c.email, phone: c.phone, 
+        city: c.city, state: c.state, url: c.url, status: c.status, stageId: c.stageKey, 
+        raw: c.rawJson ? JSON.parse(c.rawJson) : {} 
+      }));
+      setContactsForCampaign(currentCampaignId, mapped as any);
+      
+      addToast({ 
+        title: 'Contacts imported', 
+        description: `${sourceContacts.length} contacts copied from source campaign`, 
+        variant: 'success' 
+      });
+      
+      setShowImportFromCampaign(false);
+      setSourceCampaignId('');
+      
+    } catch (error: any) {
+      addToast({ title: 'Import failed', description: error.message, variant: 'error' });
+    }
+  };
+  
   const bulkDelete = async () => {
     if (selectedIds.size===0) return;
     const confirm = window.confirm(`Delete ${selectedIds.size} selected contact(s)?`);
@@ -592,8 +663,11 @@ function ContactsTab({ contacts }: ContactsTabProps) {
               };
               reader.readAsText(file);
             }} />
-            Import CSV
+            📤 Import CSV
           </label>
+          <button className="btn-outline btn-sm" onClick={() => setShowImportFromCampaign(true)}>
+            📋 Copy from Campaign
+          </button>
           <button className="btn-outline btn-sm" onClick={()=> {
             const cid = window.location.pathname.split('/').pop() || '';
             const list = (contactsByCampaignId as any)[cid] || [];
@@ -604,7 +678,7 @@ function ContactsTab({ contacts }: ContactsTabProps) {
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = `contacts_${cid}.csv`; a.click(); URL.revokeObjectURL(url);
-          }}>Export CSV</button>
+          }}>📥 Export CSV</button>
           <button className="btn-outline btn-sm" onClick={openSms} disabled={selectedIds.size===0}>Create SMS</button>
           <button className="btn-outline btn-sm" onClick={openEmail} disabled={selectedIds.size===0}>Create Email</button>
           <button className="btn-outline btn-sm" onClick={bulkDelete} disabled={selectedIds.size===0}>Delete Selected</button>
@@ -699,6 +773,55 @@ function ContactsTab({ contacts }: ContactsTabProps) {
           <div className="flex items-center justify-end gap-2">
             <button className="btn-outline btn-sm" onClick={()=> setShowEmail(false)}>Cancel</button>
             <button className="btn-primary btn-sm" disabled={!emailSubject.trim() && !emailBody.trim()} onClick={sendBulkEmail}>Send Email</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {showImportFromCampaign && (
+      <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Copy Contacts from Campaign</h3>
+            <button className="btn-outline btn-sm" onClick={() => { setShowImportFromCampaign(false); setSourceCampaignId(''); }}>Close</button>
+          </div>
+          
+          <p className="text-sm text-gray-600">
+            Select a source campaign to copy all contacts from. This will add contacts to the current campaign without removing existing ones.
+          </p>
+          
+          <div>
+            <label className="label">Source Campaign</label>
+            <select 
+              className="input" 
+              value={sourceCampaignId} 
+              onChange={(e) => setSourceCampaignId(e.target.value)}
+            >
+              <option value="">Select a campaign...</option>
+              {liveCampaigns
+                .filter(c => c.id !== window.location.pathname.split('/').pop())
+                .map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({(contactsByCampaignId as any)[c.id]?.length || 0} contacts)
+                  </option>
+                ))}
+            </select>
+          </div>
+          
+          <div className="flex gap-2 justify-end">
+            <button 
+              className="btn-outline btn-sm" 
+              onClick={() => { setShowImportFromCampaign(false); setSourceCampaignId(''); }}
+            >
+              Cancel
+            </button>
+            <button 
+              className="btn-primary btn-sm" 
+              onClick={importFromCampaign}
+              disabled={!sourceCampaignId}
+            >
+              Import Contacts
+            </button>
           </div>
         </div>
       </div>

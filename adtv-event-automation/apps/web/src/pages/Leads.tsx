@@ -93,6 +93,45 @@ export function Leads() {
   };
   const toggleOne = (id: string) => setSelectedIds((prev)=> { const next = new Set(prev); next.has(id)?next.delete(id):next.add(id); return next; });
 
+  const exportToCsv = () => {
+    // Create CSV content
+    const headers = ['Name', 'Company', 'Email', 'Phone', 'City', 'State', 'Status', 'Campaign', 'URL'];
+    const rows = filtered.map(c => [
+      c.name,
+      c.company || '',
+      c.email || '',
+      c.phone || '',
+      c.city || '',
+      c.state || '',
+      c.status,
+      c.campaignName,
+      c.url || ''
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => {
+        // Escape cells with commas or quotes
+        const str = String(cell);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }).join(','))
+    ].join('\n');
+    
+    // Create download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `paycile-leads-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const sendBulkSms = async () => {
     const ids = Array.from(selectedIds);
     await Promise.all(ids.map(async (id) => {
@@ -122,6 +161,9 @@ export function Leads() {
           <p className="text-sm text-gray-600">Aggregated contacts from all campaigns</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          <button className="btn-outline btn-md" onClick={exportToCsv}>
+            📥 Export CSV ({filtered.length} leads)
+          </button>
           <input className="input w-64" placeholder="Search contacts" value={query} onChange={(e)=> setQuery(e.target.value)} />
           <select className="input w-60" value={selectedStatus} onChange={(e)=> setSelectedStatus(e.target.value as any)}>
             <option value="All">All Statuses</option>
