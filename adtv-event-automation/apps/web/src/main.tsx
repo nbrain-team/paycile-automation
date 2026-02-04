@@ -24,8 +24,13 @@ import { ARAPLanding } from './pages/ARAPLanding';
 import { ControllerLanding } from './pages/ControllerLanding';
 import { PropMgmtLanding } from './pages/PropMgmtLanding';
 import { AICampaignBuilder } from './pages/AICampaignBuilder';
+import { LoginPage } from './pages/LoginPage';
 
 const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
   {
     path: '/',
     element: <AppLayout />,

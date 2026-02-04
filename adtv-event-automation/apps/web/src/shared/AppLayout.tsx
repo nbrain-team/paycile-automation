@@ -31,8 +31,7 @@ export function AppLayout() {
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
-    // Reload to homepage instead of navigating to non-existent /login
-    window.location.href = '/';
+    navigate('/login');
   };
 
   const getUserInitials = () => {
