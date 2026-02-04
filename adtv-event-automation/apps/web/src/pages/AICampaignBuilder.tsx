@@ -259,7 +259,8 @@ export function AICampaignBuilder() {
         })),
       };
 
-      const response = await fetch(`${getApiUrl()}/api/templates`, {
+      // Add cache-busting timestamp to bypass browser CORS cache
+      const response = await fetch(`${getApiUrl()}/api/templates?_t=${Date.now()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(templateData),
