@@ -2292,6 +2292,48 @@ app.post('/api/ai/campaign/refine', async (req, res) => {
  * Generate A/B test variations of campaign content
  * POST /api/ai/campaign/variations
  */
+// Save AI-generated campaign as template (workaround for CORS issues)
+app.post('/api/ai/campaign/save-as-template', async (req, res) => {
+  try {
+    const { name, nodes, edges } = req.body;
+    
+    if (!name || !nodes || !edges) {
+      return res.status(400).json({ error: 'Missing required fields: name, nodes, edges' });
+    }
+    
+    // Create template
+    const created = await prisma.template.create({
+      data: {
+        name,
+        status: 'draft',
+        nodes: {
+          create: nodes.map((n: any) => ({
+            key: n.id,
+            type: n.type,
+            name: n.name,
+            configJson: n.config ? JSON.stringify(n.config) : null,
+            posX: n.posX ?? null,
+            posY: n.posY ?? null
+          }))
+        },
+        edges: {
+          create: edges.map((e: any) => ({
+            fromKey: e.from,
+            toKey: e.to,
+            conditionJson: e.condition ? JSON.stringify(e.condition) : null
+          }))
+        }
+      },
+      include: { nodes: true, edges: true }
+    });
+    
+    res.json(created);
+  } catch (error: any) {
+    console.error('[AI Campaign Save] Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to save campaign' });
+  }
+});
+
 app.post('/api/ai/campaign/variations', async (req, res) => {
   try {
     const { nodeType, originalContent, numberOfVariations } = req.body;
