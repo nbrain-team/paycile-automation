@@ -896,6 +896,56 @@ app.post('/api/campaigns', async (req, res) => {
   res.json(created);
 });
 
+// Update campaign
+app.patch('/api/campaigns/:id', async (req, res) => {
+  try {
+    const updates: any = {};
+    const body = req.body;
+    
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.status !== undefined) updates.status = body.status;
+    if (body.ownerName !== undefined) updates.ownerName = body.ownerName;
+    if (body.ownerEmail !== undefined) updates.ownerEmail = body.ownerEmail;
+    if (body.ownerPhone !== undefined) updates.ownerPhone = body.ownerPhone;
+    if (body.city !== undefined) updates.city = body.city;
+    if (body.state !== undefined) updates.state = body.state;
+    if (body.videoLink !== undefined) updates.videoLink = body.videoLink;
+    if (body.eventLink !== undefined) updates.eventLink = body.eventLink;
+    if (body.launchDate !== undefined) updates.launchDate = body.launchDate ? new Date(body.launchDate) : null;
+    if (body.templateId !== undefined) updates.templateId = body.templateId;
+    
+    const updated = await prisma.campaign.update({
+      where: { id: req.params.id },
+      data: updates
+    });
+    
+    res.json(updated);
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'update error' });
+  }
+});
+
+// Delete campaign
+app.delete('/api/campaigns/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    
+    // Delete in order: messages → conversations → contacts → campaign nodes/edges → campaign
+    await prisma.$transaction([
+      prisma.message.deleteMany({ where: { convo: { contact: { campaignId: id } } } }),
+      prisma.conversation.deleteMany({ where: { contact: { campaignId: id } } }),
+      prisma.contact.deleteMany({ where: { campaignId: id } }),
+      prisma.campaignNode.deleteMany({ where: { campaignId: id } }),
+      prisma.campaignEdge.deleteMany({ where: { campaignId: id } }),
+      prisma.campaign.delete({ where: { id } })
+    ]);
+    
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'delete error' });
+  }
+});
+
 // Execute SMS nodes for a campaign (minimal executor)
 app.post('/api/campaigns/:id/execute-sms', async (req, res) => {
   try {
