@@ -167,41 +167,14 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
   const disabled = !name || !owner || !campaignType || !launchDate || !targetPersona;
 
   const submit = async () => {
-    const id = `live_${Math.random().toString(36).slice(2)}`;
     const ownerData = CAMPAIGN_OWNERS.find((p) => p.name === owner);
     
-    const payload: Campaign = {
-      id,
-      name,
-      owner_name: ownerData?.name || owner,
-      owner_email: ownerData?.email || 'team@paycile.com',
-      owner_phone: ownerPhone,
-      city: targetPersona,
-      state: targetIndustry,
-      video_link: demoPageLink,
-      event_link: calendlyLink,
-      launch_date: launchDate,
-      event_type: campaignType as any,
-      event_date: launchDate,
-      event_slots: [],
-      target_cities: targetCompanySize,
-      hotel_name: undefined,
-      hotel_address: undefined,
-      calendly_link: calendlyLink,
-      status: 'draft',
-      total_contacts: parseInt(expectedContacts) || 0,
-      enriched_contacts: 0,
-      emails_generated: 0,
-    } as Campaign;
-    addLiveCampaign(payload);
-    addToast({ title: 'Campaign created', description: name, variant: 'success' });
-    
-    // Persist to backend
+    // Create campaign in backend FIRST to get proper database ID
     try {
-      await apiCampaigns.create({
+      const created = await apiCampaigns.create({
         name,
-        ownerName: payload.owner_name,
-        ownerEmail: payload.owner_email,
+        ownerName: ownerData?.name || owner,
+        ownerEmail: ownerData?.email || 'team@paycile.com',
         ownerPhone: ownerPhone || undefined,
         city: targetPersona,
         state: targetIndustry,
@@ -214,8 +187,39 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
         templateId: templateId || undefined,
         status: 'draft',
       });
-    } catch {}
-    onClose();
+      
+      // Add to store using backend-generated ID (not client-generated)
+      const payload: Campaign = {
+        id: created.id, // CRITICAL: Use database ID
+        name,
+        owner_name: ownerData?.name || owner,
+        owner_email: ownerData?.email || 'team@paycile.com',
+        owner_phone: ownerPhone,
+        city: targetPersona,
+        state: targetIndustry,
+        video_link: demoPageLink,
+        event_link: calendlyLink,
+        launch_date: launchDate,
+        event_type: campaignType as any,
+        event_date: launchDate,
+        event_slots: [],
+        target_cities: targetCompanySize,
+        hotel_name: undefined,
+        hotel_address: undefined,
+        calendly_link: calendlyLink,
+        status: 'draft',
+        total_contacts: parseInt(expectedContacts) || 0,
+        enriched_contacts: 0,
+        emails_generated: 0,
+        template_id: templateId || undefined,
+      } as Campaign;
+      
+      addLiveCampaign(payload);
+      addToast({ title: 'Campaign created', description: name, variant: 'success' });
+      onClose();
+    } catch (error: any) {
+      addToast({ title: 'Failed to create campaign', description: error.message, variant: 'error' });
+    }
   };
 
   // templates load handled in useEffect above
