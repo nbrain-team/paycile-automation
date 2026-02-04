@@ -2979,41 +2979,53 @@ app.post('/api/email/reply-webhook', async (req, res) => {
 // ADMIN: DATABASE MANAGEMENT ENDPOINTS
 // =============================================================================
 
-// Create admin user (one-time setup)
+// Create/update admin user (one-time setup)
 app.post('/api/admin/create-admin-user', async (req, res) => {
   try {
     // Check if admin already exists
     const existing = await prisma.user.findUnique({ where: { email: 'admin@paycile.com' } });
     
-    if (existing) {
-      return res.json({ 
-        ok: true, 
-        message: 'Admin user already exists',
-        email: 'admin@paycile.com'
-      });
-    }
-    
-    // Create admin user with password: Pass@123
+    // Always reset password to Pass@123
     const passwordHash = await bcrypt.hash('Pass@123', 10);
     
-    const admin = await prisma.user.create({
-      data: {
-        name: 'Admin User',
+    let admin;
+    if (existing) {
+      // Update existing user's password
+      admin = await prisma.user.update({
+        where: { email: 'admin@paycile.com' },
+        data: { passwordHash, role: 'admin' }
+      });
+      
+      res.json({ 
+        ok: true, 
+        message: 'Admin user password updated',
         email: 'admin@paycile.com',
-        role: 'admin',
-        passwordHash
-      }
-    });
-    
-    res.json({
-      ok: true,
-      message: 'Admin user created successfully',
-      email: admin.email,
-      credentials: {
-        email: 'admin@paycile.com',
-        password: 'Pass@123'
-      }
-    });
+        credentials: {
+          email: 'admin@paycile.com',
+          password: 'Pass@123'
+        }
+      });
+    } else {
+      // Create new admin user
+      admin = await prisma.user.create({
+        data: {
+          name: 'Admin User',
+          email: 'admin@paycile.com',
+          role: 'admin',
+          passwordHash
+        }
+      });
+      
+      res.json({
+        ok: true,
+        message: 'Admin user created successfully',
+        email: admin.email,
+        credentials: {
+          email: 'admin@paycile.com',
+          password: 'Pass@123'
+        }
+      });
+    }
   } catch (error: any) {
     console.error('[Create Admin] Error:', error);
     res.status(500).json({ error: error.message });
