@@ -271,7 +271,9 @@ export function AICampaignBuilder() {
         addToast({ title: 'Campaign saved as template! 🎉', variant: 'success' });
         navigate(`/templates/${data.id}`);
       } else {
-        throw new Error('Failed to save template');
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        console.error('Backend error:', errorData);
+        throw new Error(errorData.error || 'Failed to save template');
       }
     } catch (error: any) {
       console.error('Save error:', error);
