@@ -226,10 +226,47 @@ INSTRUCTIONS:
 13. CRITICAL: Don't just create communication nodes - design an intelligent workflow with waits, decisions, stages
 
 CONTENT GUIDELINES FOR PAYCILE:
-- Email subjects: Compelling, benefit-driven, under 60 characters, speak to ROI/efficiency
-- Email bodies: 150-250 words, clear CTA (schedule demo), personalized tone, reference specific pain points (reconciliation, cost recovery, automation)
+
+FIRST EMAIL (CRITICAL - MUST BE DETAILED):
+The first email in any campaign MUST be comprehensive and value-rich. Follow this structure:
+
+1. DIRECT OPENING: Lead with the core problem/benefit
+   Example: "I'll be direct: Your finance team is spending 96+ days per year on manual payment reconciliation."
+
+2. QUANTIFY THE PROBLEM: Use bullet points with specific metrics
+   Example:
+   • 8-12 hours per week matching carrier payments
+   • 3-5 days at month-end reconciling across entities
+   • Countless hours investigating exceptions and errors
+
+3. BOLD QUESTION: Challenge their current state
+   Example: "**What if you could automate all of it?**"
+
+4. PAYCILE SOLUTION: Explain what Paycile does specifically
+   Example: "Paycile gives you real-time cash visibility across all carriers, entities, and accounts—without the manual work. Our customers save 96+ days annually and close their books in days, not weeks."
+
+5. CLEAR VALUE PROPOSITION: What they get
+   Example: "I'd like to show you how in a quick 30-minute executive demo."
+
+6. DUAL CTA: Provide two ways to respond
+   - Primary: Link to landing page/calendar
+   - Secondary: "Or reply to this email and I'll send you times that work."
+
+7. PROFESSIONAL SIGNATURE: Use {{sender.signature}} merge tag
+
+FIRST EMAIL LENGTH: 200-300 words (longer than follow-ups)
+FIRST EMAIL TONE: Confident, direct, benefit-driven, consultative
+
+FOLLOW-UP EMAILS (SHORTER):
+- 100-150 words max
+- Reference previous email
+- Add new angle or urgency
+- Clear CTA
+- Use {{sender.signature}}
+
+OTHER CONTENT:
 - SMS messages: Under 160 characters, urgent value prop, clear action
-- Voicemail scripts: 30-45 seconds when read, conversational, mention Paycile and key benefit, include callback with name
+- Voicemail scripts: 30-45 seconds when read, conversational, mention Paycile and key benefit
 - Focus on business outcomes: time saved, costs recovered, errors eliminated
 - Reference industry-specific challenges when applicable
 
