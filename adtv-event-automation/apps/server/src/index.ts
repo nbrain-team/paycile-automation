@@ -2846,6 +2846,57 @@ app.post('/api/email/reply-webhook', async (req, res) => {
 });
 
 // =============================================================================
+// ADMIN: DATABASE MIGRATION ENDPOINT
+// =============================================================================
+
+app.post('/api/admin/run-migration', async (req, res) => {
+  try {
+    // Simple endpoint to create SmtpConfig table if it doesn't exist
+    // This is a workaround for Render shell access issues
+    
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "SmtpConfig" (
+        "id" TEXT NOT NULL,
+        "email" TEXT NOT NULL,
+        "smtpHost" TEXT NOT NULL,
+        "smtpPort" INTEGER NOT NULL,
+        "smtpUser" TEXT NOT NULL,
+        "smtpPass" TEXT NOT NULL,
+        "smtpSecure" BOOLEAN NOT NULL DEFAULT true,
+        "isActive" BOOLEAN NOT NULL DEFAULT true,
+        "dailySent" INTEGER NOT NULL DEFAULT 0,
+        "lastUsed" TIMESTAMP(3),
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT "SmtpConfig_pkey" PRIMARY KEY ("id")
+      );
+    `);
+    
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "SmtpConfig_email_key" ON "SmtpConfig"("email");
+    `);
+    
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "EmailQueue" ADD COLUMN IF NOT EXISTS "smtpConfigId" TEXT;
+    `);
+    
+    res.json({ 
+      ok: true, 
+      message: 'Migration completed successfully',
+      tables_created: ['SmtpConfig'],
+      columns_added: ['EmailQueue.smtpConfigId']
+    });
+    
+  } catch (error: any) {
+    console.error('Migration error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      hint: 'Table might already exist, which is fine'
+    });
+  }
+});
+
+// =============================================================================
 // SMTP CONFIGURATION MANAGEMENT
 // =============================================================================
 
