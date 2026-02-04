@@ -33,11 +33,13 @@ declare global {
 }
 
 const app = express();
-
-// CORS - Allow all origins for now to fix persistent issues
 app.use(cors({
-  origin: '*',
-  credentials: false,
+  origin: [
+    'https://paycile-automation.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:3000',
+  ],
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
