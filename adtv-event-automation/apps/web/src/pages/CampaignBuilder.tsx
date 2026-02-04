@@ -812,9 +812,15 @@ function ContactsTab({ contacts }: ContactsTabProps) {
               <option value="">Select a source campaign...</option>
               {availableCampaigns
                 .filter(c => c.id !== window.location.pathname.split('/').pop())
+                .sort((a, b) => {
+                  // Show archived (contact lists) first, then others
+                  if (a.status === 'archived' && b.status !== 'archived') return -1;
+                  if (a.status !== 'archived' && b.status === 'archived') return 1;
+                  return a.name.localeCompare(b.name);
+                })
                 .map(c => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.totalContacts || c.contacts?.length || 0} contacts)
+                    {c.status === 'archived' ? '📋 ' : ''}{c.name} ({c.totalContacts || c.contacts?.length || 0} contacts)
                   </option>
                 ))}
             </select>

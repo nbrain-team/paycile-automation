@@ -14,7 +14,9 @@ export function CampaignsLive() {
     return liveCampaigns.filter((c) => {
       const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
       const matchesStatus = status === 'all' ? true : c.status === status;
-      return matchesQuery && matchesStatus;
+      // Hide archived campaigns (contact holder campaigns)
+      const isVisible = c.status !== 'archived';
+      return matchesQuery && matchesStatus && isVisible;
     });
   }, [liveCampaigns, query, status]);
 

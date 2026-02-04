@@ -12,7 +12,9 @@ export function Campaigns() {
     return campaigns.filter((c) => {
       const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
       const matchesStatus = status === 'all' ? true : c.status === status;
-      return matchesQuery && matchesStatus;
+      // Hide archived campaigns by default (these are contact holder campaigns)
+      const isVisible = status === 'archived' ? true : c.status !== 'archived';
+      return matchesQuery && matchesStatus && isVisible;
     });
   }, [campaigns, query, status]);
 
