@@ -8,30 +8,10 @@ export function Dashboard() {
   const [stats, setStats] = useState<any | null>(null);
 
   useEffect(() => {
-    if (campaigns.length === 0) setCampaigns(seedCampaigns);
-    // Seed Paycile B2B campaigns if none present
-    if (liveCampaigns.length === 0) {
-      const mk = (name: string, persona: string, industry: string, date: string, campaignType: 'b2b_outreach' | 'in_person' | 'virtual') => ({
-        id: `live_${Math.random().toString(36).slice(2)}`,
-        name,
-        owner_name: 'Paycile Team',
-        owner_email: 'team@paycile.com',
-        city: persona,
-        state: industry,
-        event_type: campaignType,
-        event_date: date,
-        launch_date: date,
-        status: 'draft' as const,
-        total_contacts: 0,
-        enriched_contacts: 0,
-        emails_generated: 0,
-      });
-      addLiveCampaign(mk('CFO Outreach - Insurance Vertical','CFO','Insurance','2025-11-15','b2b_outreach'));
-      addLiveCampaign(mk('Controller Campaign - Multi-Entity','Controller','Multi-Industry','2025-11-18','b2b_outreach'));
-      addLiveCampaign(mk('AR/AP - Unapplied Funds Recovery','AR/AP Specialist','Multi-Industry','2025-11-20','b2b_outreach'));
-      addLiveCampaign(mk('Property Mgmt - Yardi Integration','Finance Manager','Property Management','2025-11-22','b2b_outreach'));
-    }
-  }, [campaigns.length, setCampaigns]);
+    // DISABLED: Auto-seeding causes campaigns to reappear after deletion
+    // All campaigns should come from database only
+    // if (campaigns.length === 0) setCampaigns(seedCampaigns);
+  }, []);
 
   useEffect(() => {
     fetch(`${API_URL}/api/stats`).then((r)=> r.json()).then((s)=> setStats(s)).catch(()=>{});
