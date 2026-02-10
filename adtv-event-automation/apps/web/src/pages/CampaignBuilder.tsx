@@ -4,9 +4,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '@store/useStore';
 import Papa from 'papaparse';
 import { seedCampaigns } from '@seed/campaignSeed';
-import { apiCampaigns, apiInbox, apiEmail, apiSms, apiTemplates, getApiUrl } from '@lib/api';
+import { apiCampaigns, apiInbox, apiEmail, apiSms, apiTemplates, apiPersonalization, getApiUrl } from '@lib/api';
 
-const tabs = ['Overview','Contacts','Funnel','Analytics','Map View'] as const;
+const ALL_TABS = ['Overview','Contacts','Funnel','Personalized Emails','Analytics','Map View'] as const;
+type TabName = (typeof ALL_TABS)[number];
 
 const CONTACT_STATUSES = ['No Activity','Needs BDR','Received RSVP','Showed Up To Event','Post Event #1','Post Event #2','Post Event #3','Received Agreement','Signed Agreement'] as const;
 
@@ -15,12 +16,19 @@ export function CampaignBuilder() {
   const navigate = useNavigate();
   const { liveCampaigns, contactsByCampaignId, setContactsForCampaign, addToast, campaigns, updateLiveCampaign, upsertCampaign } = useStore();
   const campaign = useMemo(() => liveCampaigns.find((c) => c.id === params.id), [liveCampaigns, params.id]);
-  const [tab, setTab] = useState<(typeof tabs)[number]>('Overview');
+  const [tab, setTab] = useState<TabName>('Overview');
   const [serverTemplates, setServerTemplates] = useState<Array<{ id: string; name: string }>>([]);
   const [templateVersions, setTemplateVersions] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [showVersionSelector, setShowVersionSelector] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>(undefined);
+
+  // AI Personalization state
+  const [aiPersonalization, setAiPersonalization] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState<{ total: number; completed: number; failed: number; running: boolean } | null>(null);
+  const [personalizedEmails, setPersonalizedEmails] = useState<any[]>([]);
+  const [peLoaded, setPeLoaded] = useState(false);
   
   useEffect(() => {
     (async () => {
@@ -45,6 +53,34 @@ export function CampaignBuilder() {
     })();
   }, [campaign?.template_id]);
   
+  // Load AI personalization state from server campaign data
+  useEffect(() => {
+    if (!params.id) return;
+    // Fetch from campaigns list since there's no single-campaign GET endpoint
+    fetch(`${getApiUrl()}/api/campaigns`)
+      .then(r => r.json())
+      .then((list: any[]) => {
+        const c = (Array.isArray(list) ? list : []).find((x: any) => x.id === params.id);
+        if (c && typeof c.aiPersonalization === 'boolean') setAiPersonalization(c.aiPersonalization);
+      })
+      .catch(() => {});
+  }, [params.id]);
+
+  // Load personalized emails when tab shown or after generation
+  useEffect(() => {
+    if (!params.id || !aiPersonalization) return;
+    apiPersonalization.list(params.id).then((list: any[]) => {
+      setPersonalizedEmails(Array.isArray(list) ? list : []);
+      setPeLoaded(true);
+    }).catch(() => setPeLoaded(true));
+  }, [params.id, aiPersonalization, generating]);
+
+  // Determine visible tabs (show "Personalized Emails" only when AI is on and emails exist)
+  const tabs = ALL_TABS.filter(t => {
+    if (t === 'Personalized Emails') return aiPersonalization && personalizedEmails.length > 0;
+    return true;
+  });
+
   if (!campaign) return <div className="text-gray-500">Campaign not found.</div>;
 
   const contacts = contactsByCampaignId[campaign.id] || [];
@@ -87,7 +123,14 @@ export function CampaignBuilder() {
 
       <div className="subtabs">
         {tabs.map((t) => (
-          <button key={t} className={`subtab ${tab===t?'subtab-active':''}`} onClick={() => setTab(t)}>{t}</button>
+          <button key={t} className={`subtab ${tab===t?'subtab-active':''}`} onClick={() => setTab(t as TabName)}>
+            {t}
+            {t === 'Personalized Emails' && personalizedEmails.length > 0 && (
+              <span className="ml-1.5 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                {personalizedEmails.filter(pe => pe.status === 'approved' || pe.status === 'edited').length}/{personalizedEmails.length}
+              </span>
+            )}
+          </button>
         ))}
       </div>
 
@@ -304,6 +347,17 @@ export function CampaignBuilder() {
               <div className="grid grid-cols-1 gap-2">
                 {campaign.status !== 'active' && (
                   <button className="btn-primary btn-md" onClick={async ()=> {
+                    // Warn if AI personalization is on but emails are not all approved
+                    if (aiPersonalization && personalizedEmails.length > 0) {
+                      const pendingCount = personalizedEmails.filter((pe: any) => pe.status === 'pending').length;
+                      if (pendingCount > 0) {
+                        const proceed = window.confirm(
+                          `${pendingCount} personalized email(s) are still pending review. ` +
+                          `Pending emails will fall back to the standard template. Continue?`
+                        );
+                        if (!proceed) return;
+                      }
+                    }
                     await setStatus('active');
                     try {
                       await fetch(`${getApiUrl()}/api/campaigns/${campaign.id}/execute`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
@@ -321,6 +375,93 @@ export function CampaignBuilder() {
               </div>
               <p className="text-xs text-gray-500">Activation begins executing the attached funnel for all contacts on schedule. Pause will temporarily halt sends. Stop ends the campaign.</p>
             </div>
+
+            {/* AI Personalization Section */}
+            <div className="border-t pt-3 mt-3">
+              <h4 className="font-semibold mb-2 text-sm">AI Email Personalization</h4>
+              <label className="flex items-center gap-2 cursor-pointer mb-2">
+                <input
+                  type="checkbox"
+                  checked={aiPersonalization}
+                  onChange={async (e) => {
+                    const val = e.target.checked;
+                    setAiPersonalization(val);
+                    try {
+                      await apiCampaigns.patch(campaign.id, { aiPersonalization: val });
+                    } catch {}
+                  }}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm">Enable AI personalization</span>
+              </label>
+              {aiPersonalization && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">AI will personalize each email in your funnel for every contact, adding subtle touches based on their role, company, and industry while preserving your template's structure.</p>
+                  {genProgress && genProgress.running ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-gray-600">
+                        <span>Generating...</span>
+                        <span>{genProgress.completed}/{genProgress.total}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${genProgress.total > 0 ? (genProgress.completed / genProgress.total) * 100 : 0}%` }}
+                        />
+                      </div>
+                      {genProgress.failed > 0 && (
+                        <p className="text-xs text-red-500">{genProgress.failed} failed</p>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      className="btn-primary btn-sm w-full"
+                      disabled={generating}
+                      onClick={async () => {
+                        setGenerating(true);
+                        setGenProgress(null);
+                        try {
+                          const result = await apiPersonalization.generate(campaign.id);
+                          if (result.success) {
+                            addToast({ title: 'Personalization started', description: `Processing ${result.total} email(s)...`, variant: 'success' });
+                            // Poll for progress
+                            const poll = setInterval(async () => {
+                              try {
+                                const status = await apiPersonalization.status(campaign.id);
+                                setGenProgress(status);
+                                if (!status.running) {
+                                  clearInterval(poll);
+                                  setGenerating(false);
+                                  // Reload personalized emails
+                                  const list = await apiPersonalization.list(campaign.id);
+                                  setPersonalizedEmails(Array.isArray(list) ? list : []);
+                                  addToast({ title: 'Personalization complete', description: `${status.completed} emails personalized`, variant: 'success' });
+                                }
+                              } catch {
+                                clearInterval(poll);
+                                setGenerating(false);
+                              }
+                            }, 2000);
+                          }
+                        } catch (err: any) {
+                          addToast({ title: 'Generation failed', description: err?.message || 'Error', variant: 'error' });
+                          setGenerating(false);
+                        }
+                      }}
+                    >
+                      {personalizedEmails.length > 0 ? 'Re-generate Personalized Emails' : 'Generate Personalized Emails'}
+                    </button>
+                  )}
+                  {personalizedEmails.length > 0 && !generating && (
+                    <div className="text-xs text-gray-600 space-y-0.5">
+                      <p>{personalizedEmails.length} personalized emails generated</p>
+                      <p className="text-green-600">{personalizedEmails.filter((pe: any) => pe.status === 'approved' || pe.status === 'edited').length} approved</p>
+                      <p className="text-amber-600">{personalizedEmails.filter((pe: any) => pe.status === 'pending').length} pending review</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -331,6 +472,17 @@ export function CampaignBuilder() {
 
       {tab==='Funnel' && (
         <FunnelTab campaignId={campaign.id} campaignName={campaign.name} totalContacts={contacts.length} />
+      )}
+
+      {tab==='Personalized Emails' && (
+        <PersonalizedEmailsTab
+          campaignId={campaign.id}
+          emails={personalizedEmails}
+          onUpdate={async () => {
+            const list = await apiPersonalization.list(campaign.id);
+            setPersonalizedEmails(Array.isArray(list) ? list : []);
+          }}
+        />
       )}
 
       {tab==='Analytics' && (
@@ -1117,6 +1269,233 @@ function FunnelTab({ campaignId, campaignName, totalContacts }: FunnelTabProps) 
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Personalized Emails Review Tab
+type PersonalizedEmailsTabProps = {
+  campaignId: string;
+  emails: any[];
+  onUpdate: () => Promise<void>;
+};
+
+function PersonalizedEmailsTab({ campaignId, emails, onUpdate }: PersonalizedEmailsTabProps) {
+  const { addToast } = useStore();
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'edited' | 'rejected'>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editSubject, setEditSubject] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [bulkApproving, setBulkApproving] = useState(false);
+
+  const filtered = filterStatus === 'all' ? emails : emails.filter(pe => pe.status === filterStatus);
+
+  // Group by nodeKey for clarity
+  const nodeKeys = [...new Set(emails.map(pe => pe.nodeKey))].sort();
+
+  const statusBadge = (status: string) => {
+    const cls: Record<string, string> = {
+      pending: 'bg-amber-100 text-amber-800 border-amber-200',
+      approved: 'bg-green-100 text-green-800 border-green-200',
+      edited: 'bg-blue-100 text-blue-800 border-blue-200',
+      rejected: 'bg-red-100 text-red-800 border-red-200',
+    };
+    return cls[status] || 'bg-gray-100 text-gray-700';
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await apiPersonalization.update(id, { status: 'approved' });
+      await onUpdate();
+    } catch { addToast({ title: 'Error', description: 'Failed to approve', variant: 'error' }); }
+  };
+
+  const handleReject = async (id: string) => {
+    try {
+      await apiPersonalization.update(id, { status: 'rejected' });
+      await onUpdate();
+    } catch { addToast({ title: 'Error', description: 'Failed to reject', variant: 'error' }); }
+  };
+
+  const startEdit = (pe: any) => {
+    setEditingId(pe.id);
+    setEditSubject(pe.editedSubject || pe.subject || '');
+    setEditBody(pe.editedBody || pe.body || '');
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    try {
+      await apiPersonalization.update(editingId, { editedSubject: editSubject, editedBody: editBody });
+      setEditingId(null);
+      await onUpdate();
+      addToast({ title: 'Saved', description: 'Personalized email updated', variant: 'success' });
+    } catch { addToast({ title: 'Error', description: 'Failed to save', variant: 'error' }); }
+  };
+
+  const handleBulkApprove = async () => {
+    setBulkApproving(true);
+    try {
+      const result = await apiPersonalization.bulkApprove(campaignId);
+      await onUpdate();
+      addToast({ title: 'Bulk approved', description: `${result.count} emails approved`, variant: 'success' });
+    } catch { addToast({ title: 'Error', description: 'Bulk approve failed', variant: 'error' }); }
+    setBulkApproving(false);
+  };
+
+  const pendingCount = emails.filter(pe => pe.status === 'pending').length;
+  const approvedCount = emails.filter(pe => pe.status === 'approved' || pe.status === 'edited').length;
+
+  return (
+    <div className="space-y-4">
+      {/* Stats bar */}
+      <div className="card">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 text-sm">
+            <span className="font-semibold">{emails.length} personalized emails</span>
+            <span className="text-green-600">{approvedCount} approved</span>
+            <span className="text-amber-600">{pendingCount} pending</span>
+            <span className="text-gray-500">{nodeKeys.length} email step{nodeKeys.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              className="input text-sm py-1"
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value as any)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="edited">Edited</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            {pendingCount > 0 && (
+              <button
+                className="btn-primary btn-sm"
+                onClick={handleBulkApprove}
+                disabled={bulkApproving}
+              >
+                {bulkApproving ? 'Approving...' : `Approve All Pending (${pendingCount})`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Email list */}
+      <div className="space-y-3">
+        {filtered.map(pe => (
+          <div key={pe.id} className="card">
+            <div
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setExpandedId(expandedId === pe.id ? null : pe.id)}
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${statusBadge(pe.status)}`}>
+                  {pe.status}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{pe.contact?.name || 'Unknown'}</p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {pe.contact?.company && `${pe.contact.company} · `}
+                    {pe.contact?.email || 'No email'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                <span className="text-xs text-gray-400">Step {pe.nodeKey}</span>
+                <span className="text-gray-400">{expandedId === pe.id ? '▲' : '▼'}</span>
+              </div>
+            </div>
+
+            {expandedId === pe.id && (
+              <div className="mt-4 space-y-4">
+                {/* Side-by-side comparison */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Original Template</h4>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-2 border">
+                      <div>
+                        <span className="text-xs font-medium text-gray-500">Subject:</span>
+                        <p className="mt-0.5">{pe.originalSubject || '(no subject)'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-gray-500">Body:</span>
+                        <div className="mt-0.5 whitespace-pre-wrap text-xs leading-relaxed max-h-64 overflow-y-auto">{pe.originalBody || '(empty)'}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-blue-600 uppercase mb-2">AI Personalized</h4>
+                    <div className="bg-blue-50/50 rounded-lg p-3 text-sm space-y-2 border border-blue-200">
+                      <div>
+                        <span className="text-xs font-medium text-blue-500">Subject:</span>
+                        <p className="mt-0.5">{pe.editedSubject || pe.subject || '(no subject)'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-blue-500">Body:</span>
+                        <div className="mt-0.5 whitespace-pre-wrap text-xs leading-relaxed max-h-64 overflow-y-auto">{pe.editedBody || pe.body || '(empty)'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Rationale */}
+                {pe.rationale && (
+                  <div className="bg-gray-50 rounded-lg p-3 border">
+                    <span className="text-xs font-medium text-gray-500">AI Rationale:</span>
+                    <p className="text-xs text-gray-600 mt-0.5">{pe.rationale}</p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-2 border-t">
+                  {pe.status !== 'approved' && (
+                    <button className="btn-primary btn-sm" onClick={() => handleApprove(pe.id)}>Approve</button>
+                  )}
+                  <button className="btn-outline btn-sm" onClick={() => startEdit(pe)}>Edit</button>
+                  {pe.status !== 'rejected' && (
+                    <button className="btn-outline btn-sm text-red-600" onClick={() => handleReject(pe.id)}>Reject</button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="card text-center py-8 text-gray-500">
+            <p>No personalized emails match this filter.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Edit Modal */}
+      {editingId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setEditingId(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b bg-gray-50">
+              <h3 className="text-lg font-semibold">Edit Personalized Email</h3>
+              <p className="text-sm text-gray-600 mt-1">Make adjustments and the email will be marked as "edited".</p>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="label">Subject</label>
+                <input className="input" value={editSubject} onChange={e => setEditSubject(e.target.value)} />
+              </div>
+              <div>
+                <label className="label">Body</label>
+                <textarea className="input h-56" value={editBody} onChange={e => setEditBody(e.target.value)} />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-end gap-3">
+              <button className="btn-outline btn-md" onClick={() => setEditingId(null)}>Cancel</button>
+              <button className="btn-primary btn-md" onClick={saveEdit}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

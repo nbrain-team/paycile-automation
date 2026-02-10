@@ -17,6 +17,7 @@ import { searchPeople, searchOrganizations } from './services/apolloApi';
 import { sendGraphEmail, isGraphConfigured } from './services/graphEmailProvider';
 import { startEmailQueueWorker, queueBulkEmails, getQueueStats } from './services/emailQueue';
 import { generateCampaign, refineContent, generateVariations } from './ai-campaign-builder';
+import { personalizeContent, PersonalizationContact } from './ai-personalizer';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -1026,12 +1027,37 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       try { cfg = firstEmail.configJson ? JSON.parse(firstEmail.configJson) : {}; } catch {}
       const { subject, body: emailBody } = await resolveEmailFromConfig(cfg);
       const emailsToQueue = [];
+
+      // If AI personalization is enabled, pre-load all personalized emails for this node
+      let personalizedMap: Record<string, { subject: string; body: string }> = {};
+      if (campaign?.aiPersonalization) {
+        const peList = await prisma.personalizedEmail.findMany({
+          where: { campaignId, nodeKey: firstEmail.key, status: { in: ['approved', 'edited'] } },
+        });
+        for (const pe of peList) {
+          // Use edited content if available, otherwise use AI-generated content
+          personalizedMap[pe.contactId] = {
+            subject: pe.editedSubject || pe.subject,
+            body: pe.editedBody || pe.body,
+          };
+        }
+      }
       
       for (const ct of contacts) {
         if (!ct.email) continue;
-        const np = splitName(ct.name || '');
-        const sub = renderMergeTags(subject || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
-        const bod = renderMergeTags(emailBody || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
+        let sub: string;
+        let bod: string;
+
+        // Check for approved personalized version first
+        if (personalizedMap[ct.id]) {
+          sub = personalizedMap[ct.id].subject;
+          bod = personalizedMap[ct.id].body;
+        } else {
+          // Fall back to standard mail-merge
+          const np = splitName(ct.name || '');
+          sub = renderMergeTags(subject || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
+          bod = renderMergeTags(emailBody || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
+        }
         
         emailsToQueue.push({
           campaignId,
@@ -1122,6 +1148,7 @@ app.patch('/api/campaigns/:id', async (req, res) => {
       templateId: z.string().optional(),
       importGraph: z.boolean().optional(),
       senderUserId: z.string().optional(),
+      aiPersonalization: z.boolean().optional(),
     }).partial().parse(req.body);
 
     // Normalize empty strings to null/undefined where appropriate
@@ -1140,6 +1167,9 @@ app.patch('/api/campaigns/:id', async (req, res) => {
       hotelAddress: body.hotelAddress,
       calendlyLink: body.calendlyLink,
     };
+    if (typeof body.aiPersonalization === 'boolean') {
+      updateData.aiPersonalization = body.aiPersonalization;
+    }
     if (typeof body.templateId !== 'undefined') {
       updateData.templateId = body.templateId === '' ? null : body.templateId;
     }
@@ -2426,6 +2456,234 @@ app.post('/api/apollo/organizations/search', async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// AI EMAIL PERSONALIZATION
+// ═══════════════════════════════════════════════════════════════
+
+// In-memory tracking for personalization jobs (simple approach)
+const personalizationJobs: Record<string, { total: number; completed: number; failed: number; running: boolean }> = {};
+
+/**
+ * Trigger AI personalization generation for all contacts × email nodes
+ * POST /api/campaigns/:id/personalize
+ */
+app.post('/api/campaigns/:id/personalize', async (req, res) => {
+  const campaignId = req.params.id;
+  try {
+    const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+
+    // Get all email_send nodes
+    const emailNodes = await prisma.campaignNode.findMany({
+      where: { campaignId, type: 'email_send' },
+    });
+    if (emailNodes.length === 0) {
+      return res.status(400).json({ error: 'No email nodes found in campaign funnel' });
+    }
+
+    // Get all contacts with email
+    const contacts = await prisma.contact.findMany({
+      where: { campaignId, email: { not: null } },
+    });
+    if (contacts.length === 0) {
+      return res.status(400).json({ error: 'No contacts with email addresses in this campaign' });
+    }
+
+    const total = contacts.length * emailNodes.length;
+    personalizationJobs[campaignId] = { total, completed: 0, failed: 0, running: true };
+
+    // Return immediately; process in background
+    res.json({ success: true, total, message: 'Personalization started' });
+
+    // Background processing
+    const campaignCtx = { name: campaign.name, ownerName: campaign.ownerName, eventType: campaign.eventType };
+
+    for (const node of emailNodes) {
+      let cfg: any = {};
+      try { cfg = node.configJson ? JSON.parse(node.configJson) : {}; } catch {}
+      const { subject: origSubject, body: origBody } = await resolveEmailFromConfig(cfg);
+
+      if (!origSubject && !origBody) {
+        // Skip nodes with no content
+        personalizationJobs[campaignId].completed += contacts.length;
+        continue;
+      }
+
+      for (const ct of contacts) {
+        try {
+          // Parse rawJson for extra contact data
+          let rawData: any = {};
+          try { rawData = ct.rawJson ? JSON.parse(ct.rawJson) : {}; } catch {}
+
+          const np = splitName(ct.name || '');
+          const contactData: PersonalizationContact = {
+            first_name: np.first_name,
+            last_name: np.last_name,
+            company: ct.company || rawData.company || '',
+            title: rawData.title || '',
+            industry: rawData.industry || rawData.organization_industry || '',
+            city: ct.city || '',
+            state: ct.state || '',
+            email: ct.email || '',
+            revenue: rawData.revenue || rawData.firm_revenue || '',
+            employees: rawData.employees || rawData.estimated_employees || '',
+            technologies: rawData.technologies || '',
+          };
+
+          // Apply merge tags to get the "original" rendered version for this contact
+          const mergeCtx = { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: { name: campaign.name, owner_name: campaign.ownerName } };
+          const renderedSubject = renderMergeTags(origSubject || '', mergeCtx);
+          const renderedBody = renderMergeTags(origBody || '', mergeCtx);
+
+          const result = await personalizeContent(
+            contactData,
+            { type: 'email', subject: renderedSubject, body: renderedBody },
+            campaignCtx
+          );
+
+          // Upsert the personalized email record
+          await prisma.personalizedEmail.upsert({
+            where: {
+              campaignId_contactId_nodeKey: { campaignId, contactId: ct.id, nodeKey: node.key },
+            },
+            create: {
+              campaignId,
+              contactId: ct.id,
+              nodeKey: node.key,
+              originalSubject: renderedSubject,
+              originalBody: renderedBody,
+              subject: result.subject || renderedSubject,
+              body: result.body || renderedBody,
+              rationale: result.rationale || '',
+              status: 'pending',
+            },
+            update: {
+              originalSubject: renderedSubject,
+              originalBody: renderedBody,
+              subject: result.subject || renderedSubject,
+              body: result.body || renderedBody,
+              rationale: result.rationale || '',
+              status: 'pending',
+              editedSubject: null,
+              editedBody: null,
+            },
+          });
+
+          personalizationJobs[campaignId].completed++;
+        } catch (err) {
+          console.error(`[personalize] Failed for contact ${ct.id}, node ${node.key}:`, err);
+          personalizationJobs[campaignId].failed++;
+          personalizationJobs[campaignId].completed++;
+        }
+
+        // Rate limiting between contacts
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+    }
+
+    personalizationJobs[campaignId].running = false;
+
+    // Update campaign to mark personalization enabled
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data: { aiPersonalization: true },
+    });
+
+  } catch (e: any) {
+    console.error('Personalization trigger error:', e);
+    if (personalizationJobs[campaignId]) personalizationJobs[campaignId].running = false;
+    // Only send error if headers not already sent
+    if (!res.headersSent) {
+      res.status(500).json({ error: e?.message || 'Personalization failed' });
+    }
+  }
+});
+
+/**
+ * Get personalization job status
+ * GET /api/campaigns/:id/personalize/status
+ */
+app.get('/api/campaigns/:id/personalize/status', async (req, res) => {
+  const campaignId = req.params.id;
+  const job = personalizationJobs[campaignId];
+  if (!job) {
+    // Check if there are any persisted personalized emails
+    const count = await prisma.personalizedEmail.count({ where: { campaignId } });
+    if (count > 0) {
+      return res.json({ total: count, completed: count, failed: 0, running: false });
+    }
+    return res.json({ total: 0, completed: 0, failed: 0, running: false });
+  }
+  res.json(job);
+});
+
+/**
+ * Get all personalized emails for a campaign
+ * GET /api/campaigns/:id/personalized-emails
+ */
+app.get('/api/campaigns/:id/personalized-emails', async (req, res) => {
+  try {
+    const emails = await prisma.personalizedEmail.findMany({
+      where: { campaignId: req.params.id },
+      include: {
+        contact: { select: { id: true, name: true, company: true, email: true } },
+      },
+      orderBy: [{ nodeKey: 'asc' }, { contact: { name: 'asc' } }],
+    });
+    res.json(emails);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Failed to load personalized emails' });
+  }
+});
+
+/**
+ * Update a single personalized email (approve, reject, edit)
+ * PATCH /api/personalized-emails/:id
+ */
+app.patch('/api/personalized-emails/:id', async (req, res) => {
+  try {
+    const body = z.object({
+      status: z.enum(['pending', 'approved', 'edited', 'rejected']).optional(),
+      editedSubject: z.string().optional(),
+      editedBody: z.string().optional(),
+    }).parse(req.body);
+
+    const updateData: any = {};
+    if (body.status) updateData.status = body.status;
+    if (body.editedSubject !== undefined) updateData.editedSubject = body.editedSubject;
+    if (body.editedBody !== undefined) updateData.editedBody = body.editedBody;
+
+    // If editing content, auto-set status to 'edited'
+    if (body.editedSubject !== undefined || body.editedBody !== undefined) {
+      updateData.status = 'edited';
+    }
+
+    const updated = await prisma.personalizedEmail.update({
+      where: { id: req.params.id },
+      data: updateData,
+    });
+    res.json(updated);
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Update failed' });
+  }
+});
+
+/**
+ * Bulk approve all pending personalized emails for a campaign
+ * PATCH /api/campaigns/:id/personalized-emails/bulk-approve
+ */
+app.patch('/api/campaigns/:id/personalized-emails/bulk-approve', async (req, res) => {
+  try {
+    const result = await prisma.personalizedEmail.updateMany({
+      where: { campaignId: req.params.id, status: 'pending' },
+      data: { status: 'approved' },
+    });
+    res.json({ success: true, count: result.count });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Bulk approve failed' });
+  }
+});
+
 /**
  * ADMIN: Run comprehensive Paycile funnel seed
  * POST /api/admin/seed-comprehensive-funnels
@@ -3302,6 +3560,11 @@ app.listen(port, () => {
   console.log('✓ Check-out endpoint registered at POST /api/contacts/:id/checkout');
   console.log('✓ Apollo People Search: POST /api/apollo/people/search');
   console.log('✓ Apollo Organizations Search: POST /api/apollo/organizations/search');
+  console.log('✓ AI Personalization: POST /api/campaigns/:id/personalize');
+  console.log('✓ AI Personalization Status: GET /api/campaigns/:id/personalize/status');
+  console.log('✓ Personalized Emails: GET /api/campaigns/:id/personalized-emails');
+  console.log('✓ Update Personalized Email: PATCH /api/personalized-emails/:id');
+  console.log('✓ Bulk Approve: PATCH /api/campaigns/:id/personalized-emails/bulk-approve');
   console.log('✓ Lead Submission → HubSpot: POST /api/leads/submit');
   console.log('✓ ADMIN Seed Endpoint: POST /api/admin/seed-comprehensive-funnels');
   console.log('✓ ADMIN Import Apollo Yardi: POST /api/admin/import-apollo-yardi-contacts');

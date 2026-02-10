@@ -140,6 +140,20 @@ export const apiApollo = {
   }) => sendJson('POST', '/api/apollo/organizations/search', params),
 };
 
+// AI Email Personalization
+export const apiPersonalization = {
+  /** Trigger AI personalization generation for all contacts × email nodes */
+  generate: (campaignId: string) => sendJson('POST', `/api/campaigns/${campaignId}/personalize`),
+  /** Poll generation progress */
+  status: (campaignId: string) => getJson(`/api/campaigns/${campaignId}/personalize/status`) as Promise<{ total: number; completed: number; failed: number; running: boolean }>,
+  /** Get all personalized emails for review */
+  list: (campaignId: string) => getJson(`/api/campaigns/${campaignId}/personalized-emails`),
+  /** Update a single personalized email (approve, reject, edit) */
+  update: (id: string, payload: { status?: string; editedSubject?: string; editedBody?: string }) => sendJson('PATCH', `/api/personalized-emails/${id}`, payload),
+  /** Bulk approve all pending personalized emails */
+  bulkApprove: (campaignId: string) => sendJson('PATCH', `/api/campaigns/${campaignId}/personalized-emails/bulk-approve`),
+};
+
 export { API_URL, getApiUrl };
 
 
