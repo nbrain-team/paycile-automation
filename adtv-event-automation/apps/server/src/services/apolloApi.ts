@@ -3,7 +3,7 @@
  * Docs: https://apolloio.github.io/apollo-api-docs/
  */
 
-const APOLLO_API_BASE = 'https://api.apollo.io/v1';
+const APOLLO_API_BASE = 'https://api.apollo.io/api/v1';
 
 function doFetch(url: string, init?: any) {
   const f: any = (globalThis as any).fetch;
@@ -102,7 +102,7 @@ export async function searchPeople(params: ApolloPersonSearchParams): Promise<{
     body.organization_locations = params.organization_locations;
   }
 
-  const res = await doFetch(`${APOLLO_API_BASE}/mixed_people/search`, {
+  const res = await doFetch(`${APOLLO_API_BASE}/mixed_people/api_search`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
