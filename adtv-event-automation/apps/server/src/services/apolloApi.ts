@@ -84,7 +84,6 @@ export async function searchPeople(params: ApolloPersonSearchParams): Promise<{
   }
 
   const body: any = {
-    api_key: apiKey,
     page: params.page || 1,
     per_page: params.per_page || 25,
   };
@@ -108,6 +107,7 @@ export async function searchPeople(params: ApolloPersonSearchParams): Promise<{
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
+      'X-Api-Key': apiKey,
     },
     body: JSON.stringify(body),
   });
@@ -137,7 +137,6 @@ export async function searchOrganizations(params: ApolloOrganizationSearchParams
   }
 
   const body: any = {
-    api_key: apiKey,
     page: params.page || 1,
     per_page: params.per_page || 25,
   };
@@ -160,6 +159,7 @@ export async function searchOrganizations(params: ApolloOrganizationSearchParams
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
+      'X-Api-Key': apiKey,
     },
     body: JSON.stringify(body),
   });
