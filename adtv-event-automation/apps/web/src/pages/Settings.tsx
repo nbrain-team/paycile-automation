@@ -327,14 +327,6 @@ export function Settings() {
           <h2 className="text-lg font-semibold">Integrations</h2>
           <div className="mt-3 space-y-3">
             <div>
-              <label className="label">Gmail</label>
-              <div className="flex items-center gap-2">
-                <button className="btn-primary btn-sm" onClick={connectGoogle}>Connect Google</button>
-                <button className="btn-secondary btn-sm" onClick={syncGmail}>Sync Replies</button>
-              </div>
-              {me?.googleEmail && <p className="text-xs text-gray-600 mt-1">Connected: {me.googleEmail}</p>}
-            </div>
-            <div>
               <label className="label">Microsoft Email (Outlook / 365)</label>
               <div className="flex items-center gap-2">
                 {me?.microsoftEmail ? (
@@ -362,25 +354,6 @@ export function Settings() {
               </div>
               <p className="text-xs text-gray-500 mt-1">Connect your LinkedIn account for LinkedIn campaign touchpoints.</p>
             </div>
-            <div>
-              <label className="label">Twilio</label>
-              <div className="flex items-center gap-2">
-                <input className="input flex-1" placeholder="Send test SMS…" defaultValue="+17604940404" />
-                <button className="btn-primary btn-sm" onClick={testSend}>Send Test</button>
-              </div>
-            </div>
-            <div>
-              <label className="label">Voicemail Drop (Slybroadcast)</label>
-              <div className="flex items-center gap-2">
-                <input className="input flex-1" placeholder="Queue test voicemail…" defaultValue="+17604940404" />
-                <button className="btn-primary btn-sm" onClick={testVoicemail}>Queue Test</button>
-              </div>
-            </div>
-            <div>
-              <label className="label">Calendly</label>
-              <input className="input" placeholder="Webhook key (mock)" />
-            </div>
-            <button className="btn-primary btn-md">Connect</button>
           </div>
         </div>
       </div>
