@@ -8,7 +8,10 @@ const getApiUrl = () => {
 const API_URL = getApiUrl();
 
 async function getJson(path: string) {
-  const res = await fetch(`${API_URL}${path}`);
+  const headers: Record<string, string> = {};
+  const token = localStorage.getItem('auth_token');
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API_URL}${path}`, { headers });
   if (!res.ok) throw new Error(`GET ${path} failed`);
   return res.json();
 }

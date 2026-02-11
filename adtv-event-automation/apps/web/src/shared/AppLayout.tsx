@@ -1,15 +1,20 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Toasts } from './Toasts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-const navItems = [
+// Primary nav items (always visible)
+const primaryNav = [
   { to: '/', label: 'Dashboard' },
   { to: '/inbox', label: 'Inbox' },
   { to: '/campaigns', label: 'Campaigns' },
-  { to: '/builder', label: 'Builder' },
   { to: '/templates', label: 'Funnel Templates' },
-  { to: '/analytics', label: 'Analytics' },
   { to: '/leads', label: 'Leads' },
+];
+
+// "More" dropdown items
+const moreNav = [
+  { to: '/builder', label: 'AI Builder' },
+  { to: '/analytics', label: 'Analytics' },
   { to: '/apollo', label: 'Apollo Search' },
   { to: '/settings', label: 'Settings' },
   { to: '/users', label: 'Users', adminOnly: true },
@@ -19,6 +24,8 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -27,6 +34,17 @@ export function AppLayout() {
         setUser(JSON.parse(storedUser));
       } catch {}
     }
+  }, []);
+
+  // Close menus on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const handleLogout = () => {
@@ -44,6 +62,8 @@ export function AppLayout() {
     return user.name.substring(0, 2).toUpperCase();
   };
 
+  const filteredMoreNav = moreNav.filter((item) => !item.adminOnly || user?.role === 'admin');
+
   return (
     <div className="min-h-screen">
       <Toasts />
@@ -53,10 +73,8 @@ export function AppLayout() {
             <img src="/paycile-logo.svg" alt="Paycile" className="h-7" />
             <span className="text-sm font-medium text-gray-500 border-l border-gray-300 pl-3">Marketing Automation</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm">
-            {navItems
-              .filter((item) => !item.adminOnly || user?.role === 'admin')
-              .map((item) => (
+          <nav className="hidden md:flex items-center gap-6 text-sm">
+            {primaryNav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -68,6 +86,35 @@ export function AppLayout() {
                 {item.label}
               </NavLink>
             ))}
+
+            {/* More Dropdown */}
+            <div className="relative" ref={moreRef}>
+              <button
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                className={`py-2 font-medium transition-colors flex items-center gap-1 ${showMoreMenu ? 'text-primary-600' : 'text-gray-700 hover:text-primary-600'}`}
+              >
+                More
+                <svg className={`w-3.5 h-3.5 transition-transform ${showMoreMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showMoreMenu && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  {filteredMoreNav.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `block px-4 py-2 text-sm transition-colors ${isActive ? 'text-primary-600 bg-primary-50 font-medium' : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'}`
+                      }
+                      onClick={() => setShowMoreMenu(false)}
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
           <div className="flex items-center gap-3 relative">
             <div className="text-right mr-2 hidden sm:block">
@@ -110,7 +157,7 @@ export function AppLayout() {
               <img src="/paycile-logo.svg" alt="Paycile" className="h-6 opacity-60" />
             </div>
             <p className="text-sm text-gray-600">
-              © {new Date().getFullYear()} Paycile. All rights reserved.
+              &copy; {new Date().getFullYear()} Paycile. All rights reserved.
             </p>
           </div>
         </div>
@@ -118,5 +165,3 @@ export function AppLayout() {
     </div>
   );
 }
-
-
