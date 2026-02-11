@@ -232,12 +232,16 @@ async function resolveEmailFromConfig(config: any): Promise<{ subject: string; b
       console.warn('[execute] Email template not found for id:', config.template_id);
       return { subject: '', body: '' };
     }
-    // No template selected: allow custom content
+    // Format B: nested content object
     if (config?.content && (config.content.subject || config.content.body)) {
       return { subject: String(config.content.subject || ''), body: String(config.content.body || '') };
     }
     if (config?.content?.text) {
       return { subject: '', body: String(config.content.text) };
+    }
+    // Format C: top-level subject/body (AI builder legacy format)
+    if (config?.subject || config?.body) {
+      return { subject: String(config.subject || ''), body: String(config.body || '') };
     }
   } catch {}
   return { subject: '', body: '' };
@@ -254,6 +258,8 @@ async function resolveVoicemailScriptFromConfig(config: any): Promise<string> {
       return '';
     }
     if (config?.tts?.custom_script) return String(config.tts.custom_script);
+    // Format C: top-level ttsScript (AI builder legacy format)
+    if (config?.ttsScript) return String(config.ttsScript);
   } catch {}
   return '';
 }
@@ -2331,22 +2337,57 @@ app.post('/api/ai/campaign/save-as-template', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: name, nodes, edges' });
     }
     
+    // Normalize config format: convert top-level subject/body/text (Format C)
+    // to nested content/tts (Format B) before persisting
+    function normalizeNodeConfig(config: any): any {
+      if (!config || typeof config !== 'object') return config;
+      const cfg = { ...config };
+      // email: top-level subject/body → content.subject/content.body
+      if (cfg.subject || cfg.body) {
+        cfg.content = cfg.content || {};
+        cfg.content.subject = cfg.content.subject || cfg.subject;
+        cfg.content.body = cfg.content.body || cfg.body;
+        delete cfg.subject;
+        delete cfg.body;
+      }
+      // sms: top-level text → content.text
+      if (cfg.text && !cfg.content?.text) {
+        cfg.content = cfg.content || {};
+        cfg.content.text = cfg.text;
+        delete cfg.text;
+      }
+      // voicemail: top-level ttsScript → tts.custom_script
+      if (cfg.ttsScript && !cfg.tts?.custom_script) {
+        cfg.tts = cfg.tts || {};
+        cfg.tts.custom_script = cfg.ttsScript;
+        delete cfg.ttsScript;
+      }
+      return cfg;
+    }
+
     // Create template - handle both AI format and frontend format
     const created = await prisma.template.create({
       data: {
         name,
         status: 'draft',
         nodes: {
-          create: nodes.map((n: any) => ({
-            // Handle both formats: {id, type, name} and {key, type, name}
-            key: n.key || n.id,
-            type: n.type,
-            name: n.name,
-            // Handle both {config: obj} and {configJson: string}
-            configJson: n.configJson || (n.config ? JSON.stringify(n.config) : null),
-            posX: n.posX ?? null,
-            posY: n.posY ?? null
-          }))
+          create: nodes.map((n: any) => {
+            let config = n.config || {};
+            // Parse configJson if it's a string
+            if (n.configJson && typeof n.configJson === 'string') {
+              try { config = JSON.parse(n.configJson); } catch {}
+            }
+            config = normalizeNodeConfig(config);
+            return {
+              // Handle both formats: {id, type, name} and {key, type, name}
+              key: n.key || n.id,
+              type: n.type,
+              name: n.name,
+              configJson: JSON.stringify(config),
+              posX: n.posX ?? null,
+              posY: n.posY ?? null,
+            };
+          })
         },
         edges: {
           create: edges.map((e: any) => ({

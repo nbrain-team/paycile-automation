@@ -41,13 +41,16 @@ export interface GeneratedCampaignNode {
   type: string;
   name: string;
   config: {
+    content?: { subject?: string; body?: string; text?: string };
+    tts?: { custom_script?: string };
+    waitDuration?: number;
+    waitUnit?: 'hours' | 'days';
+    description?: string;
+    // Legacy top-level fields (AI may still produce these; normalized on save)
     subject?: string;
     body?: string;
     text?: string;
     ttsScript?: string;
-    waitDuration?: number;
-    waitUnit?: 'hours' | 'days';
-    description?: string;
   };
   posX: number;
   posY: number;
@@ -290,19 +293,55 @@ Return ONLY this JSON structure (no markdown, no code blocks, just raw JSON):
       "type": "email_send",
       "name": "Email 1: Introduction",
       "config": {
-        "subject": "Email subject here",
-        "body": "Full email body here with personalization tokens"
+        "content": {
+          "subject": "Email subject here",
+          "body": "Full email body here with personalization tokens"
+        }
       },
       "posX": 400,
       "posY": 150
+    },
+    {
+      "id": "N20",
+      "type": "sms_send",
+      "name": "SMS Follow-up",
+      "config": {
+        "content": {
+          "text": "SMS message text here"
+        }
+      },
+      "posX": 400,
+      "posY": 300
+    },
+    {
+      "id": "N30",
+      "type": "voicemail_drop",
+      "name": "Voicemail",
+      "config": {
+        "tts": {
+          "custom_script": "Voicemail script here"
+        }
+      },
+      "posX": 400,
+      "posY": 450
     }
   ],
   "edges": [
-    { "from": "N00", "to": "N10" }
+    { "from": "N00", "to": "N10" },
+    { "from": "N10", "to": "N20" },
+    { "from": "N20", "to": "N30" }
   ],
   "estimatedDuration": "7 days",
   "recommendedAudience": "Target audience description"
-}`;
+}
+
+CRITICAL CONFIG FORMAT RULES:
+- email_send nodes: config.content.subject and config.content.body (MUST be nested inside "content")
+- sms_send nodes: config.content.text (MUST be nested inside "content")
+- voicemail_drop nodes: config.tts.custom_script (MUST be nested inside "tts")
+- wait nodes: config.waitDuration and config.waitUnit
+- decision/stage/task nodes: config.description
+- NEVER put subject/body/text at the top level of config - ALWAYS nest inside "content" or "tts"`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -332,14 +371,37 @@ Return ONLY this JSON structure (no markdown, no code blocks, just raw JSON):
       throw new Error('Generated campaign has no edges');
     }
     
-    // Ensure all nodes have required fields
-    campaign.nodes = campaign.nodes.map((node, index) => ({
-      ...node,
-      id: node.id || `N${index * 10}`,
-      posX: node.posX || 400,
-      posY: node.posY || (index * 150),
-      config: node.config || {}
-    }));
+    // Ensure all nodes have required fields and normalize config format
+    campaign.nodes = campaign.nodes.map((node, index) => {
+      const cfg: any = node.config || {};
+
+      // Normalize Format C (top-level subject/body) → Format B (nested content)
+      if (cfg.subject || cfg.body) {
+        cfg.content = cfg.content || {};
+        cfg.content.subject = cfg.content.subject || cfg.subject;
+        cfg.content.body = cfg.content.body || cfg.body;
+        delete cfg.subject;
+        delete cfg.body;
+      }
+      if (cfg.text && !cfg.content?.text) {
+        cfg.content = cfg.content || {};
+        cfg.content.text = cfg.text;
+        delete cfg.text;
+      }
+      if (cfg.ttsScript && !cfg.tts?.custom_script) {
+        cfg.tts = cfg.tts || {};
+        cfg.tts.custom_script = cfg.ttsScript;
+        delete cfg.ttsScript;
+      }
+
+      return {
+        ...node,
+        id: node.id || `N${index * 10}`,
+        posX: node.posX || 400,
+        posY: node.posY || (index * 150),
+        config: cfg,
+      };
+    });
     
     return campaign;
     

@@ -51,18 +51,28 @@ export function FunnelTableView({ template, onUpdate, onExportCsv, onImportCsv }
         } else if (node.config?.content) {
           emailSubject = node.config.content.subject || '';
           emailBody = node.config.content.body || '';
+        } else if (node.config?.subject || node.config?.body) {
+          // Format C fallback: top-level subject/body from AI builder
+          emailSubject = node.config.subject || '';
+          emailBody = node.config.body || '';
         }
       } else if (node.type === 'sms_send') {
         if (contentTemplate) {
           smsText = contentTemplate.text || '';
         } else if (node.config?.content) {
           smsText = node.config.content.text || '';
+        } else if (node.config?.text) {
+          // Format C fallback: top-level text from AI builder
+          smsText = node.config.text || '';
         }
       } else if (node.type === 'voicemail_drop') {
         if (contentTemplate) {
           voicemailScript = contentTemplate.tts_script || '';
         } else if (node.config?.tts) {
           voicemailScript = node.config.tts.custom_script || '';
+        } else if (node.config?.ttsScript) {
+          // Format C fallback: top-level ttsScript from AI builder
+          voicemailScript = node.config.ttsScript || '';
         }
       }
       

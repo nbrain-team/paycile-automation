@@ -675,14 +675,18 @@ type InspectorProps = {
 };
 
 function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: InspectorProps) {
+  const cfg = node?.config || {};
+  // Detect mode: template_id → template mode; any content (nested or top-level) → custom mode
+  const hasContent = cfg.content || cfg.subject || cfg.body || cfg.text || cfg.ttsScript || cfg.tts?.custom_script;
   const [name, setName] = useState(node.name || '');
-  const [mode, setMode] = useState<'template'|'custom'>(node?.config?.template_id ? 'template' : (node?.config?.content ? 'custom' : 'template'));
-  const [templateId, setTemplateId] = useState(node?.config?.template_id || '');
-  const [rules, setRules] = useState<any[]>(node?.config?.rules || []);
-  const [emailSubject, setEmailSubject] = useState(node?.config?.content?.subject || '');
-  const [emailBody, setEmailBody] = useState(node?.config?.content?.body || '');
-  const [smsText, setSmsText] = useState(node?.config?.content?.text || '');
-  const [vmScript, setVmScript] = useState(node?.config?.tts?.custom_script || '');
+  const [mode, setMode] = useState<'template'|'custom'>(cfg.template_id ? 'template' : (hasContent ? 'custom' : 'template'));
+  const [templateId, setTemplateId] = useState(cfg.template_id || '');
+  const [rules, setRules] = useState<any[]>(cfg.rules || []);
+  // Format B (nested) with Format C (top-level) fallback
+  const [emailSubject, setEmailSubject] = useState(cfg.content?.subject || cfg.subject || '');
+  const [emailBody, setEmailBody] = useState(cfg.content?.body || cfg.body || '');
+  const [smsText, setSmsText] = useState(cfg.content?.text || cfg.text || '');
+  const [vmScript, setVmScript] = useState(cfg.tts?.custom_script || cfg.ttsScript || '');
   const [edgesDraft, setEdgesDraft] = useState<any[]>(edgesOut || []);
   const [scheduleAfter, setScheduleAfter] = useState<string>(node?.config?.schedule?.after || '');
   const [scheduleAtLocal, setScheduleAtLocal] = useState<string>(node?.config?.schedule?.at_local || '');
