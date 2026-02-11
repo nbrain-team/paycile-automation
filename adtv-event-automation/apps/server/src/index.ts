@@ -3432,11 +3432,19 @@ app.get('/api/sender-emails', async (_req, res) => {
     const emails: Array<{ email: string; name: string; source: string }> = [];
     const seen = new Set<string>();
 
-    // 1. Primary SMTP from environment variables (e.g., Stanley@paysol.com)
+    // 1. Primary SMTP from environment variables
     const envSmtpUser = process.env.SMTP_USER;
+    const envSmtpFrom = process.env.SMTP_FROM;
+    console.log('[sender-emails] SMTP_USER env:', envSmtpUser || '(not set)');
+    console.log('[sender-emails] SMTP_FROM env:', envSmtpFrom || '(not set)');
+
     if (envSmtpUser) {
       seen.add(envSmtpUser.toLowerCase());
       emails.push({ email: envSmtpUser, name: envSmtpUser, source: 'env' });
+    }
+    if (envSmtpFrom && !seen.has(envSmtpFrom.toLowerCase())) {
+      seen.add(envSmtpFrom.toLowerCase());
+      emails.push({ email: envSmtpFrom, name: envSmtpFrom, source: 'env' });
     }
 
     // 2. SmtpConfig entries (rotation/additional sender addresses)
@@ -3445,31 +3453,39 @@ app.get('/api/sender-emails', async (_req, res) => {
         where: { isActive: true },
         orderBy: { createdAt: 'desc' },
       });
+      console.log('[sender-emails] SmtpConfig count:', configs.length);
       for (const c of configs) {
         if (c.email && !seen.has(c.email.toLowerCase())) {
           seen.add(c.email.toLowerCase());
           emails.push({ email: c.email, name: c.email, source: 'smtp' });
         }
       }
-    } catch {}
+    } catch (err: any) {
+      console.warn('[sender-emails] SmtpConfig query failed:', err?.message);
+    }
 
-    // 3. Users with SMTP configured
+    // 3. Users with SMTP configured OR any users with email
     try {
       const users = await prisma.user.findMany({
-        where: { smtpUser: { not: null } },
         select: { id: true, name: true, email: true, smtpUser: true },
       });
+      console.log('[sender-emails] Users count:', users.length);
       for (const u of users) {
+        // Prefer smtpUser, fall back to user email
         const addr = u.smtpUser || u.email;
         if (addr && !seen.has(addr.toLowerCase())) {
           seen.add(addr.toLowerCase());
           emails.push({ email: addr, name: u.name || addr, source: 'user' });
         }
       }
-    } catch {}
+    } catch (err: any) {
+      console.warn('[sender-emails] User query failed:', err?.message);
+    }
 
+    console.log('[sender-emails] Returning', emails.length, 'sender emails:', emails.map(e => e.email));
     res.json(emails);
   } catch (e: any) {
+    console.error('[sender-emails] Endpoint error:', e);
     res.status(500).json({ error: e?.message || 'Failed to load sender emails' });
   }
 });

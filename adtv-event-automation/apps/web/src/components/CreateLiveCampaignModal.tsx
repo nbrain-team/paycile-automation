@@ -31,12 +31,16 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
 
     // Load sender emails from backend
     apiSenderEmails.list().then((list) => {
+      console.log('[CreateCampaign] Sender emails loaded:', list);
       setSenderEmails(Array.isArray(list) ? list : []);
       // Auto-select first if only one
       if (Array.isArray(list) && list.length === 1 && !senderEmail && list[0]) {
         setSenderEmail(list[0].email);
       }
-    }).catch(() => setSenderEmails([]));
+    }).catch((err) => {
+      console.error('[CreateCampaign] Failed to load sender emails:', err);
+      setSenderEmails([]);
+    });
   }, [open, campaigns]);
 
   if (!open) return null;
