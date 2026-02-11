@@ -118,10 +118,35 @@ export async function searchPeople(params: ApolloPersonSearchParams): Promise<{
   }
 
   const data = await res.json();
-  return {
-    people: data.people || [],
-    pagination: data.pagination || { page: 1, per_page: 25, total_entries: 0, total_pages: 0 },
+
+  // Log response keys for debugging
+  console.log('[Apollo People Search] Response keys:', Object.keys(data));
+  console.log('[Apollo People Search] People count:', (data.people || []).length);
+  console.log('[Apollo People Search] Pagination:', JSON.stringify(data.pagination || null));
+  if (data.people && data.people[0]) {
+    console.log('[Apollo People Search] Sample person keys:', Object.keys(data.people[0]));
+  }
+
+  // The api_search endpoint may return people without a combined "name" field.
+  // Normalize each person record to ensure name, title, organization are populated.
+  const people = (data.people || []).map((p: any) => ({
+    ...p,
+    name: p.name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown',
+    title: p.title || '',
+    email: p.email || p.email_address || '',
+    organization: p.organization || (p.organization_name ? { name: p.organization_name, id: p.organization_id || '' } : undefined),
+  }));
+
+  // Pagination may be missing or structured differently in the new endpoint.
+  // Try multiple fallback paths for pagination data.
+  const pagination = data.pagination || {
+    page: data.page || params.page || 1,
+    per_page: data.per_page || params.per_page || 25,
+    total_entries: data.total_entries || data.num_fetch_result || people.length,
+    total_pages: data.total_pages || (data.total_entries ? Math.ceil(data.total_entries / (params.per_page || 25)) : (people.length > 0 ? 1 : 0)),
   };
+
+  return { people, pagination };
 }
 
 /**

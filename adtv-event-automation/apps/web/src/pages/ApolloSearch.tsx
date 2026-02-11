@@ -516,12 +516,12 @@ export function ApolloSearch() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-base">{person.name}</h3>
+                            <h3 className="font-semibold text-base">{person.name || `${person.first_name || ''} ${person.last_name || ''}`.trim() || 'Unknown'}</h3>
                             {person.title && <p className="text-sm text-gray-700">{person.title}</p>}
-                            {person.organization && (
+                            {(person.organization?.name || person.organization_name) && (
                               <p className="text-sm text-gray-600 mt-1">
-                                {person.organization.name}
-                                {person.organization.industry && ` · ${person.organization.industry}`}
+                                {person.organization?.name || person.organization_name}
+                                {(person.organization?.industry || person.industry) && ` · ${person.organization?.industry || person.industry}`}
                               </p>
                             )}
                             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
