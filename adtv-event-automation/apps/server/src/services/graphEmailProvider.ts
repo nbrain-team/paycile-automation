@@ -165,7 +165,84 @@ export async function sendGraphEmail(input: GraphEmailInput): Promise<GraphEmail
 }
 
 /**
- * Check if Graph API is configured
+ * Refresh a user's Microsoft OAuth access token using their refresh token.
+ * Returns the new access token or null if refresh fails.
+ */
+export async function refreshUserMicrosoftToken(refreshToken: string): Promise<{ access_token: string; refresh_token?: string; expires_in: number } | null> {
+  try {
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
+    const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
+
+    if (!clientId || !clientSecret) return null;
+
+    const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+        scope: 'openid profile email offline_access Mail.Send User.Read',
+      }).toString(),
+    });
+
+    if (!res.ok) {
+      console.error('[Graph] Token refresh failed:', await res.text().catch(() => ''));
+      return null;
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.error('[Graph] Token refresh error:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Send email using a specific user's delegated Microsoft token.
+ * Uses the /me/sendMail endpoint which sends as the authenticated user.
+ */
+export async function sendGraphEmailAsUser(
+  userAccessToken: string,
+  input: GraphEmailInput
+): Promise<GraphEmailResult> {
+  try {
+    const emailPayload = JSON.stringify({
+      message: {
+        subject: input.subject,
+        body: { contentType: 'HTML', content: input.body },
+        toRecipients: [{ emailAddress: { address: input.to } }],
+      },
+      saveToSentItems: true,
+    });
+
+    // Use /me/sendMail with the user's delegated token (sends as the user)
+    const res = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${userAccessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: emailPayload,
+    });
+
+    if (res.status === 202 || res.status === 200) {
+      return { sent: true, messageId: `graph-user-${Date.now()}` };
+    } else {
+      const errText = await res.text().catch(() => '');
+      console.error('[Graph] User sendMail failed:', res.status, errText);
+      return { sent: false, error: `Graph API error: ${res.status}` };
+    }
+  } catch (error: any) {
+    console.error('[Graph] User email error:', error.message);
+    return { sent: false, error: error.message };
+  }
+}
+
+/**
+ * Check if Graph API is configured (server-level credentials)
  */
 export function isGraphConfigured(): boolean {
   return !!(

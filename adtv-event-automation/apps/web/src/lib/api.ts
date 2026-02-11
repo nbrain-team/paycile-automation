@@ -102,6 +102,26 @@ export const apiGoogle = {
   sync: (userId: string, days?: number) => sendJson('POST', '/api/gmail/sync', { userId, days }),
 };
 
+// Microsoft OAuth
+export const apiMicrosoft = {
+  initiate: (userId: string) => getJson(`/api/auth/microsoft/initiate?userId=${encodeURIComponent(userId)}`) as Promise<{ url: string }>,
+  disconnect: () => sendJson('POST', '/api/auth/microsoft/disconnect'),
+};
+
+// LinkedIn OAuth
+export const apiLinkedIn = {
+  initiate: (userId: string) => getJson(`/api/auth/linkedin/initiate?userId=${encodeURIComponent(userId)}`) as Promise<{ url: string }>,
+  disconnect: () => sendJson('POST', '/api/auth/linkedin/disconnect'),
+};
+
+// User Management (admin)
+export const apiUsers = {
+  list: () => getJson('/api/users') as Promise<any[]>,
+  create: (payload: { name: string; email: string; password?: string; role?: string; phone?: string }) => sendJson('POST', '/api/users', payload),
+  update: (id: string, payload: { name?: string; email?: string; role?: string; phone?: string; password?: string }) => sendJson('PATCH', `/api/users/${id}`, payload),
+  delete: (id: string) => sendJson('DELETE', `/api/users/${id}`),
+};
+
 // AI - Newbury Partners Voice
 export const apiAI = {
   generateResponse: (contactId: string, conversationHistory?: Array<{ direction: 'in' | 'out'; text: string; time: string }>) =>

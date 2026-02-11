@@ -12,7 +12,8 @@ const navItems = [
   { to: '/leads', label: 'Leads' },
   { to: '/apollo', label: 'Apollo Search' },
   { to: '/settings', label: 'Settings' },
-];
+  { to: '/users', label: 'Users', adminOnly: true },
+] as Array<{ to: string; label: string; adminOnly?: boolean }>;
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -53,7 +54,9 @@ export function AppLayout() {
             <span className="text-sm font-medium text-gray-500 border-l border-gray-300 pl-3">Marketing Automation</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm">
-            {navItems.map((item) => (
+            {navItems
+              .filter((item) => !item.adminOnly || user?.role === 'admin')
+              .map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

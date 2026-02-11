@@ -25,6 +25,7 @@ import { ControllerLanding } from './pages/ControllerLanding';
 import { PropMgmtLanding } from './pages/PropMgmtLanding';
 import { AICampaignBuilder } from './pages/AICampaignBuilder';
 import { LoginPage } from './pages/LoginPage';
+import { UserManagement } from './pages/UserManagement';
 
 const router = createBrowserRouter([
   {
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
       { path: 'leads', element: <Leads /> },
       { path: 'apollo', element: <ApolloSearch /> },
       { path: 'settings', element: <Settings /> },
+      { path: 'users', element: <UserManagement /> },
     ],
   },
   // Landing pages (no AppLayout wrapper - standalone pages)

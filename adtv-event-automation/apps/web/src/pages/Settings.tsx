@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiAuth, apiGoogle, getApiUrl } from '../lib/api';
+import { apiAuth, apiGoogle, apiMicrosoft, apiLinkedIn, getApiUrl } from '../lib/api';
 
 export function Settings() {
   const [me, setMe] = useState<any>(null);
@@ -136,6 +136,44 @@ export function Settings() {
       window.location.href = url;
     } catch (e) {
       alert('Google initiate failed');
+    }
+  };
+  const connectMicrosoft = async () => {
+    if (!me?.id) return alert('Login first');
+    try {
+      const { url } = await apiMicrosoft.initiate(me.id);
+      window.location.href = url;
+    } catch (e: any) {
+      alert('Microsoft connect failed: ' + (e?.message || 'error'));
+    }
+  };
+  const disconnectMicrosoft = async () => {
+    try {
+      await apiMicrosoft.disconnect();
+      const meData = await apiAuth.me();
+      setMe(meData);
+      alert('Microsoft disconnected');
+    } catch (e) {
+      alert('Disconnect failed');
+    }
+  };
+  const connectLinkedIn = async () => {
+    if (!me?.id) return alert('Login first');
+    try {
+      const { url } = await apiLinkedIn.initiate(me.id);
+      window.location.href = url;
+    } catch (e: any) {
+      alert('LinkedIn connect failed: ' + (e?.message || 'error'));
+    }
+  };
+  const disconnectLinkedIn = async () => {
+    try {
+      await apiLinkedIn.disconnect();
+      const meData = await apiAuth.me();
+      setMe(meData);
+      alert('LinkedIn disconnected');
+    } catch (e) {
+      alert('Disconnect failed');
     }
   };
   const syncGmail = async () => {
@@ -297,10 +335,32 @@ export function Settings() {
               {me?.googleEmail && <p className="text-xs text-gray-600 mt-1">Connected: {me.googleEmail}</p>}
             </div>
             <div>
-              <label className="label">Email Provider</label>
-              <select className="input">
-                <option>Mock</option>
-              </select>
+              <label className="label">Microsoft Email (Outlook / 365)</label>
+              <div className="flex items-center gap-2">
+                {me?.microsoftEmail ? (
+                  <>
+                    <span className="text-sm text-green-600 font-medium">{me.microsoftEmail}</span>
+                    <button className="btn-outline btn-xs text-red-600" onClick={disconnectMicrosoft}>Disconnect</button>
+                  </>
+                ) : (
+                  <button className="btn-primary btn-sm" onClick={connectMicrosoft}>Connect Microsoft Email</button>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Connect your Microsoft account to send campaign emails from your Outlook address.</p>
+            </div>
+            <div>
+              <label className="label">LinkedIn</label>
+              <div className="flex items-center gap-2">
+                {me?.linkedinProfileUrl ? (
+                  <>
+                    <span className="text-sm text-green-600 font-medium">Connected</span>
+                    <button className="btn-outline btn-xs text-red-600" onClick={disconnectLinkedIn}>Disconnect</button>
+                  </>
+                ) : (
+                  <button className="btn-primary btn-sm" onClick={connectLinkedIn}>Connect LinkedIn</button>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Connect your LinkedIn account for LinkedIn campaign touchpoints.</p>
             </div>
             <div>
               <label className="label">Twilio</label>

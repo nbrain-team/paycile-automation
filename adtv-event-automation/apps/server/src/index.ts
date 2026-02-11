@@ -1803,12 +1803,104 @@ app.post('/api/voicemail/drop', async (req, res) => {
 });
 
 
-// Users
+// ═══════════════════════════════════════════════════════════════
+// USER MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
+// List all users (admin only)
+app.get('/api/users', async (req: any, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const caller = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!caller || caller.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+
+    const users = await prisma.user.findMany({
+      select: {
+        id: true, name: true, email: true, role: true, phone: true,
+        googleEmail: true, microsoftEmail: true, linkedinProfileUrl: true,
+        createdAt: true, updatedAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(users);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Failed to list users' });
+  }
+});
+
+// Create user
 app.post('/api/users', async (req, res) => {
-  const body = z.object({ name: z.string(), email: z.string().email(), password: z.string().optional(), role: z.enum(['bdr','admin']).optional(), phone: z.string().optional(), smsFromNumber: z.string().optional(), vmCallerId: z.string().optional(), smtp: z.object({ host: z.string(), port: z.number(), user: z.string(), pass: z.string(), secure: z.boolean().optional() }).optional() }).parse(req.body);
-  const passwordHash = body.password ? await bcrypt.hash(body.password, 10) : null;
-  const created = await prisma.user.create({ data: { name: body.name, email: body.email, role: body.role || 'bdr', passwordHash, phone: body.phone || null, smsFromNumber: body.smsFromNumber || null, vmCallerId: body.vmCallerId || null, smtpHost: body.smtp?.host, smtpPort: body.smtp?.port, smtpUser: body.smtp?.user, smtpPass: body.smtp?.pass, smtpSecure: body.smtp?.secure ?? true } });
-  res.json(created);
+  try {
+    const body = z.object({
+      name: z.string(),
+      email: z.string().email(),
+      password: z.string().optional(),
+      role: z.enum(['bdr', 'admin']).optional(),
+      phone: z.string().optional(),
+      smsFromNumber: z.string().optional(),
+      vmCallerId: z.string().optional(),
+      smtp: z.object({ host: z.string(), port: z.number(), user: z.string(), pass: z.string(), secure: z.boolean().optional() }).optional(),
+    }).parse(req.body);
+    const passwordHash = body.password ? await bcrypt.hash(body.password, 10) : null;
+    const created = await prisma.user.create({
+      data: {
+        name: body.name, email: body.email, role: body.role || 'bdr', passwordHash,
+        phone: body.phone || null, smsFromNumber: body.smsFromNumber || null, vmCallerId: body.vmCallerId || null,
+        smtpHost: body.smtp?.host, smtpPort: body.smtp?.port, smtpUser: body.smtp?.user, smtpPass: body.smtp?.pass, smtpSecure: body.smtp?.secure ?? true,
+      },
+    });
+    res.json({ id: created.id, name: created.name, email: created.email, role: created.role });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Failed to create user' });
+  }
+});
+
+// Update user (admin only)
+app.patch('/api/users/:id', async (req: any, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const caller = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!caller || caller.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+
+    const body = z.object({
+      name: z.string().optional(),
+      email: z.string().email().optional(),
+      role: z.enum(['bdr', 'admin']).optional(),
+      phone: z.string().optional(),
+      password: z.string().optional(),
+    }).parse(req.body);
+
+    const updateData: any = {};
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.email !== undefined) updateData.email = body.email;
+    if (body.role !== undefined) updateData.role = body.role;
+    if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.password) updateData.passwordHash = await bcrypt.hash(body.password, 10);
+
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: updateData,
+      select: { id: true, name: true, email: true, role: true, phone: true, createdAt: true },
+    });
+    res.json(updated);
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Failed to update user' });
+  }
+});
+
+// Delete user (admin only)
+app.delete('/api/users/:id', async (req: any, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const caller = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!caller || caller.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+    if (req.params.id === req.user.id) return res.status(400).json({ error: 'Cannot delete your own account' });
+
+    await prisma.user.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Failed to delete user' });
+  }
 });
 
 // Auth endpoints
@@ -1830,7 +1922,7 @@ app.get('/api/auth/me', async (req: any, res) => {
   if (!req.user) return res.status(401).json({ error: 'unauthorized' });
   const user = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (!user) return res.status(404).json({ error: 'not found' });
-  res.json({ id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone, smsFromNumber: user.smsFromNumber, vmCallerId: user.vmCallerId, googleEmail: user.googleEmail });
+  res.json({ id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone, smsFromNumber: user.smsFromNumber, vmCallerId: user.vmCallerId, googleEmail: user.googleEmail, microsoftEmail: user.microsoftEmail, linkedinProfileUrl: user.linkedinProfileUrl });
 });
 
 // BDR CSV import
@@ -1921,6 +2013,222 @@ app.get('/api/auth/google/callback', async (req: any, res) => {
     res.json({ ok: true, googleEmail });
   } catch (e: any) {
     res.status(400).json({ error: e?.message || 'callback error' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// MICROSOFT OAUTH (Per-User Email Authorization)
+// ═══════════════════════════════════════════════════════════════
+
+app.get('/api/auth/microsoft/initiate', async (req: any, res) => {
+  try {
+    const userId = (req.user?.id || req.query.userId || '').toString();
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
+    const redirectUri = process.env.MICROSOFT_REDIRECT_URI || `${process.env.PUBLIC_BASE_URL || 'http://localhost:4000'}/api/auth/microsoft/callback`;
+
+    if (!clientId) return res.status(400).json({ error: 'Microsoft OAuth not configured (MICROSOFT_CLIENT_ID missing)' });
+
+    const scopes = ['openid', 'profile', 'email', 'offline_access', 'Mail.Send', 'User.Read'];
+    const state = JSON.stringify({ userId });
+
+    const url = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
+      `client_id=${encodeURIComponent(clientId)}` +
+      `&response_type=code` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_mode=query` +
+      `&scope=${encodeURIComponent(scopes.join(' '))}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&prompt=consent`;
+
+    res.json({ url });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Microsoft OAuth initiate error' });
+  }
+});
+
+app.get('/api/auth/microsoft/callback', async (req: any, res) => {
+  try {
+    const code = (req.query.code || '').toString();
+    const stateRaw = (req.query.state || '').toString();
+    const state = (() => { try { return JSON.parse(stateRaw || '{}'); } catch { return {}; } })();
+    const userId = state?.userId ? String(state.userId) : '';
+
+    if (!code || !userId) return res.status(400).send('Missing code or userId. <a href="/">Go back</a>');
+
+    const clientId = process.env.MICROSOFT_CLIENT_ID!;
+    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!;
+    const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
+    const redirectUri = process.env.MICROSOFT_REDIRECT_URI || `${process.env.PUBLIC_BASE_URL || 'http://localhost:4000'}/api/auth/microsoft/callback`;
+
+    // Exchange code for tokens
+    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+        scope: 'openid profile email offline_access Mail.Send User.Read',
+      }).toString(),
+    });
+
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text();
+      console.error('[Microsoft OAuth] Token exchange failed:', errText);
+      return res.status(400).send('Microsoft token exchange failed. <a href="/">Go back</a>');
+    }
+
+    const tokens: any = await tokenRes.json();
+
+    // Get user profile to find their email
+    const profileRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    const profile: any = profileRes.ok ? await profileRes.json() : {};
+    const microsoftEmail = profile.mail || profile.userPrincipalName || null;
+
+    console.log('[Microsoft OAuth] Connected:', microsoftEmail, 'for user:', userId);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        microsoftEmail,
+        microsoftAccessToken: tokens.access_token || null,
+        microsoftRefreshToken: tokens.refresh_token || null,
+        microsoftTokenExpiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
+      },
+    });
+
+    // Redirect to frontend settings page with success
+    const frontendUrl = process.env.PUBLIC_FRONTEND_URL || process.env.VITE_API_URL?.replace(/\/api$/, '') || '/';
+    res.redirect(`${frontendUrl}/settings?microsoft=connected&email=${encodeURIComponent(microsoftEmail || '')}`);
+  } catch (e: any) {
+    console.error('[Microsoft OAuth] Callback error:', e);
+    res.status(400).send('Microsoft OAuth failed: ' + (e?.message || 'unknown error') + '. <a href="/">Go back</a>');
+  }
+});
+
+// Disconnect Microsoft
+app.post('/api/auth/microsoft/disconnect', async (req: any, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { microsoftEmail: null, microsoftAccessToken: null, microsoftRefreshToken: null, microsoftTokenExpiry: null },
+    });
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'disconnect error' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// LINKEDIN OAUTH
+// ═══════════════════════════════════════════════════════════════
+
+app.get('/api/auth/linkedin/initiate', async (req: any, res) => {
+  try {
+    const userId = (req.user?.id || req.query.userId || '').toString();
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+
+    const clientId = process.env.LINKEDIN_CLIENT_ID;
+    const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${process.env.PUBLIC_BASE_URL || 'http://localhost:4000'}/api/auth/linkedin/callback`;
+
+    if (!clientId) return res.status(400).json({ error: 'LinkedIn OAuth not configured (LINKEDIN_CLIENT_ID missing)' });
+
+    const scopes = ['openid', 'profile', 'email'];
+    const state = JSON.stringify({ userId });
+
+    const url = `https://www.linkedin.com/oauth/v2/authorization?` +
+      `response_type=code` +
+      `&client_id=${encodeURIComponent(clientId)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&scope=${encodeURIComponent(scopes.join(' '))}`;
+
+    res.json({ url });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'LinkedIn OAuth initiate error' });
+  }
+});
+
+app.get('/api/auth/linkedin/callback', async (req: any, res) => {
+  try {
+    const code = (req.query.code || '').toString();
+    const stateRaw = (req.query.state || '').toString();
+    const state = (() => { try { return JSON.parse(stateRaw || '{}'); } catch { return {}; } })();
+    const userId = state?.userId ? String(state.userId) : '';
+
+    if (!code || !userId) return res.status(400).send('Missing code or userId. <a href="/">Go back</a>');
+
+    const clientId = process.env.LINKEDIN_CLIENT_ID!;
+    const clientSecret = process.env.LINKEDIN_CLIENT_SECRET!;
+    const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${process.env.PUBLIC_BASE_URL || 'http://localhost:4000'}/api/auth/linkedin/callback`;
+
+    // Exchange code for tokens
+    const tokenRes = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+      }).toString(),
+    });
+
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text();
+      console.error('[LinkedIn OAuth] Token exchange failed:', errText);
+      return res.status(400).send('LinkedIn token exchange failed. <a href="/">Go back</a>');
+    }
+
+    const tokens: any = await tokenRes.json();
+
+    // Get user profile
+    const profileRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    const profile: any = profileRes.ok ? await profileRes.json() : {};
+    const linkedinProfileUrl = profile.sub ? `https://www.linkedin.com/in/${profile.sub}` : null;
+
+    console.log('[LinkedIn OAuth] Connected for user:', userId, 'profile:', linkedinProfileUrl);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        linkedinProfileUrl: linkedinProfileUrl || profile.picture || 'connected',
+        linkedinAccessToken: tokens.access_token || null,
+        linkedinRefreshToken: tokens.refresh_token || null,
+        linkedinTokenExpiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
+      },
+    });
+
+    const frontendUrl = process.env.PUBLIC_FRONTEND_URL || '/';
+    res.redirect(`${frontendUrl}/settings?linkedin=connected`);
+  } catch (e: any) {
+    console.error('[LinkedIn OAuth] Callback error:', e);
+    res.status(400).send('LinkedIn OAuth failed: ' + (e?.message || 'unknown error') + '. <a href="/">Go back</a>');
+  }
+});
+
+// Disconnect LinkedIn
+app.post('/api/auth/linkedin/disconnect', async (req: any, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { linkedinProfileUrl: null, linkedinAccessToken: null, linkedinRefreshToken: null, linkedinTokenExpiry: null },
+    });
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'disconnect error' });
   }
 });
 
@@ -3480,6 +3788,23 @@ app.get('/api/sender-emails', async (_req, res) => {
       }
     } catch (err: any) {
       console.warn('[sender-emails] User query failed:', err?.message);
+    }
+
+    // 4. Users with Microsoft email connected (via OAuth)
+    try {
+      const msUsers = await prisma.user.findMany({
+        where: { microsoftEmail: { not: null } },
+        select: { name: true, microsoftEmail: true },
+      });
+      console.log('[sender-emails] Microsoft-connected users:', msUsers.length);
+      for (const u of msUsers) {
+        if (u.microsoftEmail && !seen.has(u.microsoftEmail.toLowerCase())) {
+          seen.add(u.microsoftEmail.toLowerCase());
+          emails.push({ email: u.microsoftEmail, name: `${u.name || ''} (Microsoft)`.trim(), source: 'microsoft' });
+        }
+      }
+    } catch (err: any) {
+      console.warn('[sender-emails] Microsoft user query failed:', err?.message);
     }
 
     console.log('[sender-emails] Returning', emails.length, 'sender emails:', emails.map(e => e.email));
