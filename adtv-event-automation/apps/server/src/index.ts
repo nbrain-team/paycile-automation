@@ -3391,7 +3391,14 @@ app.get('/api/sender-emails', async (_req, res) => {
     const emails: Array<{ email: string; name: string; source: string }> = [];
     const seen = new Set<string>();
 
-    // 1. SmtpConfig entries (primary sender addresses)
+    // 1. Primary SMTP from environment variables (e.g., Stanley@paysol.com)
+    const envSmtpUser = process.env.SMTP_USER;
+    if (envSmtpUser) {
+      seen.add(envSmtpUser.toLowerCase());
+      emails.push({ email: envSmtpUser, name: envSmtpUser, source: 'env' });
+    }
+
+    // 2. SmtpConfig entries (rotation/additional sender addresses)
     try {
       const configs = await prisma.smtpConfig.findMany({
         where: { isActive: true },
@@ -3405,7 +3412,7 @@ app.get('/api/sender-emails', async (_req, res) => {
       }
     } catch {}
 
-    // 2. Users with SMTP configured
+    // 3. Users with SMTP configured
     try {
       const users = await prisma.user.findMany({
         where: { smtpUser: { not: null } },
