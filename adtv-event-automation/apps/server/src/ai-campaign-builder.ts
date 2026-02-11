@@ -324,12 +324,25 @@ Return ONLY this JSON structure (no markdown, no code blocks, just raw JSON):
       },
       "posX": 400,
       "posY": 450
+    },
+    {
+      "id": "N40",
+      "type": "linkedin_message",
+      "name": "LinkedIn DM: Introduction",
+      "config": {
+        "content": {
+          "text": "Full LinkedIn message text here. Keep it professional, 300 chars max."
+        }
+      },
+      "posX": 400,
+      "posY": 600
     }
   ],
   "edges": [
     { "from": "N00", "to": "N10" },
     { "from": "N10", "to": "N20" },
-    { "from": "N20", "to": "N30" }
+    { "from": "N20", "to": "N30" },
+    { "from": "N30", "to": "N40" }
   ],
   "estimatedDuration": "7 days",
   "recommendedAudience": "Target audience description"
@@ -339,9 +352,12 @@ CRITICAL CONFIG FORMAT RULES:
 - email_send nodes: config.content.subject and config.content.body (MUST be nested inside "content")
 - sms_send nodes: config.content.text (MUST be nested inside "content")
 - voicemail_drop nodes: config.tts.custom_script (MUST be nested inside "tts")
+- linkedin_message nodes: config.content.text (MUST be nested inside "content" - write the FULL message text)
+- linkedin_post nodes: config.content.text (MUST be nested inside "content" - write the FULL post text)
 - wait nodes: config.waitDuration and config.waitUnit
 - decision/stage/task nodes: config.description
-- NEVER put subject/body/text at the top level of config - ALWAYS nest inside "content" or "tts"`;
+- NEVER put subject/body/text at the top level of config - ALWAYS nest inside "content" or "tts"
+- EVERY communication node MUST have actual content written out - never leave content empty`;
 
   try {
     const completion = await openai.chat.completions.create({

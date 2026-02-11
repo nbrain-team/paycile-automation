@@ -74,6 +74,12 @@ export function FunnelTableView({ template, onUpdate, onExportCsv, onImportCsv }
           // Format C fallback: top-level ttsScript from AI builder
           voicemailScript = node.config.ttsScript || '';
         }
+      } else if (node.type === 'linkedin_message' || node.type === 'linkedin_post') {
+        if (node.config?.content?.text) {
+          smsText = node.config.content.text || '';
+        } else if (node.config?.text) {
+          smsText = node.config.text || '';
+        }
       }
       
       if (outgoingEdges.length === 0) {

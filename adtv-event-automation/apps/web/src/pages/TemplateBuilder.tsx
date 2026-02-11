@@ -716,8 +716,9 @@ function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: Inspec
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
 
-      {(node.type === 'email_send' || node.type === 'sms_send' || node.type === 'voicemail_drop') && (
+      {(node.type === 'email_send' || node.type === 'sms_send' || node.type === 'voicemail_drop' || node.type === 'linkedin_message' || node.type === 'linkedin_post') && (
         <div className="space-y-2">
+          {(node.type === 'email_send' || node.type === 'sms_send' || node.type === 'voicemail_drop') && (
           <div>
             <label className="label">Content Source</label>
             <select className="input" value={mode} onChange={(e)=> setMode(e.target.value as any)}>
@@ -725,8 +726,9 @@ function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: Inspec
               <option value="custom">Custom Content</option>
             </select>
           </div>
+          )}
 
-          {mode==='template' ? (
+          {mode==='template' && (node.type === 'email_send' || node.type === 'sms_send' || node.type === 'voicemail_drop') ? (
             <div>
               <label className="label">Choose Template</label>
               <select className="input" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
@@ -765,12 +767,19 @@ function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: Inspec
                   <textarea className="input h-28" value={vmScript} onChange={(e)=> setVmScript(e.target.value)} />
                 </div>
               )}
+              {(node.type === 'linkedin_message' || node.type === 'linkedin_post') && (
+                <div>
+                  <label className="label">{node.type === 'linkedin_message' ? 'LinkedIn Message' : 'LinkedIn Post'}</label>
+                  <textarea className="input h-28" value={smsText} onChange={(e)=> setSmsText(e.target.value)} placeholder={node.type === 'linkedin_message' ? 'Write your LinkedIn DM here...' : 'Write your LinkedIn post here...'} />
+                </div>
+              )}
               <div className="flex items-center gap-2 flex-wrap">
                 {tags.map((t)=> (
                   <button key={t} className="subtab" onClick={()=> {
                     if (node.type==='email_send') append(setEmailBody, emailBody, t);
                     if (node.type==='sms_send') append(setSmsText, smsText, t);
                     if (node.type==='voicemail_drop') append(setVmScript, vmScript, t);
+                    if (node.type==='linkedin_message' || node.type==='linkedin_post') append(setSmsText, smsText, t);
                   }}>{t}</button>
                 ))}
               </div>
@@ -849,6 +858,9 @@ function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: Inspec
                   at_local: scheduleAtLocal || undefined,
                 }
               };
+            }
+            if (node.type === 'linkedin_message' || node.type === 'linkedin_post') {
+              updated.config = { ...(node.config||{}), content: { text: smsText } };
             }
             if (node.type === 'decision') {
               updated.config = { ...(node.config||{}), rules };

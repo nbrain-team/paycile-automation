@@ -1185,29 +1185,35 @@ function FunnelTab({ campaignId, campaignName, totalContacts }: FunnelTabProps) 
                         <span className="text-xs px-2 py-0.5 bg-white/60 rounded">{node.type}</span>
                       </div>
                       
-                      {/* Display node configuration */}
-                      {node.type === 'email_send' && config.subject && (
+                      {/* Display node configuration - handle both nested and top-level formats */}
+                      {node.type === 'email_send' && (config.content?.subject || config.subject) && (
                         <div className="mt-2 text-sm space-y-1">
-                          <div><span className="font-medium">Subject:</span> {config.subject}</div>
-                          <div><span className="font-medium">Body:</span> {config.body}</div>
+                          <div><span className="font-medium">Subject:</span> {config.content?.subject || config.subject}</div>
+                          <div><span className="font-medium">Body:</span> {config.content?.body || config.body}</div>
                         </div>
                       )}
                       
-                      {node.type === 'sms_send' && config.text && (
+                      {node.type === 'sms_send' && (config.content?.text || config.text) && (
                         <div className="mt-2 text-sm">
-                          <span className="font-medium">Message:</span> {config.text}
+                          <span className="font-medium">Message:</span> {config.content?.text || config.text}
                         </div>
                       )}
                       
-                      {node.type === 'wait' && config.duration && (
+                      {node.type === 'wait' && (config.duration || config.waitDuration) && (
                         <div className="mt-2 text-sm">
-                          <span className="font-medium">Duration:</span> {config.duration === 'PT5M' ? '5 minutes' : config.duration}
+                          <span className="font-medium">Duration:</span> {config.duration === 'PT5M' ? '5 minutes' : (config.waitDuration ? `${config.waitDuration} ${config.waitUnit || 'days'}` : config.duration)}
                         </div>
                       )}
                       
-                      {node.type === 'voicemail_drop' && config.tts_script && (
+                      {node.type === 'voicemail_drop' && (config.tts?.custom_script || config.tts_script || config.ttsScript) && (
                         <div className="mt-2 text-sm">
-                          <span className="font-medium">Script:</span> {config.tts_script}
+                          <span className="font-medium">Script:</span> {config.tts?.custom_script || config.tts_script || config.ttsScript}
+                        </div>
+                      )}
+
+                      {(node.type === 'linkedin_message' || node.type === 'linkedin_post') && (config.content?.text || config.text) && (
+                        <div className="mt-2 text-sm">
+                          <span className="font-medium">{node.type === 'linkedin_message' ? 'Message:' : 'Post:'}</span> {config.content?.text || config.text}
                         </div>
                       )}
                     </div>
