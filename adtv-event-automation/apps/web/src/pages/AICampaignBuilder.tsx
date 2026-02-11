@@ -594,39 +594,42 @@ export function AICampaignBuilder() {
               
               {selectedNode ? (
                 <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                  {/* Display content based on node type */}
-                  {selectedNode.config.subject && (
+                  {/* Display content based on node type - check both nested and top-level formats */}
+                  {(selectedNode.config.content?.subject || selectedNode.config.subject) && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm">
-                        {selectedNode.config.subject}
+                        {selectedNode.config.content?.subject || selectedNode.config.subject}
                       </div>
                     </div>
                   )}
                   
-                  {selectedNode.config.body && (
+                  {(selectedNode.config.content?.body || selectedNode.config.body) && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email Body</label>
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm whitespace-pre-wrap max-h-64 overflow-y-auto">
-                        {selectedNode.config.body}
+                        {selectedNode.config.content?.body || selectedNode.config.body}
                       </div>
                     </div>
                   )}
                   
-                  {selectedNode.config.text && (
+                  {(selectedNode.config.content?.text || selectedNode.config.text) && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">SMS Text</label>
-                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm">
-                        {selectedNode.config.text}
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {selectedNode.type === 'linkedin_message' ? 'LinkedIn Message' :
+                         selectedNode.type === 'linkedin_post' ? 'LinkedIn Post' : 'SMS Text'}
+                      </label>
+                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto">
+                        {selectedNode.config.content?.text || selectedNode.config.text}
                       </div>
                     </div>
                   )}
                   
-                  {selectedNode.config.ttsScript && (
+                  {(selectedNode.config.tts?.custom_script || selectedNode.config.ttsScript) && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Voicemail Script</label>
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto">
-                        {selectedNode.config.ttsScript}
+                        {selectedNode.config.tts?.custom_script || selectedNode.config.ttsScript}
                       </div>
                     </div>
                   )}
