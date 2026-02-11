@@ -1,12 +1,23 @@
+import { useEffect } from 'react';
 import { useStore } from '@store/useStore';
 
 export function Toasts() {
   const { toasts, dismissToast } = useStore();
+
+  // Auto-dismiss toasts after 3 seconds
+  useEffect(() => {
+    if (toasts.length === 0) return;
+    const timers = toasts.map((t) =>
+      setTimeout(() => dismissToast(t.id), 3000)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [toasts, dismissToast]);
+
   if (toasts.length === 0) return null;
   return (
     <div className="fixed top-4 right-4 z-50 space-y-2 w-80">
       {toasts.map((t) => (
-        <div key={t.id} className="bg-white shadow-soft-xl rounded-md border p-3">
+        <div key={t.id} className="bg-white shadow-soft-xl rounded-md border p-3 animate-fade-in">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-medium">{t.title}</p>
@@ -19,5 +30,3 @@ export function Toasts() {
     </div>
   );
 }
-
-
