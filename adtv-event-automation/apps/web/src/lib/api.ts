@@ -154,6 +154,11 @@ export const apiPersonalization = {
   bulkApprove: (campaignId: string) => sendJson('PATCH', `/api/campaigns/${campaignId}/personalized-emails/bulk-approve`),
 };
 
+// Sender Emails (for campaign creation)
+export const apiSenderEmails = {
+  list: () => getJson('/api/sender-emails') as Promise<Array<{ email: string; name: string; source: string }>>,
+};
+
 export { API_URL, getApiUrl };
 
 

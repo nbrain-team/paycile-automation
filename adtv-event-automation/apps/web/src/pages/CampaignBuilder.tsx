@@ -116,7 +116,7 @@ export function CampaignBuilder() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{campaign.name}</h1>
-          <p className="text-sm text-gray-600">{campaign.owner_name} · {campaign.event_type} · {campaign.city}, {campaign.state}</p>
+          <p className="text-sm text-gray-600">{campaign.owner_email || campaign.owner_name}</p>
         </div>
         <a className="btn-outline btn-sm" href="/campaigns">Back</a>
       </div>
@@ -139,21 +139,13 @@ export function CampaignBuilder() {
           <div className="card md:col-span-2">
             <h2 className="text-lg font-semibold mb-3">Campaign Details</h2>
             <div className="grid md:grid-cols-2 gap-3 text-sm">
-              <div>
-                <label className="label">Associate</label>
-                <input className="input" defaultValue={campaign.owner_name} onBlur={(e)=> updateLiveCampaign(campaign.id, { owner_name: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">Email</label>
-                <input className="input" defaultValue={campaign.owner_email} onBlur={(e)=> updateLiveCampaign(campaign.id, { owner_email: e.target.value })} />
+              <div className="md:col-span-2">
+                <label className="label">Send From Email</label>
+                <input className="input" defaultValue={campaign.owner_email} onBlur={(e)=> { updateLiveCampaign(campaign.id, { owner_email: e.target.value }); apiCampaigns.patch(campaign.id, { ownerEmail: e.target.value }).catch(()=>{}); }} />
               </div>
               <div>
                 <label className="label">Phone</label>
                 <input className="input" defaultValue={campaign.owner_phone||''} onBlur={(e)=> updateLiveCampaign(campaign.id, { owner_phone: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">Send From (Email)</label>
-                <input className="input" defaultValue={(campaign as any).sender_email||''} onBlur={(e)=> updateLiveCampaign(campaign.id, { sender_email: e.target.value as any })} />
               </div>
               <div>
                 <label className="label">Launch Date</label>
@@ -164,7 +156,7 @@ export function CampaignBuilder() {
                 <input className="input" defaultValue={(campaign as any).video_link||''} onBlur={(e)=> { updateLiveCampaign(campaign.id, { videoLink: e.target.value }); apiCampaigns.patch(campaign.id, { videoLink: e.target.value }).catch(()=>{}); }} />
               </div>
               <div>
-                <label className="label">Event Link</label>
+                <label className="label">Calendly / Scheduling Link</label>
                 <input className="input" defaultValue={(campaign as any).event_link||''} onBlur={(e)=> { updateLiveCampaign(campaign.id, { eventLink: e.target.value }); apiCampaigns.patch(campaign.id, { eventLink: e.target.value }).catch(()=>{}); }} />
               </div>
               <div className="md:col-span-2">
@@ -312,30 +304,7 @@ export function CampaignBuilder() {
                 )}
               </div>
             </div>
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2">Event Slots</h3>
-              <ul className="list-disc pl-5 text-sm">
-                {(campaign.event_slots||[]).map((s,i)=> (
-                  <li key={i}>{s.date} {s.time}{s.calendly_link?` · ${s.calendly_link}`:''}</li>
-                ))}
-              </ul>
-            </div>
-            {campaign.event_type==='in_person' && (
-              <div className="mt-4 grid md:grid-cols-2 gap-3 text-sm">
-                <div>
-                  <label className="label">Hotel</label>
-                  <input className="input" defaultValue={campaign.hotel_name||''} onBlur={(e)=> updateLiveCampaign(campaign.id, { hotel_name: e.target.value })} />
-                </div>
-                <div>
-                  <label className="label">Address</label>
-                  <input className="input" defaultValue={campaign.hotel_address||''} onBlur={(e)=> updateLiveCampaign(campaign.id, { hotel_address: e.target.value })} />
-                </div>
-                <div>
-                  <label className="label">Calendly</label>
-                  <input className="input" defaultValue={campaign.calendly_link||''} onBlur={(e)=> updateLiveCampaign(campaign.id, { calendly_link: e.target.value })} />
-                </div>
-              </div>
-            )}
+            {/* Event slots and hotel fields removed - not applicable for outreach campaigns */}
           </div>
           <div className="card h-max">
             <h3 className="font-semibold mb-3">Campaign Controls</h3>

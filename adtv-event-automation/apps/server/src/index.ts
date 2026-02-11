@@ -3383,6 +3383,50 @@ app.post('/api/admin/run-migration', async (req, res) => {
 });
 
 // =============================================================================
+// SENDER EMAILS (for campaign creation dropdown)
+// =============================================================================
+
+app.get('/api/sender-emails', async (_req, res) => {
+  try {
+    const emails: Array<{ email: string; name: string; source: string }> = [];
+    const seen = new Set<string>();
+
+    // 1. SmtpConfig entries (primary sender addresses)
+    try {
+      const configs = await prisma.smtpConfig.findMany({
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      for (const c of configs) {
+        if (c.email && !seen.has(c.email.toLowerCase())) {
+          seen.add(c.email.toLowerCase());
+          emails.push({ email: c.email, name: c.email, source: 'smtp' });
+        }
+      }
+    } catch {}
+
+    // 2. Users with SMTP configured
+    try {
+      const users = await prisma.user.findMany({
+        where: { smtpUser: { not: null } },
+        select: { id: true, name: true, email: true, smtpUser: true },
+      });
+      for (const u of users) {
+        const addr = u.smtpUser || u.email;
+        if (addr && !seen.has(addr.toLowerCase())) {
+          seen.add(addr.toLowerCase());
+          emails.push({ email: addr, name: u.name || addr, source: 'user' });
+        }
+      }
+    } catch {}
+
+    res.json(emails);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Failed to load sender emails' });
+  }
+});
+
+// =============================================================================
 // SMTP CONFIGURATION MANAGEMENT
 // =============================================================================
 
