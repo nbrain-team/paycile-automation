@@ -97,27 +97,71 @@ Study these carefully and match this exact tone in your generated content:
     toneReference += `\nYour generated content MUST match the tone, style, formality level, and voice of these examples.`;
   }
 
-  // Add Paycile context if available
+  // Add Paycile Master Intelligence Layer context
   let paycileContext = '';
   if (PAYCILE_CONTEXT) {
-    paycileContext = `\n\nPAYCILE PLATFORM CONTEXT:
-You are creating campaigns for Paycile, a payment reconciliation and automation platform.
-Use the following information to ensure your content is accurate, on-brand, and valuable:
-
-${PAYCILE_CONTEXT.substring(0, 4000)}
-
-Key points to remember:
-- Paycile focuses on automated payment reconciliation for businesses
-- Target audiences include CFOs, Controllers, Finance Managers, AR/AP specialists
-- Key industries: Insurance, Property Management, Multi-Entity Businesses
-- Value props: Cost savings, time efficiency, automated reconciliation, real-time visibility
-- Tone: Professional yet approachable, benefit-driven, data-informed
-- Leadership: Jim Fitzgerald (CEO), Paul Huntley (CFO), Steve Leighty (CTO)
-- Partnership with Deluxe for enterprise payment processing
-
-Use this context to make content specific, credible, and compelling for Paycile's target audience.
+    paycileContext = `\n\nPAYCILE MASTER INTELLIGENCE LAYER:
+${PAYCILE_CONTEXT.substring(0, 6000)}
 `;
   }
+
+  // Always inject the core messaging DNA regardless of knowledge base availability
+  const paycileCoreDNA = `
+
+PAYCILE IDENTITY & MESSAGING DNA (MANDATORY):
+
+ONE-LINE IDENTITY: Paycile is compliance-grade reconciliation infrastructure that makes financial truth real-time across fragmented payment systems in insurance and property management.
+
+CATEGORY: Financial control infrastructure — NOT "back-office automation," NOT "AI reconciliation," NOT "just payments."
+
+MESSAGE SPINE (every piece of content must trace back to this):
+1. Reconciliation isn't admin. It's financial truth.
+2. When payment flows fragment across systems, manual reconciliation becomes risk, delay, and burnout.
+3. Paycile makes reconciliation real-time, rules-driven, and audit-aligned across the systems you already run — so close cycles compress and confidence rises.
+
+LANGUAGE GUARDRAILS — PHRASE BANK (use these):
+- "financial truth"
+- "cross-system reconciliation"  
+- "audit-ready trails" / "audit-aligned"
+- "exception handling"
+- "continuous close direction"
+- "control layer" / "infrastructure layer"
+
+LANGUAGE GUARDRAILS — AVOID LIST (never use these):
+- "AI-powered reconciliation" as the lead
+- "set it and forget it"
+- "guaranteed compliance"
+- "eliminates all risk"
+- "instant integration"
+- Don't lead with "AI" — lead with transparency and control
+- Don't claim "we replace your ERP" or "rip and replace"
+- Don't pick fights with named incumbents
+
+PROOF STRATEGY (Paycile is early-stage — no big logo claims):
+- Anchor proof in workflow truth ("this is where exceptions live")
+- Use measurable deltas (hours saved, exceptions reduced, close days reduced)
+- Emphasize transparency (how reconciliation decisions are explained)
+- Frame as outcomes the buyer already values, not unsubstantiated case studies
+
+CHANNEL RULES:
+- Email: Lead with problem reframe (reconciliation = financial truth), ask a scope question, offer tiny next step (not scheduling pressure)
+- SMS: One sentence reframe + one question. No claims, no links unless requested.
+- Voicemail: 10-18 seconds. Acknowledge role + one pain + one question. Call-back feels optional, not forceful.
+- LinkedIn: Lead with shared industry context, reference a specific challenge their role faces, offer insight not a pitch.
+
+OUTCOMES THAT MATTER (what Paycile buys them — use these, not feature lists):
+- Faster close / "continuous close" directionality
+- Lower compliance anxiety (audit-ready trails)
+- Fewer reconciliation hours + less exception firefighting
+- Higher confidence in financial truth (forecasting, reporting)
+- Reduced operational fragility (less spreadsheet dependency)
+
+FIT-TEST QUESTIONS (weave into messaging naturally):
+- "Are you reconciling across multiple systems — or mostly within one platform?"
+- "Where do exceptions live today — spreadsheets, inbox, or inside your system?"
+- "How many days does close take when everything goes 'normally'?"
+- "When an auditor asks 'why did this match,' can you show the logic quickly?"
+`;
 
   // Build persona-specific guidance
   const personaGuidance = request.targetPersona ? getPersonaGuidance(request.targetPersona) : '';
@@ -132,32 +176,31 @@ Include this URL in email CTAs and SMS messages as appropriate. Example CTAs:
 - "See how we can help: ${request.landingPageUrl}"`
     : '';
 
-  const systemPrompt = `You are an expert marketing automation strategist specializing in multi-channel campaigns for B2B financial technology and payment processing platforms. 
-You create highly effective, conversion-focused marketing sequences with intelligent workflow design.
+  const systemPrompt = `You are an expert B2B outbound strategist creating multi-channel campaigns for Paycile — compliance-grade reconciliation infrastructure for insurance and property management.
 
-CRITICAL WORKFLOW DESIGN PRINCIPLES:
-You have full control over campaign workflow. The user selects communication channels (email, SMS, voicemail, LinkedIn), 
-and YOU intelligently design the complete workflow including:
-- WAIT nodes: Strategic timing between touchpoints (1-3 days typical, adjust based on urgency)
-- DECISION nodes: Engagement-based routing (opened email → nurture path, no open → re-engage)
-- STAGE nodes: Milestone markers for tracking (Initial Outreach, Follow-Up, Closing, etc.)
-- TASK nodes: Manual intervention points (BDR review high-value prospects, etc.)
+YOUR ABSOLUTE RULES:
+1. Every piece of content must trace back to the Message Spine: "Reconciliation isn't admin. It's financial truth."
+2. NEVER lead with AI claims. Lead with transparency, control, and audit-readiness.
+3. NEVER use feature soup. Frame everything as outcomes the buyer already budgets for.
+4. Use the Phrase Bank. Avoid the Avoid List. No exceptions.
+5. Paycile is early-stage — frame proof as workflow truth and measurable deltas, not logo claims.
+${paycileCoreDNA}${toneReference}${paycileContext}${personaGuidance}${landingPageGuidance}
 
-Your campaigns should:
-- Have a clear narrative arc from awareness to conversion
-- Use appropriate channels for each stage of the customer journey (email for detail, SMS for urgency, voicemail for personal touch)
-- Include compelling, benefit-driven copy that speaks to financial decision-makers
-- Intelligently sequence touches: Don't send SMS immediately after email - wait 2-3 days
-- Build urgency and value progressively with quantifiable ROI metrics
-- Include clear calls-to-action (demos, consultations, landing page visits)
-- Add WAIT nodes between all major communication touchpoints
-- Add DECISION nodes when engagement determines next step (e.g., after first email, route opened vs. not opened)
-- Add STAGE nodes to mark campaign phases (Awareness, Consideration, Decision)
-- Add TASK nodes when manual intervention makes sense (high-value prospect needs BDR call)
-- Be personalized and conversational while maintaining professionalism
-- Reference specific pain points and quantifiable benefits from the Paycile strategy
-- Match the company's established tone and voice
-- Use persona-specific messaging that resonates with their unique challenges${toneReference}${paycileContext}${personaGuidance}${landingPageGuidance}
+WORKFLOW DESIGN PRINCIPLES:
+You design intelligent multi-step workflows. The user selects channels (email, SMS, voicemail, LinkedIn), and YOU add:
+- WAIT nodes: Strategic timing between touchpoints (2-3 days typical)
+- DECISION nodes: Engagement-based routing (opened email → nurture, no open → re-engage)
+- STAGE nodes: Milestone markers (Initial Outreach, Follow-Up, Closing)
+- TASK nodes: Manual intervention points (BDR review high-value prospect)
+
+WORKFLOW SEQUENCING:
+- Email → WAIT (2 days) → Email Follow-up
+- Email → WAIT (1 day) → DECISION (opened?) → branch paths
+- Email → WAIT (2-3 days) → SMS (single tension reinforcement)
+- Email → WAIT (3 days) → Voicemail (personal escalation)
+- LinkedIn → WAIT (3 days) → Email (cross-channel)
+- STAGE nodes at phase transitions
+- TASK nodes when human judgment adds value
 
 WORKFLOW INTELLIGENCE EXAMPLES:
 - Email → WAIT (2 days) → Email Follow-up (better than immediate email spam)
@@ -532,148 +575,148 @@ No markdown, no code blocks, just raw JSON array.`;
 }
 
 /**
- * Get persona-specific messaging guidance
+ * Get persona-specific messaging guidance aligned with Paycile MIL
  */
 function getPersonaGuidance(persona: string): string {
   const personaMap: Record<string, string> = {
     cfo: `
-PERSONA: CFO / Financial Executive
-TONE: Executive-level, strategic, ROI-focused
-KEY PAIN POINTS:
-- Data inconsistency across systems (emphasize "single source of truth")
-- Delayed financial insights ("50% faster cash visibility")
-- Audit exposure and compliance risk ("audit-ready automation")
-- Limited real-time visibility ("real-time dashboard")
+PERSONA: CFO / Financial Executive (ICP 1 — Insurance Carrier / MGA Finance Ops)
+TONE: Executive-level. Direct. Outcome-anchored. No fluff.
+THEY FEEL: Month-end close pain, audit pressure, multi-system fragmentation, distorted financial reporting.
+THEY CARE ABOUT: Controls, audit trails, exception handling, speed of close, confidence in financials.
 
-QUANTIFIABLE BENEFITS TO EMPHASIZE:
-- 50% faster cash visibility
-- Real-time financial dashboards
-- Reduced audit risk with complete traceability
-- Strategic time reallocation from reconciliation to growth initiatives
+PROBLEM REFRAME:
+Manual reconciliation is treated like admin but functionally it creates delayed close cycles, distorted reporting, and audit exposure. In insurance, reconciliation is the economic circulatory system.
 
-MESSAGING HOOKS:
-- "Are you still waiting 10 days to know your true cash position?"
-- "Strategic decisions require real-time data—manual reconciliation can't deliver"
-- "The hidden cost of reconciliation chaos: delayed insights and missed opportunities"
+MESSAGING APPROACH:
+- Lead with the economic truth of fragmented reconciliation
+- Frame Paycile as a control layer, not an automation tool
+- Ask scope questions: "Across all systems or only inside the platform?"
+- Reference close cycle compression and audit-ready confidence
+- NEVER claim AI leadership — lead with transparency and rules-driven control
 
-CTA STYLE: "Schedule executive demo", "See CFO dashboard", "Get strategic insights"`,
+SAMPLE HOOKS (adapt, don't copy verbatim):
+- "How many days does close take when everything goes 'normally'?"
+- "When an auditor asks 'why did this match,' can your team show the logic in seconds?"
+- "Reconciliation across fragmented carriers isn't admin — it's your financial truth"
+
+CTA STYLE: Tiny next step, not scheduling pressure. "Worth a 15-minute look?" or "Happy to show how the control layer works."`,
 
     controller: `
-PERSONA: Finance Manager / Controller
-TONE: Operational efficiency, compliance-focused, team enablement
-KEY PAIN POINTS:
-- Manual workloads consuming 60-80% of time ("90% workload reduction")
-- Cross-entity reconciliations ("consolidated reporting")
-- Team morale from repetitive tasks ("focus on strategic analysis")
-- Period-end pressure ("96 days saved annually")
+PERSONA: Finance Manager / Controller (ICP 1/2 — Multi-system environments)
+TONE: Operational, compliance-aware, team-focused. Empathetic to workload.
+THEY FEEL: Manual workloads, cross-entity complexity, period-end pressure, spreadsheet fragility.
+THEY CARE ABOUT: Fewer reconciliation hours, audit-ready trails, reduced exception firefighting, team efficiency.
 
-QUANTIFIABLE BENEFITS TO EMPHASIZE:
-- 96 days saved annually on period-end close
-- 90% workload reduction on reconciliation
-- Traceable audit trails built automatically
-- Team efficiency and morale improvement
+PROBLEM REFRAME:
+Controllers are trapped between leadership demanding faster close and teams drowning in manual matching. The real cost isn't hours — it's the confidence gap in financial truth.
 
-MESSAGING HOOKS:
-- "Your team spends more time matching than analyzing—here's how to change that"
-- "Month-end close shouldn't require all-hands overtime"
-- "Audit-ready reconciliation: automated, traceable, compliant"
+MESSAGING APPROACH:
+- Acknowledge the operational reality (not condescend)
+- Frame Paycile as reducing fragility (less spreadsheet dependency)
+- Reference "continuous close direction" as the aspiration
+- Ask where exceptions live: spreadsheets, inbox, or inside their system
+- Emphasize audit-aligned trails that build automatically
 
-CTA STYLE: "Book efficiency demo", "See workflow automation", "Transform your close process"`,
+SAMPLE HOOKS:
+- "Where do your exceptions live today — spreadsheets, inbox, or inside your system?"
+- "Month-end close shouldn't require tribal knowledge and overtime"
+- "Audit-ready trails that build themselves — so your team analyzes instead of matching"
+
+CTA STYLE: "See how the control layer works" or "Quick look at how close cycles compress?"`,
 
     arap: `
-PERSONA: AR/AP Specialist
-TONE: Practical, efficiency-focused, results-oriented
-KEY PAIN POINTS:
-- Unapplied funds sitting in limbo ("automated recovery")
-- Dispute handling delays ("exception-based workflow")
-- Manual payment matching ("95% auto-match")
-- High write-off rates ("62% reduction")
+PERSONA: AR/AP Specialist (ICP 2 — Insurance Agency Ops)
+TONE: Practical, efficient, results-grounded. Respect their expertise.
+THEY FEEL: Payment complexity, reconciliation backlog, manual matching chaos, exception overload.
+THEY CARE ABOUT: Time savings, fewer errors, clean books, reduced exceptions.
 
-QUANTIFIABLE BENEFITS TO EMPHASIZE:
-- 90% automation on payment posting
-- 62% reduction in write-offs
-- Unapplied funds recovery automation
-- 95% auto-match accuracy
+PROBLEM REFRAME:
+AR/AP teams are the ones who feel fragmentation first. Every mismatched payment, every exception, every write-off traces back to manual reconciliation across systems that don't talk to each other.
 
-MESSAGING HOOKS:
-- "Unapplied funds are lost revenue—recover them automatically"
-- "Stop manually matching payments: 95% auto-match accuracy"
-- "Reduce write-offs by 62% with intelligent payment reconciliation"
+MESSAGING APPROACH:
+- Lead with the exception problem (where they live, how they multiply)
+- Frame outcomes in their language: fewer exceptions, cleaner books, less firefighting
+- Reference cross-system matching as the core unlock
+- Don't oversell — frame as measurable deltas they can verify
 
-CTA STYLE: "See automation demo", "Recover lost revenue", "Eliminate manual matching"`,
+SAMPLE HOOKS:
+- "Are you reconciling across multiple systems — or mostly within one platform?"
+- "Exceptions multiply when systems don't talk to each other"
+- "Cross-system reconciliation that stands up to scrutiny — not another automation claim"
+
+CTA STYLE: "See exception handling in action" or "Quick demo of cross-system matching?"`,
 
     treasury: `
 PERSONA: Treasury / Cash Manager
-TONE: Data-driven, forecasting-focused, risk-aware
-KEY PAIN POINTS:
-- Multi-bank data lag (2-5 day delays)
-- Currency mismatch issues
-- Fraud detection gaps
-- Forecasting inaccuracy
+TONE: Data-driven, forecasting-anchored, risk-conscious. Strategic.
+THEY FEEL: Multi-source data lag, timing mismatches, forecasting gaps, compliance pressure.
+THEY CARE ABOUT: Real-time visibility, confidence in cash position, audit-ready transparency.
 
-QUANTIFIABLE BENEFITS TO EMPHASIZE:
-- 50% faster cash visibility
-- Real-time multi-bank dashboard
-- Fraud detection and mitigation
-- Improved forecasting accuracy
+PROBLEM REFRAME:
+Treasury can't forecast what it can't reconcile. When payment flows fragment across multiple sources, the cash position becomes a guess until month-end — and by then, the decision window has passed.
 
-MESSAGING HOOKS:
-- "Multi-bank reconciliation in real-time, not next week"
-- "Cash flow surprises kill growth—eliminate them"
+MESSAGING APPROACH:
+- Connect reconciliation accuracy to forecasting confidence
+- Frame as real-time financial truth (T+0 direction)
+- Reference the shift from tolerating lag to demanding accuracy
+- Ask about close cycle length and multi-source complexity
+
+SAMPLE HOOKS:
+- "How confident is your cash position on day 5 of the month vs. day 25?"
 - "Forecasting accuracy starts with reconciliation accuracy"
+- "Financial truth shouldn't require waiting for month-end"
 
-CTA STYLE: "See treasury dashboard", "Improve forecasting", "Get real-time visibility"`,
+CTA STYLE: "See real-time reconciliation" or "Quick look at how cross-system visibility works?"`,
 
     property_finance: `
-PERSONA: Property Finance Manager (Yardi-Integrated)
-TONE: Operations-focused, property-specific, efficiency-driven
-KEY PAIN POINTS:
-- Tenant payment matching across multiple properties
-- Trust account reconciliation complexity
-- Yardi data sync issues
-- Security deposit tracking
+PERSONA: Property Management Finance / Trust Accounting (ICP 3)
+TONE: Operations-focused, compliance-aware, property-specific.
+THEY FEEL: High transaction volumes, multi-entity disbursement complexity, trust accounting constraints.
+THEY CARE ABOUT: Accuracy, traceability, clean audit trails, reduced manual work, trust compliance.
 
-QUANTIFIABLE BENEFITS TO EMPHASIZE:
-- 90% less manual work on tenant payments
-- 0.8-1.8% error rates (down from 5-8%)
-- Yardi native integration
-- Trust account compliance automation
+PROBLEM REFRAME:
+Property management finance teams deal with trust accounting constraints that make reconciliation errors compliance events, not just inconveniences. Multi-property, multi-entity flows create fragmentation that spreadsheets can't safely handle.
 
-MESSAGING HOOKS:
-- "Yardi + Paycile: The perfect reconciliation match"
-- "Trust account reconciliation in minutes, not days"
-- "Multi-property rollup with zero manual work"
+MESSAGING APPROACH:
+- Acknowledge trust accounting as a compliance constraint (not just efficiency)
+- Frame Paycile as a control layer across property management systems
+- Reference traceability and audit trails as non-negotiable
+- Ask about multi-entity complexity and where exceptions accumulate
 
-CTA STYLE: "See Yardi integration", "Book property demo", "Automate trust accounts"`,
+SAMPLE HOOKS:
+- "Trust account reconciliation errors aren't just inefficiency — they're compliance events"
+- "Multi-property disbursements across entities: where do exceptions accumulate?"
+- "Audit-aligned reconciliation across your property management stack"
+
+CTA STYLE: "See trust account reconciliation" or "Quick look at multi-entity control?"`,
 
     accountant: `
 PERSONA: Accountant / GL Specialist
-TONE: Detail-oriented, accuracy-focused, practical
-KEY PAIN POINTS:
-- Spreadsheet dependency
-- High error rates (5-8%)
-- Manual data entry consuming entire day
-- Bank reconciliation backlogs
+TONE: Detail-oriented, accuracy-first, practical. Respect the craft.
+THEY FEEL: Spreadsheet dependency, manual matching fatigue, bank reconciliation backlogs.
+THEY CARE ABOUT: Accuracy, clean GL, less manual data entry, traceable matching logic.
 
-QUANTIFIABLE BENEFITS TO EMPHASIZE:
-- 95% auto-matching of transactions
-- Error rates drop to <2%
-- Full ERP integration (no double entry)
-- Real-time bank reconciliation
+PROBLEM REFRAME:
+Accountants know that reconciliation accuracy is the foundation of everything downstream — reporting, audits, forecasting. But when the process depends on spreadsheets and manual matching, accuracy becomes a function of effort, not infrastructure.
 
-MESSAGING HOOKS:
-- "Spreadsheets are error-prone and unscalable"
-- "Manual reconciliation creates bottlenecks"
-- "Your accuracy shouldn't depend on caffeine levels"
+MESSAGING APPROACH:
+- Respect their precision and framing
+- Position Paycile as infrastructure that matches their standards
+- Reference rules-driven matching that shows its logic
+- Ask about spreadsheet dependency and exception handling
 
-CTA STYLE: "Eliminate manual work", "See accuracy improvements", "Automate reconciliation"`,
+SAMPLE HOOKS:
+- "When an auditor asks 'why did this match,' can you show the rules in seconds?"
+- "Reconciliation accuracy shouldn't depend on spreadsheet formulas"
+- "Rules-driven matching with audit trails — the infrastructure your accuracy deserves"
+
+CTA STYLE: "See matching logic in action" or "Quick look at rules-driven reconciliation?"`,
 
     small_biz: `
 PERSONA: Small Business Owner / CEO
-TONE: Growth-focused, accessible, empowering, ROI-driven
-KEY PAIN POINTS:
-- Lack of automation
-- Scalability limitations
+TONE: Growth-focused, accessible, outcome-driven. No jargon.
+THEY FEEL: Lack of financial visibility, reconciliation as an afterthought, scaling pain.
 - Cash flow uncertainty
 - Limited finance resources
 
