@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paycile Automation — Platform Architecture Document</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #ffffff;
+    color: #1a1a2e;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== LAYOUT ===== */
+  .container { max-width: 1400px; margin: 0 auto; padding: 2.5rem 3rem 4rem; }
+  @media print {
+    .container { padding: 1rem; max-width: 100%; }
+    .section-box { break-inside: avoid; }
+    .card-grid { grid-template-columns: 1fr 1fr !important; }
+  }
+
+  /* ===== TYPOGRAPHY ===== */
+  h1 { font-size: 2.4rem; color: #0F1B2A; font-weight: 800; letter-spacing: -0.02em; }
+  h2 { font-size: 1.55rem; color: #0F1B2A; font-weight: 700; margin-bottom: 1.25rem;
+       padding-bottom: 0.6rem; border-bottom: 3px solid #10b981; letter-spacing: -0.01em; }
+  h3 { font-size: 1.15rem; color: #0F1B2A; font-weight: 700; margin-bottom: 0.75rem; }
+  h4 { font-size: 1rem; color: #374151; font-weight: 600; margin-bottom: 0.5rem; }
+  p { margin-bottom: 0.85rem; color: #374151; }
+  ul, ol { margin-left: 1.5rem; margin-bottom: 1rem; color: #374151; }
+  li { margin-bottom: 0.35rem; }
+  strong { color: #0F1B2A; }
+  code { background: #f1f5f9; padding: 0.15em 0.45em; border-radius: 4px; font-size: 0.9em; color: #0F1B2A; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
+
+  /* ===== HEADER ===== */
+  .doc-header { margin-bottom: 2.5rem; }
+  .doc-header h1 { margin-bottom: 0.5rem; }
+  .doc-subtitle { font-size: 1.15rem; color: #6b7280; font-weight: 400; margin-bottom: 2rem; }
+
+  .meta-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; background: #f8fafc; border: 1px solid #e5e7eb;
+    border-radius: 10px; padding: 1.5rem; margin-top: 1rem;
+  }
+  .meta-item label { display: block; font-size: 0.75rem; text-transform: uppercase;
+                     letter-spacing: 0.08em; color: #9ca3af; font-weight: 600; margin-bottom: 0.2rem; }
+  .meta-item span { font-weight: 600; color: #0F1B2A; font-size: 0.95rem; }
+
+  /* ===== STATUS BOX ===== */
+  .status-box {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #ffffff; border-radius: 10px; padding: 1.75rem 2rem;
+    margin-bottom: 2.5rem; box-shadow: 0 4px 14px rgba(16,185,129,0.25);
+  }
+  .status-box h3 { color: #ffffff; font-size: 1.1rem; margin-bottom: 1rem; text-transform: uppercase;
+                   letter-spacing: 0.06em; }
+  .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+  .status-fact { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0.85rem 1rem; }
+  .status-fact .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; opacity: 0.85; }
+  .status-fact .value { font-size: 1.35rem; font-weight: 800; }
+
+  /* ===== SECTION BOX ===== */
+  .section-box {
+    background: #ffffff; border: 1px solid #e5e7eb; border-left: 4px solid #10b981;
+    border-radius: 0 10px 10px 0; padding: 2rem 2.25rem; margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .section-box.navy-border { border-left-color: #0F1B2A; }
+  .section-box.blue-border { border-left-color: #3b82f6; }
+  .section-box.purple-border { border-left-color: #8b5cf6; }
+  .section-box.amber-border { border-left-color: #f59e0b; }
+  .section-box.red-border { border-left-color: #ef4444; }
+
+  /* ===== TABLES ===== */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-radius: 8px; overflow: hidden; }
+  thead th { background: #0F1B2A; color: #ffffff; font-weight: 600; text-align: left;
+             padding: 0.8rem 1rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  tbody td { padding: 0.7rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: 0.92rem; }
+  tbody tr:nth-child(even) { background: #f9fafb; }
+  tbody tr:hover { background: #f0fdf4; }
+
+  /* Spec table inside cards */
+  .spec-table { box-shadow: none; margin-bottom: 0; }
+  .spec-table td:first-child { font-weight: 600; width: 200px; color: #0F1B2A; background: #f9fafb; }
+  .spec-table td { padding: 0.55rem 0.85rem; font-size: 0.88rem; }
+
+  /* ===== ARCHITECTURE DIAGRAM ===== */
+  .arch-diagram { margin: 1.5rem 0; }
+  .arch-layer {
+    border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem; position: relative;
+  }
+  .arch-layer.data-layer { border-color: #3b82f6; background: #eff6ff; }
+  .arch-layer.process-layer { border-color: #8b5cf6; background: #f5f3ff; }
+  .arch-layer.output-layer { border-color: #10b981; background: #ecfdf5; }
+  .arch-layer.human-layer { border-color: #f59e0b; background: #fffbeb; }
+
+  .layer-label {
+    position: absolute; top: -0.7rem; left: 1.5rem; background: #ffffff;
+    padding: 0 0.75rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .data-layer .layer-label { color: #3b82f6; }
+  .process-layer .layer-label { color: #8b5cf6; }
+  .output-layer .layer-label { color: #10b981; }
+  .human-layer .layer-label { color: #f59e0b; }
+
+  .flow-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.5rem 0; }
+  .flow-step {
+    display: inline-block; background: #0F1B2A; color: #ffffff; padding: 0.45rem 1rem;
+    border-radius: 100px; font-size: 0.82rem; font-weight: 600; white-space: nowrap;
+  }
+  .flow-step.alt { background: #1e3a5f; }
+  .flow-step.highlight { background: #059669; }
+  .flow-arrow { color: #10b981; font-size: 1.4rem; font-weight: 700; line-height: 1; padding: 0 0.15rem; }
+  .flow-arrow.down { display: block; text-align: center; font-size: 1.6rem; margin: 0.25rem 0; }
+  .human-gate {
+    display: inline-block; background: #fef3c7; color: #92400e; padding: 0.4rem 0.9rem;
+    border-radius: 100px; font-size: 0.8rem; font-weight: 700; border: 2px solid #f59e0b;
+  }
+  .flow-sub { font-size: 0.78rem; color: #6b7280; margin-left: 0.5rem; font-style: italic; }
+
+  /* ===== CARD GRID ===== */
+  .card-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 1.5rem; margin-top: 1.25rem;
+  }
+  .card {
+    background: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px;
+    padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .card-header {
+    font-size: 1.05rem; font-weight: 700; color: #0F1B2A; padding-bottom: 0.65rem;
+    margin-bottom: 1rem; border-bottom: 2px solid #10b981;
+  }
+  .card-header .card-icon { margin-right: 0.5rem; }
+
+  /* ===== BADGES ===== */
+  .badge {
+    display: inline-block; padding: 0.2rem 0.65rem; border-radius: 100px;
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-navy { background: #e0e7ff; color: #0F1B2A; }
+  .badge-teal { background: #ccfbf1; color: #115e59; }
+
+  /* ===== ROADMAP TABLE ===== */
+  .roadmap-table td:first-child { font-weight: 700; white-space: nowrap; color: #0F1B2A; }
+  .roadmap-table .status-done { color: #059669; font-weight: 600; }
+  .roadmap-table .status-progress { color: #f59e0b; font-weight: 600; }
+  .roadmap-table .status-planned { color: #6b7280; font-weight: 600; }
+
+  /* ===== FOOTER ===== */
+  .doc-footer {
+    margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;
+    font-size: 0.85rem; color: #9ca3af;
+  }
+  .doc-footer strong { color: #6b7280; }
+
+  /* ===== HELPER CLASSES ===== */
+  .mt-1 { margin-top: 0.75rem; }
+  .mt-2 { margin-top: 1.25rem; }
+  .mb-1 { margin-bottom: 0.75rem; }
+  .mb-2 { margin-bottom: 1.25rem; }
+  .text-sm { font-size: 0.88rem; }
+  .text-muted { color: #6b7280; }
+  .flex-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .principle-list li { margin-bottom: 0.6rem; }
+  .principle-list li strong { color: #059669; }
+  .endpoint-group { margin-bottom: 1.5rem; }
+  .endpoint-group h4 { color: #0F1B2A; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.35rem; margin-bottom: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- HEADER -->
+<!-- ============================================================ -->
+<div class="doc-header">
+  <h1>Paycile Automation</h1>
+  <p class="doc-subtitle">Platform Architecture &amp; Technical Reference Document</p>
+
+  <div class="meta-grid">
+    <div class="meta-item">
+      <label>Prepared By</label>
+      <span>nBrain Engineering Team</span>
+    </div>
+    <div class="meta-item">
+      <label>Document Date</label>
+      <span>February 12, 2026</span>
+    </div>
+    <div class="meta-item">
+      <label>Version</label>
+      <span>3.0 &mdash; Production</span>
+    </div>
+    <div class="meta-item">
+      <label>Scope</label>
+      <span>Full Platform Architecture</span>
+    </div>
+    <div class="meta-item">
+      <label>Audience</label>
+      <span>Technical &amp; Executive Stakeholders</span>
+    </div>
+    <div class="meta-item">
+      <label>Deployment</label>
+      <span>Render &mdash; Production</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STATUS BOX -->
+<!-- ============================================================ -->
+<div class="status-box">
+  <h3>Platform Status &mdash; At a Glance</h3>
+  <div class="status-grid">
+    <div class="status-fact">
+      <div class="label">Environment</div>
+      <div class="value">Production</div>
+    </div>
+    <div class="status-fact">
+      <div class="label">API Endpoints</div>
+      <div class="value">75+</div>
+    </div>
+    <div class="status-fact">
+      <div class="label">Database Tables</div>
+      <div class="value">15</div>
+    </div>
+    <div class="status-fact">
+      <div class="label">Funnel Templates</div>
+      <div class="value">6+</div>
+    </div>
+    <div class="status-fact">
+      <div class="label">Content Templates</div>
+      <div class="value">49+</div>
+    </div>
+    <div class="status-fact">
+      <div class="label">AI Models Active</div>
+      <div class="value">3</div>
+    </div>
+    <div class="status-fact">
+      <div class="label">Channels</div>
+      <div class="value">4</div>
+    </div>
+    <div class="status-fact">
+      <div class="label">Integrations</div>
+      <div class="value">10+</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 1. EXECUTIVE OVERVIEW -->
+<!-- ============================================================ -->
+<div class="section-box navy-border">
+  <h2>1. Executive System Overview</h2>
+  <p>
+    Paycile Automation is a production-grade, AI-powered multi-channel marketing automation platform purpose-built for B2B outreach campaigns. The system enables Business Development Representatives (BDRs) to design, personalize, and execute outreach sequences spanning <strong>Email</strong>, <strong>SMS</strong>, <strong>Voicemail Drop</strong>, and <strong>LinkedIn</strong> &mdash; orchestrated through an intelligent visual funnel builder with AI-generated content and human review gates at every critical juncture.
+  </p>
+  <p>
+    The platform is deployed on <strong>Render</strong> with a PostgreSQL database, Node.js/Express API server, and a React single-page application frontend. AI capabilities are powered by <strong>OpenAI GPT-4</strong> for campaign generation and inbox intelligence, with <strong>GPT-4o-mini</strong> optimized for high-throughput email personalization.
+  </p>
+
+  <h3 class="mt-2">Core Design Principles</h3>
+  <ul class="principle-list">
+    <li><strong>Human-in-the-Loop:</strong> Every AI-generated piece of content passes through BDR review before delivery. Automation can be paused and resumed per-contact at any stage.</li>
+    <li><strong>Multi-Channel Orchestration:</strong> Campaigns coordinate email, SMS, voicemail, and LinkedIn messaging through a unified visual graph of workflow nodes and timed edges.</li>
+    <li><strong>AI-Augmented, Not AI-Replaced:</strong> AI generates drafts, variations, and personalization &mdash; humans approve, edit, and own the final output.</li>
+    <li><strong>Throttled &amp; Compliant Delivery:</strong> Email sending uses queue-based throttling (1&ndash;2.5 minute randomized delays) with SMTP rotation to maintain deliverability and CAN-SPAM compliance.</li>
+    <li><strong>Template-Driven Architecture:</strong> Funnel templates with versioning allow rapid campaign launch while preserving institutional knowledge and proven sequences.</li>
+    <li><strong>CRM Integration First:</strong> HubSpot and Apollo.io integrations ensure lead data flows bidirectionally between outreach and pipeline management.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2. SYSTEM ARCHITECTURE DIAGRAM -->
+<!-- ============================================================ -->
+<div class="section-box blue-border">
+  <h2>2. System Architecture</h2>
+  <p>The platform is organized into four primary layers, each with distinct responsibilities and clear interfaces between them.</p>
+
+  <div class="arch-diagram">
+
+    <!-- LAYER 1: DATA INGESTION -->
+    <div class="arch-layer data-layer">
+      <div class="layer-label">Layer 1 &mdash; Data Ingestion &amp; Storage</div>
+      <div class="flow-row mt-1">
+        <span class="flow-step">CSV Contact Import</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Apollo.io Enrichment</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">PostgreSQL (Prisma)</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">Contact Records</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step">HubSpot CRM Sync</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Lead Submission API</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">CRM Pipeline</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step">Template Library</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Template Versioning</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">Campaign Graph (Nodes + Edges)</span>
+      </div>
+      <p class="text-sm text-muted mt-1">15 PostgreSQL tables managed via Prisma ORM &bull; Bulk import with rawJson preservation &bull; Template CSV import/export</p>
+    </div>
+
+    <div class="flow-arrow down">&#9660;</div>
+
+    <!-- LAYER 2: PROCESSING & ORCHESTRATION -->
+    <div class="arch-layer process-layer">
+      <div class="layer-label">Layer 2 &mdash; AI Processing &amp; Orchestration</div>
+      <div class="flow-row mt-1">
+        <span class="flow-step highlight">AI Campaign Builder</span>
+        <span class="flow-sub">GPT-4 Turbo &mdash; Natural language &rarr; full funnel generation</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step highlight">AI Email Personalizer</span>
+        <span class="flow-sub">GPT-4o-mini &mdash; 1-to-1 contact-aware email personalization</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step highlight">Inbox AI Generator</span>
+        <span class="flow-sub">GPT-4 Turbo &mdash; BDR response drafts with intent detection</span>
+      </div>
+      <div class="flow-row mt-1">
+        <span class="flow-step">Campaign Executor</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Node Router</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Merge Tag Engine</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Channel Dispatcher</span>
+      </div>
+      <p class="text-sm text-muted mt-1">Node types: email_send, sms_send, voicemail_drop, linkedin_message, wait, decision, stage, task, start</p>
+    </div>
+
+    <div class="flow-arrow down">&#9660;</div>
+
+    <!-- LAYER 3: OUTPUT & DELIVERY -->
+    <div class="arch-layer output-layer">
+      <div class="layer-label">Layer 3 &mdash; Multi-Channel Output &amp; Delivery</div>
+      <div class="flow-row mt-1">
+        <span class="flow-step">Email Queue</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">Microsoft Graph API</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">SMTP Rotation (Fallback)</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step">SMS Dispatcher</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">Twilio</span>
+        <span class="flow-arrow">/</span>
+        <span class="flow-step alt">Bonzo</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step">Voicemail Engine</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">ElevenLabs TTS</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">DropCowboy Delivery</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step">LinkedIn Outreach</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step alt">OAuth Delegated Access</span>
+      </div>
+      <p class="text-sm text-muted mt-1">Queue worker runs every 30s &bull; 1&ndash;2.5 min randomized email delays &bull; SMTP rotation for volume &bull; Unsubscribe compliance</p>
+    </div>
+
+    <div class="flow-arrow down">&#9660;</div>
+
+    <!-- LAYER 4: HUMAN REVIEW -->
+    <div class="arch-layer human-layer">
+      <div class="layer-label">Layer 4 &mdash; Human Review &amp; CRM Handoff</div>
+      <div class="flow-row mt-1">
+        <span class="human-gate">&#9888; BDR Review Gate</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Unified Inbox</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">AI Response Options</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="human-gate">&#9888; BDR Approval</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step">Automation Check-Out</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="human-gate">&#9888; Manual Intervention</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Check-In / Resume</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-step">Personalized Email Review</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="human-gate">&#9888; Approve / Edit / Reject</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step highlight">HubSpot Lead Handoff</span>
+      </div>
+      <p class="text-sm text-muted mt-1">Every AI output reviewed before send &bull; Per-contact automation pause/resume &bull; Conversation tracking across all channels</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3. DATA LAYER SPECIFICATION -->
+<!-- ============================================================ -->
+<div class="section-box blue-border">
+  <h2>3. Data Layer &mdash; Database Schema</h2>
+  <p>PostgreSQL database managed through Prisma ORM with 15 production tables. All migrations are version-controlled and run automatically on deployment.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Table</th>
+        <th>Purpose</th>
+        <th>Key Fields</th>
+        <th>Relationships</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Template</code></td>
+        <td>Master funnel/workflow definitions</td>
+        <td>id, name, status, version</td>
+        <td>&#8594; Nodes, Edges, Campaigns, Versions</td>
+      </tr>
+      <tr>
+        <td><code>TemplateVersion</code></td>
+        <td>Campaign-specific template snapshots</td>
+        <td>id, baseTemplateId, campaignId, nodesJson, edgesJson</td>
+        <td>&#8594; Template, Campaign</td>
+      </tr>
+      <tr>
+        <td><code>Node</code></td>
+        <td>Workflow steps (email, SMS, wait, decision, etc.)</td>
+        <td>id, templateId, key, type, name, configJson, posX, posY</td>
+        <td>&#8594; Template</td>
+      </tr>
+      <tr>
+        <td><code>Edge</code></td>
+        <td>Connections between workflow nodes with timing/conditions</td>
+        <td>id, templateId, fromKey, toKey, conditionJson</td>
+        <td>&#8594; Template</td>
+      </tr>
+      <tr>
+        <td><code>Campaign</code></td>
+        <td>Active campaign instances with owner/event metadata</td>
+        <td>id, name, ownerName, ownerEmail, status, templateId, senderUserId</td>
+        <td>&#8594; Template, User, Contacts, CampaignNodes, CampaignEdges</td>
+      </tr>
+      <tr>
+        <td><code>CampaignNode</code></td>
+        <td>Campaign-specific node instances</td>
+        <td>id, campaignId, key, type, name, configJson</td>
+        <td>&#8594; Campaign</td>
+      </tr>
+      <tr>
+        <td><code>CampaignEdge</code></td>
+        <td>Campaign-specific edge instances</td>
+        <td>id, campaignId, fromKey, toKey, conditionJson</td>
+        <td>&#8594; Campaign</td>
+      </tr>
+      <tr>
+        <td><code>Contact</code></td>
+        <td>Campaign prospects with enrichment data</td>
+        <td>id, campaignId, name, company, email, phone, stageKey, rawJson</td>
+        <td>&#8594; Campaign, Conversations, PersonalizedEmails</td>
+      </tr>
+      <tr>
+        <td><code>Conversation</code></td>
+        <td>Multi-channel communication threads</td>
+        <td>id, contactId, channel (sms/email)</td>
+        <td>&#8594; Contact, Messages</td>
+      </tr>
+      <tr>
+        <td><code>Message</code></td>
+        <td>Individual communications (inbound/outbound)</td>
+        <td>id, conversationId, direction, text, subject, provider</td>
+        <td>&#8594; Conversation</td>
+      </tr>
+      <tr>
+        <td><code>User</code></td>
+        <td>BDRs and admins with OAuth credentials</td>
+        <td>id, name, email, role, passwordHash, OAuth tokens (Google, Microsoft, LinkedIn)</td>
+        <td>&#8594; Campaigns (as sender)</td>
+      </tr>
+      <tr>
+        <td><code>ContentTemplate</code></td>
+        <td>Reusable message templates (email/SMS/voicemail)</td>
+        <td>id, type, name, subject, body, text, ttsScript</td>
+        <td>Referenced by Nodes</td>
+      </tr>
+      <tr>
+        <td><code>EmailQueue</code></td>
+        <td>Throttled email sending queue</td>
+        <td>id, campaignId, contactId, to, subject, body, status, scheduledFor</td>
+        <td>&#8594; Campaign, Contact, SmtpConfig</td>
+      </tr>
+      <tr>
+        <td><code>SmtpConfig</code></td>
+        <td>SMTP rotation pool configuration</td>
+        <td>id, email, smtpHost, smtpPort, isActive, dailySent, lastUsed</td>
+        <td>&#8594; EmailQueue</td>
+      </tr>
+      <tr>
+        <td><code>PersonalizedEmail</code></td>
+        <td>AI-personalized email versions pending review</td>
+        <td>id, campaignId, contactId, nodeKey, subject, body, status, rationale</td>
+        <td>&#8594; Campaign, Contact (unique: campaign+contact+node)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4. PROCESSING ENGINE DETAIL -->
+<!-- ============================================================ -->
+<div class="section-box purple-border">
+  <h2>4. Processing Engine &mdash; Component Detail</h2>
+  <p>Each processing component is detailed below with its inputs, outputs, technology assignment, and operational constraints.</p>
+
+  <div class="card-grid">
+
+    <!-- AI Campaign Builder -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#9881;</span> AI Campaign Builder
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Natural language to complete funnel generation</td></tr>
+        <tr><td>AI Model</td><td><span class="badge badge-purple">GPT-4 Turbo Preview</span></td></tr>
+        <tr><td>Input</td><td>Campaign brief, persona, industry, event context</td></tr>
+        <tr><td>Output</td><td>Full node/edge graph with email, SMS, voicemail, LinkedIn content</td></tr>
+        <tr><td>Node Types</td><td>email_send, sms_send, voicemail_drop, linkedin_message, wait, decision, stage, task</td></tr>
+        <tr><td>Knowledge Base</td><td>Paycile messaging DNA, persona-specific context</td></tr>
+        <tr><td>Key Constraint</td><td>All generated content requires human approval before execution</td></tr>
+        <tr><td>Endpoint</td><td><code>POST /api/ai/campaign/generate</code></td></tr>
+      </table>
+    </div>
+
+    <!-- AI Email Personalizer -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#9993;</span> AI Email Personalizer
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>1-to-1 email personalization per contact</td></tr>
+        <tr><td>AI Model</td><td><span class="badge badge-green">GPT-4o-mini</span></td></tr>
+        <tr><td>Input</td><td>Template content + contact data (company, industry, title, rawJson)</td></tr>
+        <tr><td>Output</td><td>Personalized subject, body, rationale per contact per node</td></tr>
+        <tr><td>Processing</td><td>Batch processing with rate limiting</td></tr>
+        <tr><td>Review Status</td><td>pending &rarr; approved / edited / rejected</td></tr>
+        <tr><td>Compliance</td><td>Preserves template structure, CAN-SPAM footer intact</td></tr>
+        <tr><td>Endpoint</td><td><code>POST /api/campaigns/:id/personalize</code></td></tr>
+      </table>
+    </div>
+
+    <!-- Inbox AI Generator -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#128172;</span> Inbox AI Generator
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Generate BDR response drafts for incoming messages</td></tr>
+        <tr><td>AI Model</td><td><span class="badge badge-purple">GPT-4 Turbo Preview</span></td></tr>
+        <tr><td>Input</td><td>Conversation thread, contact context, message intent</td></tr>
+        <tr><td>Output</td><td>Multiple response options with confidence scores</td></tr>
+        <tr><td>Intent Detection</td><td>Question, objection, interest, scheduling, unsubscribe</td></tr>
+        <tr><td>Voice Training</td><td>Newbury Partners voice characteristics baked in</td></tr>
+        <tr><td>Key Constraint</td><td>BDR selects and may edit before sending</td></tr>
+        <tr><td>Endpoints</td><td><code>POST /api/ai/inbox/generate-response</code><br><code>POST /api/ai/inbox/generate-options</code></td></tr>
+      </table>
+    </div>
+
+    <!-- Campaign Execution Engine -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#9654;</span> Campaign Execution Engine
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Orchestrate multi-step campaign delivery per contact</td></tr>
+        <tr><td>Technology</td><td><span class="badge badge-blue">Node.js / Express</span></td></tr>
+        <tr><td>Input</td><td>Campaign graph (nodes + edges) + contact list</td></tr>
+        <tr><td>Output</td><td>Channel-dispatched messages logged to Conversation/Message tables</td></tr>
+        <tr><td>Processing</td><td>Sequential node traversal per contact via stageKey tracking</td></tr>
+        <tr><td>Merge Tags</td><td><code>{{contact.first_name}}</code>, <code>{{campaign.*}}</code>, <code>{{sender.*}}</code></td></tr>
+        <tr><td>Key Constraint</td><td>Respects automation checkout; skips unsubscribed contacts</td></tr>
+        <tr><td>Endpoints</td><td><code>POST /api/campaigns/:id/execute</code><br><code>POST /api/campaigns/:id/execute-sms</code></td></tr>
+      </table>
+    </div>
+
+    <!-- Email Queue Worker -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#128233;</span> Email Queue &amp; SMTP Rotation
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Throttled email delivery with sender rotation</td></tr>
+        <tr><td>Technology</td><td><span class="badge badge-blue">Node.js Background Worker</span></td></tr>
+        <tr><td>Poll Interval</td><td>Every 30 seconds</td></tr>
+        <tr><td>Throttle</td><td>1&ndash;2.5 minute randomized delays between sends</td></tr>
+        <tr><td>Primary Provider</td><td>Microsoft Graph API (OAuth delegated)</td></tr>
+        <tr><td>Fallback</td><td>SMTP rotation pool (least-recently-used selection)</td></tr>
+        <tr><td>Compliance</td><td>Unsubscribe check before send, CAN-SPAM footer, daily send limits</td></tr>
+        <tr><td>Status Flow</td><td>pending &rarr; sent / failed</td></tr>
+      </table>
+    </div>
+
+    <!-- SMS Provider -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#128241;</span> SMS Provider Service
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Outbound SMS delivery and inbound webhook handling</td></tr>
+        <tr><td>Primary Provider</td><td><span class="badge badge-blue">Twilio</span></td></tr>
+        <tr><td>Alternate Provider</td><td><span class="badge badge-teal">Bonzo</span></td></tr>
+        <tr><td>Phone Format</td><td>E.164 normalization</td></tr>
+        <tr><td>Inbound Webhooks</td><td><code>POST /api/twilio/inbound-sms</code><br><code>POST /api/bonzo/inbound-sms</code></td></tr>
+        <tr><td>Configuration</td><td><code>SMS_PROVIDER</code> env var (twilio or bonzo)</td></tr>
+        <tr><td>Key Constraint</td><td>Inbound triggers auto-checkout for human review</td></tr>
+      </table>
+    </div>
+
+    <!-- Voicemail Provider -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#127908;</span> Voicemail Drop Engine
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Ringless voicemail delivery with TTS generation</td></tr>
+        <tr><td>TTS Provider</td><td><span class="badge badge-purple">ElevenLabs</span></td></tr>
+        <tr><td>Delivery Provider</td><td><span class="badge badge-amber">DropCowboy</span></td></tr>
+        <tr><td>Input</td><td>TTS script (30&ndash;45 seconds) or pre-recorded audio URL</td></tr>
+        <tr><td>Output</td><td>MP3 generated &rarr; DropCowboy delivery &rarr; logged to Message</td></tr>
+        <tr><td>Media Storage</td><td>In-memory MP3 store with UUID-based temporary URLs</td></tr>
+        <tr><td>Endpoint</td><td><code>POST /api/voicemail/drop</code></td></tr>
+      </table>
+    </div>
+
+    <!-- Apollo.io Integration -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#128270;</span> Apollo.io Integration
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Contact enrichment and prospect discovery</td></tr>
+        <tr><td>Technology</td><td><span class="badge badge-blue">Apollo.io REST API</span></td></tr>
+        <tr><td>Capabilities</td><td>People search, organization search, contact enrichment</td></tr>
+        <tr><td>Filters</td><td>Title, seniority, location, industry, company size</td></tr>
+        <tr><td>Output</td><td>Enriched contact data stored in Contact.rawJson</td></tr>
+        <tr><td>Endpoints</td><td><code>POST /api/apollo/people/search</code><br><code>POST /api/apollo/organizations/search</code></td></tr>
+      </table>
+    </div>
+
+    <!-- HubSpot Integration -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#128200;</span> HubSpot CRM Integration
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Lead handoff and CRM pipeline management</td></tr>
+        <tr><td>Technology</td><td><span class="badge badge-amber">HubSpot API v3</span></td></tr>
+        <tr><td>Lead Submission</td><td>Contact create/update with <code>RECORD_SOURCE: "PLG CAMPAIGN"</code> tag</td></tr>
+        <tr><td>Reply Sync</td><td>Email replies pushed to HubSpot via webhook</td></tr>
+        <tr><td>Endpoint</td><td><code>POST /api/leads/submit</code></td></tr>
+        <tr><td>Key Constraint</td><td>Bidirectional sync &mdash; outreach data flows into CRM pipeline</td></tr>
+      </table>
+    </div>
+
+    <!-- Visual Funnel Builder -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#127912;</span> Visual Funnel Builder
+      </div>
+      <table class="spec-table">
+        <tr><td>Role</td><td>Drag-and-drop workflow editor for campaign sequences</td></tr>
+        <tr><td>Technology</td><td><span class="badge badge-green">React Flow + Dagre</span></td></tr>
+        <tr><td>Frontend</td><td><span class="badge badge-blue">React 18 + TypeScript + Vite</span></td></tr>
+        <tr><td>Node Types</td><td>10 types: email, SMS, voicemail, LinkedIn, wait, decision, stage, task, start, post</td></tr>
+        <tr><td>Layout</td><td>Dagre automatic graph layout with manual override</td></tr>
+        <tr><td>Export</td><td>CSV export, PDF export (html2canvas + jsPDF)</td></tr>
+        <tr><td>Versioning</td><td>Template versions with campaign-specific snapshots</td></tr>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5. TECHNOLOGY ROUTING TABLE -->
+<!-- ============================================================ -->
+<div class="section-box navy-border">
+  <h2>5. Technology Routing Table</h2>
+  <p>Complete mapping of which technology handles each capability, and why that choice was made.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>Technology / Model</th>
+        <th>Tier</th>
+        <th>Rationale</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Campaign Generation</td>
+        <td><span class="badge badge-purple">GPT-4 Turbo Preview</span></td>
+        <td>AI &mdash; Primary</td>
+        <td>Complex multi-node graph generation requires highest reasoning capability</td>
+      </tr>
+      <tr>
+        <td>Email Personalization</td>
+        <td><span class="badge badge-green">GPT-4o-mini</span></td>
+        <td>AI &mdash; Optimized</td>
+        <td>High throughput required; mini model provides sufficient quality at 10x lower cost</td>
+      </tr>
+      <tr>
+        <td>Inbox Response Generation</td>
+        <td><span class="badge badge-purple">GPT-4 Turbo Preview</span></td>
+        <td>AI &mdash; Primary</td>
+        <td>Context-sensitive responses need full reasoning with voice training adherence</td>
+      </tr>
+      <tr>
+        <td>Intent Detection</td>
+        <td><span class="badge badge-blue">GPT-3.5 Turbo</span></td>
+        <td>AI &mdash; Fast</td>
+        <td>Classification task &mdash; speed and cost efficiency prioritized</td>
+      </tr>
+      <tr>
+        <td>Text-to-Speech</td>
+        <td><span class="badge badge-purple">ElevenLabs API</span></td>
+        <td>Voice AI</td>
+        <td>Industry-leading voice quality for professional voicemail drops</td>
+      </tr>
+      <tr>
+        <td>Email Delivery (Primary)</td>
+        <td><span class="badge badge-blue">Microsoft Graph API</span></td>
+        <td>Infrastructure</td>
+        <td>OAuth delegated sending &mdash; emails appear from user's own Outlook account</td>
+      </tr>
+      <tr>
+        <td>Email Delivery (Fallback)</td>
+        <td><span class="badge badge-navy">SMTP Rotation Pool</span></td>
+        <td>Infrastructure</td>
+        <td>Multi-account rotation for deliverability; least-recently-used selection</td>
+      </tr>
+      <tr>
+        <td>SMS Delivery (Primary)</td>
+        <td><span class="badge badge-blue">Twilio</span></td>
+        <td>Infrastructure</td>
+        <td>Industry standard, reliable delivery, webhook support</td>
+      </tr>
+      <tr>
+        <td>SMS Delivery (Alternate)</td>
+        <td><span class="badge badge-teal">Bonzo</span></td>
+        <td>Infrastructure</td>
+        <td>Integrated CRM features, prospect management built-in</td>
+      </tr>
+      <tr>
+        <td>Voicemail Delivery</td>
+        <td><span class="badge badge-amber">DropCowboy</span></td>
+        <td>Infrastructure</td>
+        <td>Reliable ringless voicemail with API support and brand management</td>
+      </tr>
+      <tr>
+        <td>Contact Enrichment</td>
+        <td><span class="badge badge-blue">Apollo.io</span></td>
+        <td>Data</td>
+        <td>Comprehensive B2B contact database with company/industry filters</td>
+      </tr>
+      <tr>
+        <td>CRM Pipeline</td>
+        <td><span class="badge badge-amber">HubSpot</span></td>
+        <td>Data</td>
+        <td>Client's existing CRM &mdash; bidirectional lead sync</td>
+      </tr>
+      <tr>
+        <td>Database</td>
+        <td><span class="badge badge-blue">PostgreSQL + Prisma</span></td>
+        <td>Infrastructure</td>
+        <td>Relational data with complex joins; Prisma provides type-safe queries</td>
+      </tr>
+      <tr>
+        <td>API Server</td>
+        <td><span class="badge badge-green">Node.js + Express</span></td>
+        <td>Infrastructure</td>
+        <td>Event-driven architecture ideal for I/O-heavy operations</td>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td><span class="badge badge-blue">React 18 + Vite + Tailwind</span></td>
+        <td>Application</td>
+        <td>Component-based UI with fast HMR; Tailwind for consistent styling</td>
+      </tr>
+      <tr>
+        <td>State Management</td>
+        <td><span class="badge badge-green">Zustand</span></td>
+        <td>Application</td>
+        <td>Lightweight, minimal boilerplate, ideal for mid-complexity state</td>
+      </tr>
+      <tr>
+        <td>Flow Visualization</td>
+        <td><span class="badge badge-green">React Flow + Dagre</span></td>
+        <td>Application</td>
+        <td>Node-based graph UI with automatic layout &mdash; purpose-built for workflow editors</td>
+      </tr>
+      <tr>
+        <td>Charts &amp; Analytics</td>
+        <td><span class="badge badge-blue">Chart.js</span></td>
+        <td>Application</td>
+        <td>Flexible charting with React integration; lightweight bundle</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6. OUTPUT PIPELINE -->
+<!-- ============================================================ -->
+<div class="section-box">
+  <h2>6. Output Pipeline &mdash; Templates &amp; Delivery</h2>
+
+  <h3>Content Template System</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Template Type</th>
+        <th>Format</th>
+        <th>Constraints</th>
+        <th>Merge Tags Supported</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Email</td>
+        <td>HTML subject + body</td>
+        <td>Must include CAN-SPAM footer with unsubscribe link</td>
+        <td><code>{{contact.first_name}}</code>, <code>{{contact.company}}</code>, <code>{{campaign.ownerName}}</code>, <code>{{sender.*}}</code></td>
+      </tr>
+      <tr>
+        <td>SMS</td>
+        <td>Plain text</td>
+        <td>160-character limit recommended</td>
+        <td><code>{{FirstName}}</code>, <code>{{contact.*}}</code></td>
+      </tr>
+      <tr>
+        <td>Voicemail</td>
+        <td>TTS script &rarr; MP3</td>
+        <td>30&ndash;45 second duration limit</td>
+        <td>Contact name, company (baked into TTS script)</td>
+      </tr>
+      <tr>
+        <td>LinkedIn</td>
+        <td>Plain text message</td>
+        <td>Connection request or InMail format</td>
+        <td><code>{{contact.first_name}}</code>, <code>{{contact.company}}</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="mt-2">Pre-Built Funnel Templates</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Funnel Name</th>
+        <th>Target Persona</th>
+        <th>Nodes</th>
+        <th>Edges</th>
+        <th>Channels Used</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>CFO Insurance Funnel</td>
+        <td>CFO / Finance Leader</td>
+        <td>91</td>
+        <td>104</td>
+        <td>Email, SMS, Voicemail, LinkedIn</td>
+      </tr>
+      <tr>
+        <td>Controller Multi-Entity Funnel</td>
+        <td>Controller / Accounting Manager</td>
+        <td>~60</td>
+        <td>~70</td>
+        <td>Email, SMS, Voicemail</td>
+      </tr>
+      <tr>
+        <td>Property Management (Yardi) Funnel</td>
+        <td>Property Manager / CFO</td>
+        <td>~55</td>
+        <td>~65</td>
+        <td>Email, SMS, Voicemail</td>
+      </tr>
+      <tr>
+        <td>AR/AP Automation Funnel</td>
+        <td>AP/AR Manager</td>
+        <td>~45</td>
+        <td>~55</td>
+        <td>Email, SMS</td>
+      </tr>
+      <tr>
+        <td>Commissions Funnel</td>
+        <td>Sales Operations</td>
+        <td>~40</td>
+        <td>~50</td>
+        <td>Email, SMS</td>
+      </tr>
+      <tr>
+        <td>Newbury Partners Funnels</td>
+        <td>Multi-persona</td>
+        <td>Variable</td>
+        <td>Variable</td>
+        <td>Email, SMS, Voicemail, LinkedIn</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="mt-2">Node Type Inventory</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Node Type</th>
+        <th>Purpose</th>
+        <th>Configuration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>start</code></td><td>Campaign entry point</td><td>None</td></tr>
+      <tr><td><code>email_send</code></td><td>Send email via queue</td><td>Subject, body, contentTemplateId</td></tr>
+      <tr><td><code>sms_send</code></td><td>Send SMS message</td><td>Text, contentTemplateId</td></tr>
+      <tr><td><code>voicemail_drop</code></td><td>Ringless voicemail delivery</td><td>TTS script or audio URL</td></tr>
+      <tr><td><code>linkedin_message</code></td><td>LinkedIn direct message</td><td>Message text</td></tr>
+      <tr><td><code>linkedin_post</code></td><td>LinkedIn content engagement</td><td>Post content</td></tr>
+      <tr><td><code>wait</code></td><td>Timed delay between steps</td><td>Duration (hours/days)</td></tr>
+      <tr><td><code>decision</code></td><td>Conditional branching</td><td>Condition rules in conditionJson</td></tr>
+      <tr><td><code>stage</code></td><td>Pipeline stage marker</td><td>Stage label</td></tr>
+      <tr><td><code>task</code></td><td>Manual BDR task assignment</td><td>Task description</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7. HUMAN REVIEW WORKFLOW -->
+<!-- ============================================================ -->
+<div class="section-box amber-border">
+  <h2>7. Human Review Workflow</h2>
+  <p>Human oversight is embedded at every critical decision point. The system provides three distinct review workflows:</p>
+
+  <h3>7a. AI Content Review Flow</h3>
+  <div class="arch-diagram">
+    <div class="flow-row">
+      <span class="flow-step highlight">AI Generates Content</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Content Saved as Draft</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="human-gate">&#9888; BDR Reviews</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Approve / Edit / Reject</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step highlight">Execute Campaign</span>
+    </div>
+  </div>
+
+  <h3 class="mt-2">7b. Personalized Email Approval Flow</h3>
+  <div class="arch-diagram">
+    <div class="flow-row">
+      <span class="flow-step">Trigger Personalization</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step highlight">GPT-4o-mini Personalizes</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Per-Contact Drafts Created</span>
+    </div>
+    <div class="flow-arrow down">&#9660;</div>
+    <div class="flow-row">
+      <span class="human-gate">&#9888; BDR Reviews Each Email</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Status: Pending</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Approved / Edited / Rejected</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step highlight">Approved Emails Used in Send</span>
+    </div>
+  </div>
+
+  <h3 class="mt-2">7c. Inbound Response Flow</h3>
+  <div class="arch-diagram">
+    <div class="flow-row">
+      <span class="flow-step">Contact Replies (SMS/Email)</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Webhook Received</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Auto-Checkout</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Status: "Needs BDR"</span>
+    </div>
+    <div class="flow-arrow down">&#9660;</div>
+    <div class="flow-row">
+      <span class="human-gate">&#9888; BDR Opens Unified Inbox</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step highlight">AI Generates Response Options</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="human-gate">&#9888; BDR Selects / Edits</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Send Response</span>
+    </div>
+    <div class="flow-arrow down">&#9660;</div>
+    <div class="flow-row">
+      <span class="flow-step">Log to Conversation</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Check-In (Resume Automation)</span>
+      <span class="flow-arrow">or</span>
+      <span class="flow-step highlight">HubSpot Lead Handoff</span>
+    </div>
+  </div>
+
+  <h3 class="mt-2">Review Status Lifecycle</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Meaning</th>
+        <th>Next Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-amber">Pending</span></td>
+        <td>AI content generated, awaiting BDR review</td>
+        <td>Approve, Edit, Reject</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">Approved</span></td>
+        <td>BDR confirmed content ready to send</td>
+        <td>Queue for delivery</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Edited</span></td>
+        <td>BDR modified AI draft before approval</td>
+        <td>Queue for delivery (edited version)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">Rejected</span></td>
+        <td>BDR declined AI content</td>
+        <td>Re-generate or manual write</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8. API ENDPOINTS INVENTORY -->
+<!-- ============================================================ -->
+<div class="section-box navy-border">
+  <h2>8. API Endpoints Inventory</h2>
+  <p>Complete REST API surface &mdash; 75+ endpoints organized by domain.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Domain</th>
+        <th>Endpoint Count</th>
+        <th>Key Operations</th>
+        <th>Auth Required</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Templates</strong></td>
+        <td>12</td>
+        <td>CRUD, duplicate, versioning, CSV import/export</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>Content Templates</strong></td>
+        <td>4</td>
+        <td>CRUD for reusable email/SMS/voicemail content</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>Campaigns</strong></td>
+        <td>14</td>
+        <td>CRUD, execute, contacts, graph, stats, personalization</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>Contacts</strong></td>
+        <td>3</td>
+        <td>Update, checkout (pause), checkin (resume)</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>AI</strong></td>
+        <td>6</td>
+        <td>Campaign generate, refine, variations, inbox responses</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>Apollo.io</strong></td>
+        <td>2</td>
+        <td>People search, organization search</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>Email</strong></td>
+        <td>4</td>
+        <td>Send, test, reply webhook, queue stats</td>
+        <td>Mixed</td>
+      </tr>
+      <tr>
+        <td><strong>SMS</strong></td>
+        <td>5</td>
+        <td>Send, status, inbound webhooks (Twilio, Bonzo), backfill</td>
+        <td>Mixed</td>
+      </tr>
+      <tr>
+        <td><strong>Voicemail</strong></td>
+        <td>1</td>
+        <td>Drop voicemail</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>Users &amp; Auth</strong></td>
+        <td>14</td>
+        <td>CRUD, login, OAuth (Google, Microsoft, LinkedIn)</td>
+        <td>Mixed</td>
+      </tr>
+      <tr>
+        <td><strong>Conversations</strong></td>
+        <td>2</td>
+        <td>List conversations, create messages</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>SMTP Config</strong></td>
+        <td>3</td>
+        <td>List configs, create, delete</td>
+        <td>Yes (JWT)</td>
+      </tr>
+      <tr>
+        <td><strong>Leads</strong></td>
+        <td>1</td>
+        <td>Submit to HubSpot</td>
+        <td>No (public)</td>
+      </tr>
+      <tr>
+        <td><strong>Admin</strong></td>
+        <td>7</td>
+        <td>Seed funnels, import contacts, create admin, migrations</td>
+        <td>Yes (Admin)</td>
+      </tr>
+      <tr>
+        <td><strong>Health / Media</strong></td>
+        <td>3</td>
+        <td>Health check, media upload, voicemail audio serve</td>
+        <td>No</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9. FRONTEND APPLICATION -->
+<!-- ============================================================ -->
+<div class="section-box">
+  <h2>9. Frontend Application &mdash; Page Inventory</h2>
+  <p>React 18 SPA with 20+ pages, built with Vite, styled with Tailwind CSS, state managed via Zustand.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Page</th>
+        <th>Purpose</th>
+        <th>Key Components</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Dashboard</strong></td>
+        <td>Analytics overview with campaign performance metrics</td>
+        <td>Chart.js charts, stat cards, recent activity</td>
+      </tr>
+      <tr>
+        <td><strong>Campaigns</strong></td>
+        <td>Campaign list with status filtering</td>
+        <td>Data table, status badges, quick actions</td>
+      </tr>
+      <tr>
+        <td><strong>Campaign Builder</strong></td>
+        <td>Visual drag-and-drop workflow editor</td>
+        <td>React Flow canvas, Dagre layout, node config panels</td>
+      </tr>
+      <tr>
+        <td><strong>AI Campaign Builder</strong></td>
+        <td>Natural language campaign generation</td>
+        <td>Chat interface, preview, save-as-template</td>
+      </tr>
+      <tr>
+        <td><strong>Templates</strong></td>
+        <td>Funnel template library management</td>
+        <td>Template cards, version history, duplicate</td>
+      </tr>
+      <tr>
+        <td><strong>Template Builder</strong></td>
+        <td>Visual template editor</td>
+        <td>React Flow canvas, node palette, edge config</td>
+      </tr>
+      <tr>
+        <td><strong>Unified Inbox</strong></td>
+        <td>Cross-channel conversation management</td>
+        <td>Thread list, message composer, AI response generator</td>
+      </tr>
+      <tr>
+        <td><strong>Leads</strong></td>
+        <td>Contact management and enrichment</td>
+        <td>Data table, bulk import, Apollo.io search</td>
+      </tr>
+      <tr>
+        <td><strong>Analytics Master</strong></td>
+        <td>Deep campaign analytics</td>
+        <td>Chart.js visualizations, date filtering, export</td>
+      </tr>
+      <tr>
+        <td><strong>Media Library</strong></td>
+        <td>Audio/media asset management</td>
+        <td>Upload, preview, voicemail management</td>
+      </tr>
+      <tr>
+        <td><strong>Calendar</strong></td>
+        <td>Event and campaign scheduling</td>
+        <td>Calendar view, event details</td>
+      </tr>
+      <tr>
+        <td><strong>Realtors (Team)</strong></td>
+        <td>Team management for BDRs</td>
+        <td>Team roster, assignment, performance</td>
+      </tr>
+      <tr>
+        <td><strong>Settings</strong></td>
+        <td>User preferences and integrations</td>
+        <td>OAuth connections, SMTP config, profile</td>
+      </tr>
+      <tr>
+        <td><strong>User Management</strong></td>
+        <td>Admin user administration</td>
+        <td>User CRUD, role assignment</td>
+      </tr>
+      <tr>
+        <td><strong>Apollo Search</strong></td>
+        <td>Prospect discovery via Apollo.io</td>
+        <td>Search interface, filters, import to campaign</td>
+      </tr>
+      <tr>
+        <td><strong>Landing Pages (4)</strong></td>
+        <td>Persona-specific public landing pages</td>
+        <td>CFO Insurance, Controller, AR/AP, Property Management</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10. SECURITY & DATA OWNERSHIP -->
+<!-- ============================================================ -->
+<div class="section-box red-border">
+  <h2>10. Security &amp; Data Ownership</h2>
+
+  <div class="card-grid">
+
+    <div class="card">
+      <div class="card-header">Authentication &amp; Authorization</div>
+      <table class="spec-table">
+        <tr><td>Auth Method</td><td>JWT (JSON Web Token) with 7-day expiration</td></tr>
+        <tr><td>Password Storage</td><td>bcryptjs with 10 salt rounds &mdash; never plaintext</td></tr>
+        <tr><td>Role System</td><td>BDR (standard) and Admin (elevated)</td></tr>
+        <tr><td>Token Location</td><td>Authorization header (Bearer token)</td></tr>
+        <tr><td>Middleware</td><td>Non-blocking JWT extraction on all routes; protected routes check <code>req.user</code></td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">OAuth Integrations</div>
+      <table class="spec-table">
+        <tr><td>Google OAuth</td><td>Gmail access for email sending/sync</td></tr>
+        <tr><td>Microsoft OAuth</td><td>Outlook/Graph API delegated email sending</td></tr>
+        <tr><td>LinkedIn OAuth</td><td>LinkedIn messaging and profile access</td></tr>
+        <tr><td>Token Storage</td><td>Encrypted in User table (accessToken, refreshToken, expiry)</td></tr>
+        <tr><td>Token Refresh</td><td>Automatic refresh on expiry for Graph API</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">API Security</div>
+      <table class="spec-table">
+        <tr><td>CORS</td><td>Configured for specific allowed origins only</td></tr>
+        <tr><td>Input Validation</td><td>Zod schema validation on all request bodies</td></tr>
+        <tr><td>SQL Injection</td><td>Prevented via Prisma parameterized queries</td></tr>
+        <tr><td>Rate Limiting</td><td>Email queue throttling, AI batch rate limits</td></tr>
+        <tr><td>Webhook Security</td><td>Provider-specific validation (Twilio signature, etc.)</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Compliance &amp; Data Protection</div>
+      <table class="spec-table">
+        <tr><td>CAN-SPAM</td><td>Unsubscribe links in all commercial email; physical address in footer</td></tr>
+        <tr><td>Unsubscribe</td><td>Per-contact unsubscribe with timestamp tracking</td></tr>
+        <tr><td>Data Ownership</td><td>All data stored in client-dedicated PostgreSQL instance</td></tr>
+        <tr><td>Transport</td><td>HTTPS/TLS enforced for all traffic via Render</td></tr>
+        <tr><td>Env Secrets</td><td>All secrets stored as Render environment variables &mdash; never in code</td></tr>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11. INFRASTRUCTURE & DEPLOYMENT -->
+<!-- ============================================================ -->
+<div class="section-box blue-border">
+  <h2>11. Infrastructure &amp; Deployment</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Service</th>
+        <th>Plan</th>
+        <th>Region</th>
+        <th>Configuration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>API Server</strong></td>
+        <td>Render Web Service</td>
+        <td>Starter</td>
+        <td>Oregon</td>
+        <td>Node.js 20, port 4000, health check at <code>/health</code></td>
+      </tr>
+      <tr>
+        <td><strong>Frontend</strong></td>
+        <td>Render Static Site</td>
+        <td>Free</td>
+        <td>CDN</td>
+        <td>SPA routing, cache headers, <code>apps/web/dist</code></td>
+      </tr>
+      <tr>
+        <td><strong>Database</strong></td>
+        <td>Render PostgreSQL</td>
+        <td>Starter ($7/mo)</td>
+        <td>Oregon</td>
+        <td>Managed PostgreSQL, auto-backups</td>
+      </tr>
+      <tr>
+        <td><strong>Source Control</strong></td>
+        <td>GitHub</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td>Auto-deploy on push to <code>main</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="mt-2">Deployment Pipeline</h3>
+  <div class="arch-diagram">
+    <div class="flow-row">
+      <span class="flow-step">Local Development</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">git push github main</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step highlight">Render Auto-Deploy</span>
+    </div>
+    <div class="flow-arrow down">&#9660;</div>
+    <div class="flow-row">
+      <span class="flow-step">pnpm install</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">prisma generate</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">prisma migrate deploy</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">tsc build</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step highlight">node dist/index.js</span>
+    </div>
+  </div>
+
+  <h3 class="mt-2">Environment Variable Categories</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Variable Count</th>
+        <th>Examples</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Database</td><td>1</td><td><code>DATABASE_URL</code></td></tr>
+      <tr><td>Authentication</td><td>1</td><td><code>JWT_SECRET</code></td></tr>
+      <tr><td>Application</td><td>4</td><td><code>PORT</code>, <code>NODE_ENV</code>, <code>PUBLIC_BASE_URL</code>, <code>BASE_URL</code></td></tr>
+      <tr><td>AI Services</td><td>4</td><td><code>OPENAI_API_KEY</code>, <code>ELEVENLABS_API_KEY</code>, <code>ELEVENLABS_VOICE_ID</code>, <code>ELEVENLABS_MODEL_ID</code></td></tr>
+      <tr><td>SMS Providers</td><td>10+</td><td><code>SMS_PROVIDER</code>, <code>TWILIO_*</code>, <code>BONZO_*</code></td></tr>
+      <tr><td>Email Providers</td><td>8+</td><td><code>MICROSOFT_*</code>, <code>SMTP_*</code>, <code>EMAIL_FROM</code></td></tr>
+      <tr><td>Voicemail</td><td>8+</td><td><code>VOICEMAIL_PROVIDER</code>, <code>DROPCOWBOY_*</code>, <code>SLYBROADCAST_*</code></td></tr>
+      <tr><td>CRM/Integrations</td><td>8+</td><td><code>APOLLO_API_KEY</code>, <code>HUBSPOT_*</code>, <code>GOOGLE_*</code>, <code>LINKEDIN_*</code></td></tr>
+      <tr><td>Compliance</td><td>1</td><td><code>COMPANY_ADDRESS</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12. DEVELOPMENT ROADMAP -->
+<!-- ============================================================ -->
+<div class="section-box">
+  <h2>12. Development Roadmap &amp; Feature Timeline</h2>
+  <p>Platform capability progression from foundation through current production state and planned enhancements.</p>
+
+  <table class="roadmap-table">
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Deliverables</th>
+        <th>Success Metrics</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Phase 1: Foundation</td>
+        <td>Express API server, PostgreSQL schema, JWT auth, Prisma ORM, basic CRUD for templates, campaigns, contacts</td>
+        <td>API operational, data model stable, auth functional</td>
+        <td class="status-done">&#10003; Complete</td>
+      </tr>
+      <tr>
+        <td>Phase 2: Visual Builder</td>
+        <td>React Flow funnel builder, template editor, node/edge management, Dagre auto-layout, CSV import/export</td>
+        <td>Users can visually design multi-step funnels with 10 node types</td>
+        <td class="status-done">&#10003; Complete</td>
+      </tr>
+      <tr>
+        <td>Phase 3: Multi-Channel</td>
+        <td>Email queue with throttling, SMTP rotation, Twilio SMS, Bonzo integration, DropCowboy voicemail, ElevenLabs TTS</td>
+        <td>4 channels operational; email deliverability maintained; voicemail drop success rate</td>
+        <td class="status-done">&#10003; Complete</td>
+      </tr>
+      <tr>
+        <td>Phase 4: AI Integration</td>
+        <td>GPT-4 campaign builder, GPT-4o-mini email personalizer, inbox AI response generator, intent detection</td>
+        <td>AI generates production-quality campaigns; personalization approval rate &gt;80%</td>
+        <td class="status-done">&#10003; Complete</td>
+      </tr>
+      <tr>
+        <td>Phase 5: CRM &amp; Enrichment</td>
+        <td>HubSpot lead handoff, Apollo.io enrichment, bidirectional CRM sync, lead submission API</td>
+        <td>Leads flow automatically to CRM; contact enrichment operational</td>
+        <td class="status-done">&#10003; Complete</td>
+      </tr>
+      <tr>
+        <td>Phase 6: OAuth &amp; Identity</td>
+        <td>Google OAuth (Gmail), Microsoft OAuth (Graph API), LinkedIn OAuth, delegated email sending</td>
+        <td>BDRs send from their own accounts; 3 OAuth providers integrated</td>
+        <td class="status-done">&#10003; Complete</td>
+      </tr>
+      <tr>
+        <td>Phase 7: Production Polish</td>
+        <td>Unified inbox, analytics dashboard, template versioning, landing pages, unsubscribe compliance, 49+ content templates, 6+ funnel templates</td>
+        <td>Production-ready platform with complete content library</td>
+        <td class="status-done">&#10003; Complete</td>
+      </tr>
+      <tr>
+        <td>Phase 8: Scale &amp; Optimize</td>
+        <td>Advanced analytics, A/B testing, multi-tenant support, webhook reliability, performance optimization</td>
+        <td>Support 10x campaign volume; sub-2s API response times</td>
+        <td class="status-progress">&#9679; In Progress</td>
+      </tr>
+      <tr>
+        <td>Phase 9: Enterprise</td>
+        <td>Team permissions, audit logging, advanced reporting, API rate limiting, custom integrations</td>
+        <td>Enterprise-grade access controls; compliance audit trail</td>
+        <td class="status-planned">&#9675; Planned</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13. FULL TECHNOLOGY STACK SUMMARY -->
+<!-- ============================================================ -->
+<div class="section-box purple-border">
+  <h2>13. Technology Stack Summary</h2>
+
+  <div class="card-grid">
+
+    <div class="card">
+      <div class="card-header">Backend Stack</div>
+      <table class="spec-table">
+        <tr><td>Runtime</td><td>Node.js 20+</td></tr>
+        <tr><td>Framework</td><td>Express 4.19.2</td></tr>
+        <tr><td>Language</td><td>TypeScript 5.6.3</td></tr>
+        <tr><td>ORM</td><td>Prisma 5.17.0</td></tr>
+        <tr><td>Database</td><td>PostgreSQL (Render managed)</td></tr>
+        <tr><td>Validation</td><td>Zod 3.23.8</td></tr>
+        <tr><td>Auth</td><td>jsonwebtoken 9.0.2 + bcryptjs 2.4.3</td></tr>
+        <tr><td>Email</td><td>Nodemailer 7.0.6 + @azure/msal-node</td></tr>
+        <tr><td>Package Manager</td><td>pnpm 10.12.4</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Frontend Stack</div>
+      <table class="spec-table">
+        <tr><td>Framework</td><td>React 18.2.0</td></tr>
+        <tr><td>Build Tool</td><td>Vite 5.4.1</td></tr>
+        <tr><td>Language</td><td>TypeScript 5.5.4</td></tr>
+        <tr><td>Styling</td><td>Tailwind CSS 3.4.10</td></tr>
+        <tr><td>Routing</td><td>React Router DOM 6.26.2</td></tr>
+        <tr><td>State</td><td>Zustand 4.5.2</td></tr>
+        <tr><td>Flow Editor</td><td>ReactFlow 11.11.4 + Dagre 0.8.5</td></tr>
+        <tr><td>Charts</td><td>Chart.js 4.5.0 + react-chartjs-2 5.3.0</td></tr>
+        <tr><td>Utilities</td><td>DayJS, Papaparse, html2canvas, jsPDF</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">AI &amp; ML Stack</div>
+      <table class="spec-table">
+        <tr><td>Primary LLM</td><td>OpenAI GPT-4 Turbo Preview</td></tr>
+        <tr><td>Optimized LLM</td><td>OpenAI GPT-4o-mini</td></tr>
+        <tr><td>Fast LLM</td><td>OpenAI GPT-3.5 Turbo</td></tr>
+        <tr><td>Voice AI</td><td>ElevenLabs (TTS)</td></tr>
+        <tr><td>Use Cases</td><td>Campaign generation, personalization, response drafting, intent detection</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Third-Party Integrations</div>
+      <table class="spec-table">
+        <tr><td>CRM</td><td>HubSpot API v3</td></tr>
+        <tr><td>Enrichment</td><td>Apollo.io REST API</td></tr>
+        <tr><td>SMS</td><td>Twilio + Bonzo</td></tr>
+        <tr><td>Email</td><td>Microsoft Graph + SMTP + Gmail</td></tr>
+        <tr><td>Voicemail</td><td>DropCowboy + Slybroadcast</td></tr>
+        <tr><td>TTS</td><td>ElevenLabs</td></tr>
+        <tr><td>OAuth</td><td>Google, Microsoft, LinkedIn</td></tr>
+        <tr><td>Hosting</td><td>Render.com</td></tr>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- FOOTER -->
+<!-- ============================================================ -->
+<div class="doc-footer">
+  <p><strong>Prepared by:</strong> nBrain Engineering Team &bull; <strong>Document Version:</strong> 3.0 &bull; <strong>Date:</strong> February 12, 2026</p>
+  <p><strong>Repository:</strong> github.com/nbrain-team/paycile-automation &bull; <strong>Deployment:</strong> Render (Auto-deploy from main)</p>
+  <p style="margin-top: 1rem;">
+    <strong>Scope Disclaimer:</strong> This document describes the Paycile Automation platform architecture as of the document date.
+    It is intended as a technical reference for development teams and a strategic overview for executive stakeholders.
+    Implementation details may evolve as the platform scales. All AI-generated content is subject to human review and approval
+    before customer-facing delivery. Environment-specific configurations (API keys, secrets, credentials) are managed
+    exclusively through Render environment variables and are not included in this document.
+  </p>
+  <p style="margin-top: 0.75rem; font-size: 0.8rem; color: #d1d5db;">&copy; 2026 Paycile Automation &mdash; Confidential</p>
+</div>
+
+</div><!-- /.container -->
+</body>
+</html>
