@@ -994,6 +994,7 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
     let smsSent = 0;
     let emailSent = 0;
     let vmQueued = 0;
+    const senderUser = (campaign as any)?.senderUser;
     const campaignCtx = {
       name: campaign?.name,
       owner_name: campaign?.ownerName,
@@ -1009,7 +1010,9 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       hotel_name: campaign?.hotelName,
       hotel_address: campaign?.hotelAddress,
       calendly_link: campaign?.calendlyLink,
-      sender_email: undefined,
+      sender_name: senderUser?.name || campaign?.ownerName || '',
+      sender_email: senderUser?.microsoftEmail || senderUser?.email || campaign?.ownerEmail || '',
+      sender_phone: senderUser?.phone || campaign?.ownerPhone || '',
     } as any;
 
     if (firstSms) {

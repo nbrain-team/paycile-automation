@@ -1,7 +1,7 @@
 // Email Queue Service with Throttling (1-2.5 minute random delays)
 import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
-import { sendGraphEmail, isGraphConfigured } from './graphEmailProvider';
+import { sendGraphEmail, sendGraphEmailAsUser, isGraphConfigured, refreshUserMicrosoftToken } from './graphEmailProvider';
 
 const prisma = new PrismaClient();
 
@@ -80,7 +80,9 @@ export async function queueEmail(params: {
 }
 
 /**
- * Queue multiple emails with staggered delays
+ * Queue multiple emails with staggered delays.
+ * Prevents duplicates: skips contacts that already have a pending/processing/sent
+ * entry for the same campaign, and deduplicates the input array.
  */
 export async function queueBulkEmails(emails: Array<{
   campaignId: string;
@@ -90,12 +92,38 @@ export async function queueBulkEmails(emails: Array<{
   body: string;
   userId?: string;
 }>) {
+  if (emails.length === 0) return [];
+
+  // Deduplicate input by contactId (keep first occurrence)
+  const seen = new Set<string>();
+  const unique = emails.filter(e => {
+    if (seen.has(e.contactId)) return false;
+    seen.add(e.contactId);
+    return true;
+  });
+
+  // Check for existing queue entries that are already pending/processing/sent
+  const campaignId = unique[0].campaignId;
+  const existingEntries = await prisma.emailQueue.findMany({
+    where: {
+      campaignId,
+      contactId: { in: unique.map(e => e.contactId) },
+      status: { in: ['pending', 'processing', 'sent'] },
+    },
+    select: { contactId: true },
+  });
+  const alreadyQueued = new Set(existingEntries.map(e => e.contactId));
+
+  const toQueue = unique.filter(e => !alreadyQueued.has(e.contactId));
+  if (toQueue.length < unique.length) {
+    console.log(`[EmailQueue] Skipped ${unique.length - toQueue.length} duplicate(s)`);
+  }
+
   const now = new Date();
   const queued = [];
   
-  for (let i = 0; i < emails.length; i++) {
-    const email = emails[i];
-    // Stagger each email by 1-2.5 minutes from the previous one
+  for (let i = 0; i < toQueue.length; i++) {
+    const email = toQueue[i];
     const delayMs = i * (60000 + Math.random() * 90000);
     const scheduledFor = new Date(now.getTime() + delayMs);
     
@@ -180,7 +208,13 @@ async function processQueue() {
           </div>
         `;
         
+        // Convert plain-text body to HTML before appending footer
         let emailBodyWithFooter = email.body;
+        if (!/<[a-z][\s\S]*>/i.test(emailBodyWithFooter)) {
+          emailBodyWithFooter = emailBodyWithFooter
+            .split('\n\n').map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+        }
+
         if (emailBodyWithFooter.includes('</body>')) {
           emailBodyWithFooter = emailBodyWithFooter.replace('</body>', `${footer}</body>`);
         } else if (emailBodyWithFooter.includes('</html>')) {
@@ -188,17 +222,61 @@ async function processQueue() {
         } else {
           emailBodyWithFooter = emailBodyWithFooter + footer;
         }
-        
+
         let messageId: string | undefined;
         let provider = 'unknown';
-        
-        // Try Microsoft Graph API first
-        if (isGraphConfigured()) {
+
+        // Load sender user if specified on the queue item
+        let senderUser: any = null;
+        if (email.userId) {
+          senderUser = await prisma.user.findUnique({ where: { id: email.userId } });
+        }
+
+        // Try sending via the sender user's delegated Microsoft token first
+        if (senderUser?.microsoftRefreshToken) {
+          try {
+            let accessToken = senderUser.microsoftAccessToken;
+            const expiry = senderUser.microsoftTokenExpiry ? new Date(senderUser.microsoftTokenExpiry).getTime() : 0;
+
+            if (!accessToken || Date.now() > expiry - 300000) {
+              const refreshed = await refreshUserMicrosoftToken(senderUser.microsoftRefreshToken);
+              if (refreshed) {
+                accessToken = refreshed.access_token;
+                await prisma.user.update({
+                  where: { id: senderUser.id },
+                  data: {
+                    microsoftAccessToken: refreshed.access_token,
+                    ...(refreshed.refresh_token ? { microsoftRefreshToken: refreshed.refresh_token } : {}),
+                    microsoftTokenExpiry: new Date(Date.now() + refreshed.expires_in * 1000),
+                  },
+                });
+              }
+            }
+
+            if (accessToken) {
+              const result = await sendGraphEmailAsUser(accessToken, {
+                to: email.to,
+                subject: email.subject,
+                body: emailBodyWithFooter,
+              });
+              if (result.sent) {
+                messageId = result.messageId;
+                provider = 'graph';
+              }
+            }
+          } catch (e: any) {
+            console.warn(`[EmailQueue] Delegated send failed for ${senderUser.email}, falling back:`, e.message);
+          }
+        }
+
+        // Fallback: app-level Graph API using sender's Microsoft email (or env default)
+        if (!messageId && isGraphConfigured()) {
+          const fromAddr = senderUser?.microsoftEmail || senderUser?.email || process.env.EMAIL_FROM;
           const result = await sendGraphEmail({
             to: email.to,
             subject: email.subject,
             body: emailBodyWithFooter,
-            from: process.env.EMAIL_FROM,
+            from: fromAddr,
           });
           
           if (result.sent) {
@@ -265,8 +343,11 @@ async function processQueue() {
             auth: { user: smtpUser, pass: smtpPass },
           });
           
+          const fromDisplay = senderUser?.name
+            ? `"${senderUser.name}" <${fromEmail}>`
+            : fromEmail;
           const info = await transporter.sendMail({
-            from: fromEmail,
+            from: fromDisplay,
             to: email.to,
             subject: email.subject,
             html: emailBodyWithFooter,
