@@ -1211,9 +1211,9 @@ function FunnelTab({ campaignId, campaignName, totalContacts }: FunnelTabProps) 
                         </div>
                       )}
 
-                      {(node.type === 'linkedin_message' || node.type === 'linkedin_post') && (config.content?.text || config.text) && (
+                      {(node.type === 'linkedin_connect' || node.type === 'linkedin_message' || node.type === 'linkedin_post') && (config.content?.text || config.text) && (
                         <div className="mt-2 text-sm">
-                          <span className="font-medium">{node.type === 'linkedin_message' ? 'Message:' : 'Post:'}</span> {config.content?.text || config.text}
+                          <span className="font-medium">{node.type === 'linkedin_connect' ? 'Note:' : node.type === 'linkedin_message' ? 'Message:' : 'Post:'}</span> {config.content?.text || config.text}
                         </div>
                       )}
                     </div>

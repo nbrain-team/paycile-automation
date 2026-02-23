@@ -230,7 +230,7 @@ INDUSTRY:
 ${request.industry || 'Financial Services / Payment Processing'}
 
 COMMUNICATION CHANNELS AVAILABLE:
-${request.availableNodeTypes.filter(t => ['email_send', 'sms_send', 'voicemail_drop', 'linkedin_message', 'linkedin_post'].includes(t)).join(', ')}
+${request.availableNodeTypes.filter(t => ['email_send', 'sms_send', 'voicemail_drop', 'linkedin_connect', 'linkedin_message', 'linkedin_post'].includes(t)).join(', ')}
 
 WORKFLOW NODES YOU CONTROL:
 - wait: Strategic delays (REQUIRED between major touches - use intelligently!)
@@ -242,6 +242,7 @@ NODE TYPE SPECIFICATIONS:
 - email_send: Send email (requires subject and body with personalization)
 - sms_send: Send SMS text (requires text, max 160 chars, urgent/timely only)
 - voicemail_drop: Direct-to-voicemail (requires ttsScript, 30-45 seconds)
+- linkedin_connect: LinkedIn connection request (requires text, max 300 chars, brief personalized note)
 - linkedin_message: LinkedIn DM (requires text, professional tone)
 - linkedin_post: LinkedIn post (requires text, thought leadership content)
 - wait: Delay (requires waitDuration: number and waitUnit: 'hours' | 'days')
@@ -395,6 +396,7 @@ CRITICAL CONFIG FORMAT RULES:
 - email_send nodes: config.content.subject and config.content.body (MUST be nested inside "content")
 - sms_send nodes: config.content.text (MUST be nested inside "content")
 - voicemail_drop nodes: config.tts.custom_script (MUST be nested inside "tts")
+- linkedin_connect nodes: config.content.text (MUST be nested inside "content" - write the FULL connection note, max 300 chars)
 - linkedin_message nodes: config.content.text (MUST be nested inside "content" - write the FULL message text)
 - linkedin_post nodes: config.content.text (MUST be nested inside "content" - write the FULL post text)
 - wait nodes: config.waitDuration and config.waitUnit

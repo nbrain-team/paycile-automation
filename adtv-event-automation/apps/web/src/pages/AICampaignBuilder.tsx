@@ -7,6 +7,7 @@ const AVAILABLE_CHANNELS = [
   { value: 'email_send', label: 'Email', description: 'Send email to contacts', icon: '📧' },
   { value: 'sms_send', label: 'SMS', description: 'Send text message', icon: '💬' },
   { value: 'voicemail_drop', label: 'Voicemail', description: 'Direct-to-voicemail drop', icon: '🎙️' },
+  { value: 'linkedin_connect', label: 'LinkedIn Connect', description: 'Send connection request with note', icon: '🔗' },
   { value: 'linkedin_message', label: 'LinkedIn Message', description: 'Send LinkedIn direct message', icon: '💼' },
   { value: 'linkedin_post', label: 'LinkedIn Post', description: 'Post to LinkedIn feed', icon: '📱' },
 ];

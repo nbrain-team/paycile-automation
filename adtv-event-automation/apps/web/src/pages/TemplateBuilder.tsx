@@ -716,7 +716,7 @@ function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: Inspec
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
 
-      {(node.type === 'email_send' || node.type === 'sms_send' || node.type === 'voicemail_drop' || node.type === 'linkedin_message' || node.type === 'linkedin_post') && (
+      {(node.type === 'email_send' || node.type === 'sms_send' || node.type === 'voicemail_drop' || node.type === 'linkedin_connect' || node.type === 'linkedin_message' || node.type === 'linkedin_post') && (
         <div className="space-y-2">
           {(node.type === 'email_send' || node.type === 'sms_send' || node.type === 'voicemail_drop') && (
           <div>
@@ -767,10 +767,11 @@ function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: Inspec
                   <textarea className="input h-28" value={vmScript} onChange={(e)=> setVmScript(e.target.value)} />
                 </div>
               )}
-              {(node.type === 'linkedin_message' || node.type === 'linkedin_post') && (
+              {(node.type === 'linkedin_connect' || node.type === 'linkedin_message' || node.type === 'linkedin_post') && (
                 <div>
-                  <label className="label">{node.type === 'linkedin_message' ? 'LinkedIn Message' : 'LinkedIn Post'}</label>
-                  <textarea className="input h-28" value={smsText} onChange={(e)=> setSmsText(e.target.value)} placeholder={node.type === 'linkedin_message' ? 'Write your LinkedIn DM here...' : 'Write your LinkedIn post here...'} />
+                  <label className="label">{node.type === 'linkedin_connect' ? 'Connection Note' : node.type === 'linkedin_message' ? 'LinkedIn Message' : 'LinkedIn Post'}</label>
+                  <textarea className="input h-28" value={smsText} onChange={(e)=> setSmsText(e.target.value)} placeholder={node.type === 'linkedin_connect' ? 'Write your connection request note here (max 300 chars)...' : node.type === 'linkedin_message' ? 'Write your LinkedIn DM here...' : 'Write your LinkedIn post here...'} maxLength={node.type === 'linkedin_connect' ? 300 : undefined} />
+                  {node.type === 'linkedin_connect' && <div className="text-xs text-gray-500 mt-1">{(smsText || '').length}/300 characters</div>}
                 </div>
               )}
               <div className="flex items-center gap-2 flex-wrap">
@@ -779,7 +780,7 @@ function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: Inspec
                     if (node.type==='email_send') append(setEmailBody, emailBody, t);
                     if (node.type==='sms_send') append(setSmsText, smsText, t);
                     if (node.type==='voicemail_drop') append(setVmScript, vmScript, t);
-                    if (node.type==='linkedin_message' || node.type==='linkedin_post') append(setSmsText, smsText, t);
+                    if (node.type==='linkedin_connect' || node.type==='linkedin_message' || node.type==='linkedin_post') append(setSmsText, smsText, t);
                   }}>{t}</button>
                 ))}
               </div>
@@ -859,7 +860,7 @@ function Inspector({ node, edgesOut, onChange, onChangeEdges, onDelete }: Inspec
                 }
               };
             }
-            if (node.type === 'linkedin_message' || node.type === 'linkedin_post') {
+            if (node.type === 'linkedin_connect' || node.type === 'linkedin_message' || node.type === 'linkedin_post') {
               updated.config = { ...(node.config||{}), content: { text: smsText } };
             }
             if (node.type === 'decision') {
