@@ -62,7 +62,7 @@ function addUnsubscribeLink(emailBody: string, contactId: string, companyAddress
   const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
   const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${contactId}`;
   
-  const address = companyAddress || '123 Main Street, Suite 100, City, ST 12345';
+  const address = companyAddress || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
   
   const footer = `
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
@@ -3745,13 +3745,14 @@ app.get('/api/sender-emails', async (_req, res) => {
 
     // Build a lookup from email -> userId so every entry can carry its user ID
     const allUsers = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, smtpUser: true, microsoftEmail: true },
+      select: { id: true, name: true, email: true, smtpUser: true, microsoftEmail: true, googleEmail: true },
     });
     const emailToUser = new Map<string, { id: string; name: string }>();
     for (const u of allUsers) {
       if (u.email) emailToUser.set(u.email.toLowerCase(), { id: u.id, name: u.name });
       if (u.smtpUser) emailToUser.set(u.smtpUser.toLowerCase(), { id: u.id, name: u.name });
       if (u.microsoftEmail) emailToUser.set(u.microsoftEmail.toLowerCase(), { id: u.id, name: u.name });
+      if (u.googleEmail) emailToUser.set(u.googleEmail.toLowerCase(), { id: u.id, name: u.name });
     }
 
     // 1. Primary SMTP from environment variables
@@ -3800,6 +3801,14 @@ app.get('/api/sender-emails', async (_req, res) => {
       if (u.microsoftEmail && !seen.has(u.microsoftEmail.toLowerCase())) {
         seen.add(u.microsoftEmail.toLowerCase());
         emails.push({ email: u.microsoftEmail, name: u.name || u.microsoftEmail, source: 'microsoft', userId: u.id });
+      }
+    }
+
+    // 5. Users with Google/Gmail connected (via OAuth)
+    for (const u of allUsers) {
+      if (u.googleEmail && !seen.has(u.googleEmail.toLowerCase())) {
+        seen.add(u.googleEmail.toLowerCase());
+        emails.push({ email: u.googleEmail, name: u.name || u.googleEmail, source: 'google', userId: u.id });
       }
     }
 

@@ -197,7 +197,7 @@ async function processQueue() {
         // Add unsubscribe link to email body
         const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
         const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${email.contactId}`;
-        const companyAddress = process.env.COMPANY_ADDRESS || '123 Main Street, Suite 100, City, ST 12345';
+        const companyAddress = process.env.COMPANY_ADDRESS || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
         
         const footer = `
           <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
