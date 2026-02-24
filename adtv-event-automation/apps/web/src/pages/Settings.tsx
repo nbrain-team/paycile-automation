@@ -217,32 +217,6 @@ export function Settings() {
         </div>
       </div>
 
-      {/* Profile / Calendar Link */}
-      {me && (
-        <div className="card">
-          <h2 className="text-lg font-semibold mb-3">Your Profile</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Calendar / Booking Link</label>
-              <input
-                className="input"
-                value={calendlyLink}
-                onChange={(e) => setCalendlyLink(e.target.value)}
-                placeholder="https://calendly.com/your-name"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Used in campaign email CTAs when you are selected as the sender. Supports Calendly, Cal.com, or any booking URL.
-              </p>
-            </div>
-            <div className="flex items-end">
-              <button className="btn-primary btn-sm" onClick={saveCalendarLink} disabled={calendarSaving}>
-                {calendarSaving ? 'Saving...' : 'Save Calendar Link'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* SMTP Configuration Section */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
@@ -372,7 +346,22 @@ export function Settings() {
 
         <div className="card">
           <h2 className="text-lg font-semibold">Integrations</h2>
-          <div className="mt-3 space-y-3">
+          <div className="mt-3 space-y-4">
+            <div>
+              <label className="label">Calendar / Booking Link</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="input flex-1"
+                  value={calendlyLink}
+                  onChange={(e) => setCalendlyLink(e.target.value)}
+                  placeholder="https://calendly.com/your-name"
+                />
+                <button className="btn-primary btn-sm whitespace-nowrap" onClick={saveCalendarLink} disabled={calendarSaving}>
+                  {calendarSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Used in campaign email CTAs when you are selected as the sender. Supports Calendly, Cal.com, or any booking URL.</p>
+            </div>
             <div>
               <label className="label">Microsoft Email (Outlook / 365)</label>
               <div className="flex items-center gap-2">
