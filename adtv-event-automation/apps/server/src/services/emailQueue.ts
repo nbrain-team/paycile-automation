@@ -211,6 +211,8 @@ async function processQueue() {
         // Convert plain-text body to HTML before appending footer
         let emailBodyWithFooter = email.body;
         if (!/<[a-z][\s\S]*>/i.test(emailBodyWithFooter)) {
+          // Normalize literal \n sequences (from AI/JSON) to real newlines
+          emailBodyWithFooter = emailBodyWithFooter.replace(/\\n/g, '\n');
           emailBodyWithFooter = emailBodyWithFooter
             .split('\n\n').map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
         }
