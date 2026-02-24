@@ -15,7 +15,7 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
   const [demoPageLink, setDemoPageLink] = useState('');
   const [templates, setTemplates] = useState<any[]>([]);
   const [templateId, setTemplateId] = useState('');
-  const [senderEmails, setSenderEmails] = useState<Array<{ email: string; name: string; source: string }>>([]);
+  const [senderEmails, setSenderEmails] = useState<Array<{ email: string; name: string; source: string; userId?: string }>>([]);
 
   // Load templates and sender emails when modal opens
   useEffect(() => {
@@ -74,6 +74,7 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
         launchDate: launchDate,
         calendlyLink: calendlyLink || undefined,
         templateId: templateId || undefined,
+        senderUserId: senderData?.userId || undefined,
         status: 'draft',
       });
 
@@ -148,7 +149,9 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
               <select className="input" value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)}>
                 <option value="">Select sender email</option>
                 {senderEmails.map((s) => (
-                  <option key={s.email} value={s.email}>{s.email}</option>
+                  <option key={s.email} value={s.email}>
+                    {s.name && s.name !== s.email ? `${s.name} (${s.email})` : s.email}
+                  </option>
                 ))}
               </select>
               {senderEmails.length === 0 && (

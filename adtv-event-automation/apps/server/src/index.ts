@@ -3740,22 +3740,33 @@ app.post('/api/admin/run-migration', async (req, res) => {
 
 app.get('/api/sender-emails', async (_req, res) => {
   try {
-    const emails: Array<{ email: string; name: string; source: string }> = [];
+    const emails: Array<{ email: string; name: string; source: string; userId?: string }> = [];
     const seen = new Set<string>();
+
+    // Build a lookup from email -> userId so every entry can carry its user ID
+    const allUsers = await prisma.user.findMany({
+      select: { id: true, name: true, email: true, smtpUser: true, microsoftEmail: true },
+    });
+    const emailToUser = new Map<string, { id: string; name: string }>();
+    for (const u of allUsers) {
+      if (u.email) emailToUser.set(u.email.toLowerCase(), { id: u.id, name: u.name });
+      if (u.smtpUser) emailToUser.set(u.smtpUser.toLowerCase(), { id: u.id, name: u.name });
+      if (u.microsoftEmail) emailToUser.set(u.microsoftEmail.toLowerCase(), { id: u.id, name: u.name });
+    }
 
     // 1. Primary SMTP from environment variables
     const envSmtpUser = process.env.SMTP_USER;
     const envSmtpFrom = process.env.SMTP_FROM;
-    console.log('[sender-emails] SMTP_USER env:', envSmtpUser || '(not set)');
-    console.log('[sender-emails] SMTP_FROM env:', envSmtpFrom || '(not set)');
 
     if (envSmtpUser) {
       seen.add(envSmtpUser.toLowerCase());
-      emails.push({ email: envSmtpUser, name: envSmtpUser, source: 'env' });
+      const match = emailToUser.get(envSmtpUser.toLowerCase());
+      emails.push({ email: envSmtpUser, name: match?.name || envSmtpUser, source: 'env', userId: match?.id });
     }
     if (envSmtpFrom && !seen.has(envSmtpFrom.toLowerCase())) {
       seen.add(envSmtpFrom.toLowerCase());
-      emails.push({ email: envSmtpFrom, name: envSmtpFrom, source: 'env' });
+      const match = emailToUser.get(envSmtpFrom.toLowerCase());
+      emails.push({ email: envSmtpFrom, name: match?.name || envSmtpFrom, source: 'env', userId: match?.id });
     }
 
     // 2. SmtpConfig entries (rotation/additional sender addresses)
@@ -3764,53 +3775,35 @@ app.get('/api/sender-emails', async (_req, res) => {
         where: { isActive: true },
         orderBy: { createdAt: 'desc' },
       });
-      console.log('[sender-emails] SmtpConfig count:', configs.length);
       for (const c of configs) {
         if (c.email && !seen.has(c.email.toLowerCase())) {
           seen.add(c.email.toLowerCase());
-          emails.push({ email: c.email, name: c.email, source: 'smtp' });
+          const match = emailToUser.get(c.email.toLowerCase());
+          emails.push({ email: c.email, name: match?.name || c.email, source: 'smtp', userId: match?.id });
         }
       }
     } catch (err: any) {
       console.warn('[sender-emails] SmtpConfig query failed:', err?.message);
     }
 
-    // 3. Users with SMTP configured OR any users with email
-    try {
-      const users = await prisma.user.findMany({
-        select: { id: true, name: true, email: true, smtpUser: true },
-      });
-      console.log('[sender-emails] Users count:', users.length);
-      for (const u of users) {
-        // Prefer smtpUser, fall back to user email
-        const addr = u.smtpUser || u.email;
-        if (addr && !seen.has(addr.toLowerCase())) {
-          seen.add(addr.toLowerCase());
-          emails.push({ email: addr, name: u.name || addr, source: 'user' });
-        }
+    // 3. Users with email
+    for (const u of allUsers) {
+      const addr = u.smtpUser || u.email;
+      if (addr && !seen.has(addr.toLowerCase())) {
+        seen.add(addr.toLowerCase());
+        emails.push({ email: addr, name: u.name || addr, source: 'user', userId: u.id });
       }
-    } catch (err: any) {
-      console.warn('[sender-emails] User query failed:', err?.message);
     }
 
     // 4. Users with Microsoft email connected (via OAuth)
-    try {
-      const msUsers = await prisma.user.findMany({
-        where: { microsoftEmail: { not: null } },
-        select: { name: true, microsoftEmail: true },
-      });
-      console.log('[sender-emails] Microsoft-connected users:', msUsers.length);
-      for (const u of msUsers) {
-        if (u.microsoftEmail && !seen.has(u.microsoftEmail.toLowerCase())) {
-          seen.add(u.microsoftEmail.toLowerCase());
-          emails.push({ email: u.microsoftEmail, name: `${u.name || ''} (Microsoft)`.trim(), source: 'microsoft' });
-        }
+    for (const u of allUsers) {
+      if (u.microsoftEmail && !seen.has(u.microsoftEmail.toLowerCase())) {
+        seen.add(u.microsoftEmail.toLowerCase());
+        emails.push({ email: u.microsoftEmail, name: u.name || u.microsoftEmail, source: 'microsoft', userId: u.id });
       }
-    } catch (err: any) {
-      console.warn('[sender-emails] Microsoft user query failed:', err?.message);
     }
 
-    console.log('[sender-emails] Returning', emails.length, 'sender emails:', emails.map(e => e.email));
+    console.log('[sender-emails] Returning', emails.length, 'sender emails');
     res.json(emails);
   } catch (e: any) {
     console.error('[sender-emails] Endpoint error:', e);
