@@ -34,6 +34,7 @@ export interface CampaignBuilderRequest {
   industry?: string; // real estate, insurance, property management, etc.
   targetPersona?: string; // cfo, controller, arap, property_finance, treasury, accountant, small_biz, auditor
   landingPageUrl?: string; // URL to include in CTAs if provided
+  calendarLink?: string; // Sender's calendar/booking link (e.g., Calendly URL)
 }
 
 export interface GeneratedCampaignNode {
@@ -166,14 +167,19 @@ FIT-TEST QUESTIONS (weave into messaging naturally):
   // Build persona-specific guidance
   const personaGuidance = request.targetPersona ? getPersonaGuidance(request.targetPersona) : '';
   
-  // Build landing page CTA guidance
+  // Build landing page / calendar CTA guidance
+  const calendarGuidance = request.calendarLink
+    ? `\n\nCALENDAR BOOKING LINK:
+The sender has a booking link: ${request.calendarLink}
+Use this REAL URL in all scheduling CTAs. Examples:
+- "Book a time on our calendar: ${request.calendarLink}"
+- "[Schedule a 30-minute demo](${request.calendarLink})"
+NEVER use "#" or placeholder URLs when this link is available.`
+    : '';
   const landingPageGuidance = request.landingPageUrl 
     ? `\n\nLANDING PAGE CTA:
 This campaign has a dedicated landing page at: ${request.landingPageUrl}
-Include this URL in email CTAs and SMS messages as appropriate. Example CTAs:
-- "Learn more: ${request.landingPageUrl}"
-- "Schedule your demo: ${request.landingPageUrl}"
-- "See how we can help: ${request.landingPageUrl}"`
+Include this URL in email CTAs and SMS messages as appropriate.`
     : '';
 
   const systemPrompt = `You are an expert B2B outbound strategist creating multi-channel campaigns for Paycile — compliance-grade reconciliation infrastructure for insurance and property management.
@@ -184,7 +190,7 @@ YOUR ABSOLUTE RULES:
 3. NEVER use feature soup. Frame everything as outcomes the buyer already budgets for.
 4. Use the Phrase Bank. Avoid the Avoid List. No exceptions.
 5. Paycile is early-stage — frame proof as workflow truth and measurable deltas, not logo claims.
-${paycileCoreDNA}${toneReference}${paycileContext}${personaGuidance}${landingPageGuidance}
+${paycileCoreDNA}${toneReference}${paycileContext}${personaGuidance}${calendarGuidance}${landingPageGuidance}
 
 WORKFLOW DESIGN PRINCIPLES:
 You design intelligent multi-step workflows. The user selects channels (email, SMS, voicemail, LinkedIn), and YOU add:
@@ -296,8 +302,9 @@ The first email in any campaign MUST be comprehensive and value-rich. Follow thi
    Example: "I'd like to show you how in a quick 30-minute executive demo."
 
 6. DUAL CTA: Provide two ways to respond
-   - Primary: Link to landing page/calendar
+   - Primary: Link to calendar booking page (use the CALENDAR BOOKING LINK if provided, or landing page URL, or {{campaign.calendly_link}} merge tag)
    - Secondary: "Or reply to this email and I'll send you times that work."
+   - NEVER use "#" as a placeholder URL. Always use a real link or merge tag.
 
 7. PROFESSIONAL SIGNATURE: Use {{sender.signature}} merge tag
 

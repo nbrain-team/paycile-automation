@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getApiUrl } from '@lib/api';
+import { getApiUrl, apiAuth } from '@lib/api';
 import { useStore } from '@store/useStore';
 
 const AVAILABLE_CHANNELS = [
@@ -123,6 +123,12 @@ export function AICampaignBuilder() {
   const [targetPersona, setTargetPersona] = useState('cfo');
   const [landingPageTemplate, setLandingPageTemplate] = useState('none');
   
+  // Fetch logged-in user's calendar link
+  const [userCalendarLink, setUserCalendarLink] = useState('');
+  useEffect(() => {
+    apiAuth.me().then((u: any) => { if (u?.calendlyLink) setUserCalendarLink(u.calendlyLink); }).catch(() => {});
+  }, []);
+
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCampaign, setGeneratedCampaign] = useState<GeneratedCampaign | null>(null);
@@ -170,7 +176,8 @@ export function AICampaignBuilder() {
           landingPageUrl: landingPageTemplate !== 'none' 
             ? LANDING_PAGE_TEMPLATES.find(t => t.value === landingPageTemplate)?.url 
             : undefined,
-          includeExistingTemplates: true, // Match tone from existing templates
+          calendarLink: userCalendarLink || undefined,
+          includeExistingTemplates: true,
         }),
       });
 

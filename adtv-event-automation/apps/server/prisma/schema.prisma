@@ -162,6 +162,7 @@ model User {
   phone      String?
   smsFromNumber String?
   vmCallerId String?
+  calendlyLink String?
   smtpHost   String?
   smtpPort   Int?
   smtpUser   String?

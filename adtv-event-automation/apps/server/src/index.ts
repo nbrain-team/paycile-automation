@@ -1009,7 +1009,7 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       event_link: campaign?.eventLink,
       hotel_name: campaign?.hotelName,
       hotel_address: campaign?.hotelAddress,
-      calendly_link: campaign?.calendlyLink,
+      calendly_link: senderUser?.calendlyLink || campaign?.calendlyLink || '',
       sender_name: senderUser?.name || campaign?.ownerName || '',
       sender_email: senderUser?.microsoftEmail || senderUser?.email || campaign?.ownerEmail || '',
       sender_phone: senderUser?.phone || campaign?.ownerPhone || '',
@@ -1871,6 +1871,7 @@ app.patch('/api/users/:id', async (req: any, res) => {
       role: z.enum(['bdr', 'admin']).optional(),
       phone: z.string().optional(),
       password: z.string().optional(),
+      calendlyLink: z.string().optional(),
     }).parse(req.body);
 
     const updateData: any = {};
@@ -1878,12 +1879,13 @@ app.patch('/api/users/:id', async (req: any, res) => {
     if (body.email !== undefined) updateData.email = body.email;
     if (body.role !== undefined) updateData.role = body.role;
     if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.calendlyLink !== undefined) updateData.calendlyLink = body.calendlyLink || null;
     if (body.password) updateData.passwordHash = await bcrypt.hash(body.password, 10);
 
     const updated = await prisma.user.update({
       where: { id: req.params.id },
       data: updateData,
-      select: { id: true, name: true, email: true, role: true, phone: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, phone: true, calendlyLink: true, createdAt: true },
     });
     res.json(updated);
   } catch (e: any) {
@@ -1925,7 +1927,30 @@ app.get('/api/auth/me', async (req: any, res) => {
   if (!req.user) return res.status(401).json({ error: 'unauthorized' });
   const user = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (!user) return res.status(404).json({ error: 'not found' });
-  res.json({ id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone, smsFromNumber: user.smsFromNumber, vmCallerId: user.vmCallerId, googleEmail: user.googleEmail, microsoftEmail: user.microsoftEmail, linkedinProfileUrl: user.linkedinProfileUrl });
+  res.json({ id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone, smsFromNumber: user.smsFromNumber, vmCallerId: user.vmCallerId, calendlyLink: user.calendlyLink, googleEmail: user.googleEmail, microsoftEmail: user.microsoftEmail, linkedinProfileUrl: user.linkedinProfileUrl });
+});
+
+// Self-update profile (any logged-in user can update their own profile)
+app.patch('/api/auth/me', async (req: any, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'unauthorized' });
+    const body = z.object({
+      calendlyLink: z.string().optional(),
+      phone: z.string().optional(),
+    }).parse(req.body);
+
+    const updateData: any = {};
+    if (body.calendlyLink !== undefined) updateData.calendlyLink = body.calendlyLink || null;
+    if (body.phone !== undefined) updateData.phone = body.phone || null;
+
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+    });
+    res.json({ ok: true, calendlyLink: updated.calendlyLink, phone: updated.phone });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'update error' });
+  }
 });
 
 // BDR CSV import
@@ -2534,6 +2559,7 @@ app.post('/api/ai/campaign/generate', async (req, res) => {
       tone,
       industry,
       includeExistingTemplates,
+      calendarLink,
     } = req.body;
 
     // Validate inputs
@@ -2580,6 +2606,7 @@ app.post('/api/ai/campaign/generate', async (req, res) => {
       campaignGoal,
       tone,
       industry,
+      calendarLink,
     }, existingTemplates);
 
     console.log('✅ AI Campaign Generated:', campaign.name);

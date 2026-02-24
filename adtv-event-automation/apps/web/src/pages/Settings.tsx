@@ -3,6 +3,8 @@ import { apiAuth, apiGoogle, apiMicrosoft, apiLinkedIn, getApiUrl } from '../lib
 
 export function Settings() {
   const [me, setMe] = useState<any>(null);
+  const [calendlyLink, setCalendlyLink] = useState('');
+  const [calendarSaving, setCalendarSaving] = useState(false);
   const [smtpConfigs, setSmtpConfigs] = useState<any[]>([]);
   const [showSmtpForm, setShowSmtpForm] = useState(false);
   const [smtpForm, setSmtpForm] = useState({
@@ -15,7 +17,10 @@ export function Settings() {
   });
   
   useEffect(() => {
-    apiAuth.me().then(setMe).catch(() => setMe(null));
+    apiAuth.me().then((u) => {
+      setMe(u);
+      if (u?.calendlyLink) setCalendlyLink(u.calendlyLink);
+    }).catch(() => setMe(null));
     loadSmtpConfigs();
   }, []);
   
@@ -185,6 +190,22 @@ export function Settings() {
       alert('Sync failed');
     }
   };
+  const saveCalendarLink = async () => {
+    setCalendarSaving(true);
+    try {
+      await fetch(`${getApiUrl()}/api/auth/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` },
+        body: JSON.stringify({ calendlyLink: calendlyLink.trim() }),
+      });
+      setMe((prev: any) => ({ ...prev, calendlyLink: calendlyLink.trim() }));
+      alert('Calendar link saved!');
+    } catch {
+      alert('Failed to save calendar link');
+    } finally {
+      setCalendarSaving(false);
+    }
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -195,6 +216,32 @@ export function Settings() {
           {me && <span className="text-sm text-gray-700">Logged in as {me.email}</span>}
         </div>
       </div>
+
+      {/* Profile / Calendar Link */}
+      {me && (
+        <div className="card">
+          <h2 className="text-lg font-semibold mb-3">Your Profile</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Calendar / Booking Link</label>
+              <input
+                className="input"
+                value={calendlyLink}
+                onChange={(e) => setCalendlyLink(e.target.value)}
+                placeholder="https://calendly.com/your-name"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Used in campaign email CTAs when you are selected as the sender. Supports Calendly, Cal.com, or any booking URL.
+              </p>
+            </div>
+            <div className="flex items-end">
+              <button className="btn-primary btn-sm" onClick={saveCalendarLink} disabled={calendarSaving}>
+                {calendarSaving ? 'Saving...' : 'Save Calendar Link'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SMTP Configuration Section */}
       <div className="card">
