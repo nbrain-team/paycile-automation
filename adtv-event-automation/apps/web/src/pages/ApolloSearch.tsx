@@ -68,6 +68,7 @@ export function ApolloSearch() {
   const [selectedCampaignId, setSelectedCampaignId] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [syncToHubSpot, setSyncToHubSpot] = useState(true);
 
   // Fetch campaigns on mount
   useEffect(() => {
@@ -304,7 +305,7 @@ export function ApolloSearch() {
         return;
       }
 
-      const result = await apiCampaigns.contactsBulk(selectedCampaignId, contacts);
+      const result = await apiCampaigns.contactsBulk(selectedCampaignId, contacts, syncToHubSpot);
       const importedCount = result?.count || contacts.length;
       const campaignName = campaigns.find((c) => c.id === selectedCampaignId)?.name || 'campaign';
 
@@ -313,6 +314,15 @@ export function ApolloSearch() {
         description: `${importedCount} contact${importedCount !== 1 ? 's' : ''} imported to "${campaignName}"`,
         variant: 'success',
       });
+
+      if (syncToHubSpot && result.hubspot) {
+        const hs = result.hubspot;
+        if (hs.failed > 0) {
+          addToast({ title: 'HubSpot sync partial', description: `${hs.created} created, ${hs.updated} updated, ${hs.failed} failed`, variant: 'warning' });
+        } else {
+          addToast({ title: 'HubSpot synced', description: `${hs.created} created, ${hs.updated} updated as non-marketing contacts`, variant: 'success' });
+        }
+      }
 
       // Clear selection and close modal
       if (tab === 'People') setSelectedPeopleIds(new Set());
@@ -845,6 +855,19 @@ export function ApolloSearch() {
                     ))}
                 </div>
               </div>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none py-1">
+                <input
+                  type="checkbox"
+                  checked={syncToHubSpot}
+                  onChange={(e) => setSyncToHubSpot(e.target.checked)}
+                  className="rounded border-gray-300 text-orange-500 focus:ring-orange-500 h-4 w-4"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Sync to HubSpot</span>
+                  <p className="text-xs text-gray-500">Contacts added as non-marketing contacts (no billing impact)</p>
+                </div>
+              </label>
             </div>
 
             <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-end gap-3">

@@ -18,6 +18,7 @@ import { sendGraphEmail, isGraphConfigured } from './services/graphEmailProvider
 import { startEmailQueueWorker, queueBulkEmails, getQueueStats } from './services/emailQueue';
 import { generateCampaign, refineContent, generateVariations } from './ai-campaign-builder';
 import { personalizeContent, PersonalizationContact } from './ai-personalizer';
+import { syncContactsToHubSpot, testHubSpotConnection } from './services/hubspotService';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -1247,7 +1248,11 @@ app.get('/api/campaigns/:id/contacts', async (req, res) => {
 });
 
 app.post('/api/campaigns/:id/contacts/bulk', async (req, res) => {
-  const body = z.object({ contacts: z.array(z.any()) }).parse(req.body);
+  const body = z.object({
+    contacts: z.array(z.any()),
+    syncToHubSpot: z.boolean().optional(),
+  }).parse(req.body);
+
   const created = await prisma.$transaction(body.contacts.map((c: any) => prisma.contact.create({ data: { campaignId: req.params.id, name: c.name, company: c.company, email: c.email, phone: c.phone, city: c.city, state: c.state, url: c.url, status: c.status||'No Activity', stageKey: c.stageId||null, rawJson: c.raw?JSON.stringify(c.raw):null } })));
   // Ensure a conversation exists for each contact (prefer sms if phone present)
   for (const ct of created) {
@@ -1257,7 +1262,46 @@ app.post('/api/campaigns/:id/contacts/bulk', async (req, res) => {
       await prisma.conversation.create({ data: { contactId: ct.id, channel } });
     }
   }
-  res.json({ count: created.length });
+
+  // HubSpot sync — non-marketing contacts (fire-and-forget to not block response)
+  let hubspotResult = null;
+  if (body.syncToHubSpot) {
+    try {
+      const campaign = await prisma.campaign.findUnique({ where: { id: req.params.id }, select: { name: true } });
+      hubspotResult = await syncContactsToHubSpot(body.contacts, campaign?.name || undefined);
+    } catch (err: any) {
+      console.error('[HubSpot] Sync failed during bulk import:', err.message);
+      hubspotResult = { created: 0, updated: 0, failed: body.contacts.length, errors: [{ email: '', error: err.message }], skipped: 0 };
+    }
+  }
+
+  res.json({ count: created.length, hubspot: hubspotResult });
+});
+
+// Sync existing campaign contacts to HubSpot as non-marketing contacts
+app.post('/api/campaigns/:id/contacts/hubspot-sync', async (req, res) => {
+  try {
+    const campaign = await prisma.campaign.findUnique({ where: { id: req.params.id }, select: { name: true } });
+    const contacts = await prisma.contact.findMany({ where: { campaignId: req.params.id } });
+    if (contacts.length === 0) {
+      return res.json({ created: 0, updated: 0, failed: 0, errors: [], skipped: 0, message: 'No contacts in campaign' });
+    }
+    const mapped = contacts.map((c: any) => ({
+      name: c.name, company: c.company, email: c.email, phone: c.phone,
+      city: c.city, state: c.state, url: c.url, status: c.status,
+    }));
+    const result = await syncContactsToHubSpot(mapped, campaign?.name || undefined);
+    res.json(result);
+  } catch (err: any) {
+    console.error('[HubSpot] Campaign sync failed:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Test HubSpot connection
+app.get('/api/hubspot/status', async (_req, res) => {
+  const result = await testHubSpotConnection();
+  res.json(result);
 });
 
 app.post('/api/campaigns/:id/contacts', async (req, res) => {

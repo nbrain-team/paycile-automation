@@ -544,6 +544,8 @@ function ContactsTab({ contacts }: ContactsTabProps) {
   const [showImportFromCampaign, setShowImportFromCampaign] = useState(false);
   const [sourceCampaignId, setSourceCampaignId] = useState('');
   const [availableCampaigns, setAvailableCampaigns] = useState<any[]>([]);
+  const [syncToHubSpot, setSyncToHubSpot] = useState(true);
+  const [hubSpotSyncing, setHubSpotSyncing] = useState(false);
   
   // Load all campaigns when import modal opens
   useEffect(() => {
@@ -681,7 +683,8 @@ function ContactsTab({ contacts }: ContactsTabProps) {
             status: 'No Activity',
             stageId: null,
             raw: null
-          }))
+          })),
+          syncToHubSpot,
         })
       });
       
@@ -704,6 +707,15 @@ function ContactsTab({ contacts }: ContactsTabProps) {
         description: `${sourceContacts.length} contacts copied from source campaign`, 
         variant: 'success' 
       });
+      
+      if (syncToHubSpot && result.hubspot) {
+        const hs = result.hubspot;
+        if (hs.failed > 0) {
+          addToast({ title: 'HubSpot sync partial', description: `${hs.created} created, ${hs.updated} updated, ${hs.failed} failed`, variant: 'warning' });
+        } else {
+          addToast({ title: 'HubSpot synced', description: `${hs.created} created, ${hs.updated} updated as non-marketing contacts`, variant: 'success' });
+        }
+      }
       
       setShowImportFromCampaign(false);
       setSourceCampaignId('');
@@ -770,12 +782,10 @@ function ContactsTab({ contacts }: ContactsTabProps) {
             <input type="file" accept=".csv" className="hidden" onChange={(ev)=> {
               const file = ev.target.files?.[0]; if (!file) return;
               const reader = new FileReader();
-              reader.onload = () => {
+              reader.onload = async () => {
                 const text = String(reader.result || '');
                 const parsed = Papa.parse(text, { header: true });
                 const rows = (parsed.data as any[]).filter(Boolean);
-                // We don't have campaign context here; derive from URL
-                const params = new URLSearchParams(window.location.search);
                 const cid = window.location.pathname.split('/').pop() || '';
                 const mapped = rows.map((r) => ({
                   id: Math.random().toString(36).slice(2),
@@ -791,8 +801,25 @@ function ContactsTab({ contacts }: ContactsTabProps) {
                   raw: r,
                 })).slice(0, 1000);
                 setContactsForCampaign(cid, mapped as any);
-                fetch(`${getApiUrl()}/api/campaigns/${cid}/contacts/bulk`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contacts: mapped }) }).catch(()=>{});
-                addToast({ title: 'Contacts imported', description: `${mapped.length} records`, variant: 'success' });
+                try {
+                  const res = await fetch(`${getApiUrl()}/api/campaigns/${cid}/contacts/bulk`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contacts: mapped, syncToHubSpot }),
+                  });
+                  const result = await res.json();
+                  addToast({ title: 'Contacts imported', description: `${mapped.length} records`, variant: 'success' });
+                  if (syncToHubSpot && result.hubspot) {
+                    const hs = result.hubspot;
+                    if (hs.failed > 0) {
+                      addToast({ title: 'HubSpot sync partial', description: `${hs.created} created, ${hs.updated} updated, ${hs.failed} failed (non-marketing)`, variant: 'warning' });
+                    } else {
+                      addToast({ title: 'HubSpot synced', description: `${hs.created} created, ${hs.updated} updated as non-marketing contacts`, variant: 'success' });
+                    }
+                  }
+                } catch {
+                  addToast({ title: 'Contacts imported', description: `${mapped.length} records (HubSpot sync may have failed)`, variant: 'success' });
+                }
               };
               reader.readAsText(file);
             }} />
@@ -812,6 +839,15 @@ function ContactsTab({ contacts }: ContactsTabProps) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = `contacts_${cid}.csv`; a.click(); URL.revokeObjectURL(url);
           }}>📥 Export CSV</button>
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" title="Sync imported contacts to HubSpot as non-marketing contacts">
+            <input
+              type="checkbox"
+              checked={syncToHubSpot}
+              onChange={(e) => setSyncToHubSpot(e.target.checked)}
+              className="rounded border-gray-300 text-orange-500 focus:ring-orange-500 h-3.5 w-3.5"
+            />
+            <span className="text-gray-600 whitespace-nowrap">HubSpot Sync</span>
+          </label>
           <button className="btn-outline btn-sm" onClick={openSms} disabled={selectedIds.size===0}>Create SMS</button>
           <button className="btn-outline btn-sm" onClick={openEmail} disabled={selectedIds.size===0}>Create Email</button>
           <button className="btn-outline btn-sm" onClick={bulkDelete} disabled={selectedIds.size===0}>Delete Selected</button>
@@ -949,6 +985,19 @@ function ContactsTab({ contacts }: ContactsTabProps) {
               <p className="text-xs text-gray-500 mt-1">Loading campaigns...</p>
             )}
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none py-1">
+            <input
+              type="checkbox"
+              checked={syncToHubSpot}
+              onChange={(e) => setSyncToHubSpot(e.target.checked)}
+              className="rounded border-gray-300 text-orange-500 focus:ring-orange-500 h-4 w-4"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-700">Sync to HubSpot</span>
+              <p className="text-xs text-gray-500">Contacts will be added as non-marketing contacts (no billing impact)</p>
+            </div>
+          </label>
           
           <div className="flex gap-2 justify-end">
             <button 

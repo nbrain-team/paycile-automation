@@ -62,10 +62,17 @@ export const apiCampaigns = {
   create: (payload: any) => sendJson('POST', '/api/campaigns', payload),
   patch: (id: string, payload: any) => sendJson('PATCH', `/api/campaigns/${id}`, payload),
   contacts: (id: string) => getJson(`/api/campaigns/${id}/contacts`),
-  contactsBulk: (id: string, contacts: any[]) => sendJson('POST', `/api/campaigns/${id}/contacts/bulk`, { contacts }),
+  contactsBulk: (id: string, contacts: any[], syncToHubSpot?: boolean) =>
+    sendJson('POST', `/api/campaigns/${id}/contacts/bulk`, { contacts, syncToHubSpot }),
   contactAdd: (id: string, contact: any) => sendJson('POST', `/api/campaigns/${id}/contacts`, contact),
   graph: (id: string) => getJson(`/api/campaigns/${id}/graph`),
   stats: (id: string) => getJson(`/api/campaigns/${id}/stats`),
+  hubspotSync: (id: string) => sendJson('POST', `/api/campaigns/${id}/contacts/hubspot-sync`),
+};
+
+// HubSpot
+export const apiHubSpot = {
+  status: () => getJson('/api/hubspot/status') as Promise<{ connected: boolean; portalId: string; error?: string }>,
 };
 
 export const apiContacts = {
