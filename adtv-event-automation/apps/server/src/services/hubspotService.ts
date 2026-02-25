@@ -266,16 +266,23 @@ export async function syncContactsToHubSpot(
 
   const result: BatchSyncResult = { created: 0, updated: 0, failed: 0, errors: [], skipped: 0 };
 
-  // Filter to contacts with email (HubSpot requires it)
+  // Filter to contacts with email and deduplicate by email (HubSpot requires unique emails)
+  const seenEmails = new Set<string>();
   const validContacts: HubSpotContactInput[] = [];
   for (const c of contacts) {
     if (!c.email || !c.email.includes('@')) {
       result.skipped++;
       continue;
     }
+    const email = c.email.toLowerCase().trim();
+    if (seenEmails.has(email)) {
+      result.skipped++;
+      continue;
+    }
+    seenEmails.add(email);
     const { firstName, lastName } = parseName(c.name);
     validContacts.push({
-      email: c.email.toLowerCase().trim(),
+      email,
       firstName,
       lastName,
       company: c.company,
@@ -292,20 +299,24 @@ export async function syncContactsToHubSpot(
     return result;
   }
 
-  console.log(`[HubSpot] Syncing ${validContacts.length} contacts as non-marketing (${result.skipped} skipped — no email)`);
+  console.log(`[HubSpot] Syncing ${validContacts.length} unique contacts as non-marketing (${result.skipped} skipped)`);
 
   // Step 1: Find which contacts already exist in HubSpot
   const emails = validContacts.map(c => c.email);
   const existingMap = await findExistingContacts(emails);
 
-  // Step 2: Split into create vs update
+  // Step 2: Split into create vs update, dedup update list by HubSpot ID
   const toCreate: HubSpotContactInput[] = [];
   const toUpdate: Array<{ id: string; input: HubSpotContactInput }> = [];
+  const seenHubSpotIds = new Set<string>();
 
   for (const c of validContacts) {
     const existingId = existingMap.get(c.email);
     if (existingId) {
-      toUpdate.push({ id: existingId, input: c });
+      if (!seenHubSpotIds.has(existingId)) {
+        seenHubSpotIds.add(existingId);
+        toUpdate.push({ id: existingId, input: c });
+      }
     } else {
       toCreate.push(c);
     }
