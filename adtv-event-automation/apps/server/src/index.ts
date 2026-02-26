@@ -841,8 +841,18 @@ app.delete('/api/content-templates/:id', async (req, res) => {
 
 // Campaigns
 app.get('/api/campaigns', async (_req, res) => {
-  const list = await prisma.campaign.findMany({ include: { contacts: true, template: true } });
-  res.json(list);
+  const list = await prisma.campaign.findMany({
+    include: {
+      template: true,
+      _count: { select: { contacts: true } },
+    },
+  });
+  const result = list.map((c: any) => ({
+    ...c,
+    totalContacts: c._count?.contacts ?? c.totalContacts ?? 0,
+    _count: undefined,
+  }));
+  res.json(result);
 });
 
 app.post('/api/campaigns', async (req, res) => {
