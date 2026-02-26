@@ -5,7 +5,7 @@ import { CreateLiveCampaignModal } from '@components/CreateLiveCampaignModal';
 import { apiCampaigns } from '@lib/api';
 
 export function CampaignsLive() {
-  const { liveCampaigns, addLiveCampaign, deleteLiveCampaign, replaceLiveCampaigns } = useStore();
+  const { liveCampaigns, addLiveCampaign, deleteLiveCampaign, replaceLiveCampaigns, addToast } = useStore();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'all' | 'draft' | 'enriching' | 'ready_for_personalization' | 'generating_emails' | 'ready_to_send'>('all');
@@ -155,8 +155,19 @@ export function CampaignsLive() {
               <div className="flex items-center gap-2">
                 <span className="badge-primary">{c.total_contacts} contacts</span>
                 <button
-                  className="btn-outline btn-sm"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteLiveCampaign(c.id); }}
+                  className="btn-outline btn-sm text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!window.confirm(`Permanently delete "${c.name}" and all its contacts? This cannot be undone.`)) return;
+                    try {
+                      await apiCampaigns.delete(c.id);
+                      deleteLiveCampaign(c.id);
+                      addToast({ title: 'Campaign deleted', description: `"${c.name}" has been permanently removed`, variant: 'success' });
+                    } catch (err: any) {
+                      addToast({ title: 'Delete failed', description: err?.message || 'Could not delete campaign', variant: 'error' });
+                    }
+                  }}
                 >
                   Delete
                 </button>

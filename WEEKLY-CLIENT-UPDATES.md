@@ -4,7 +4,18 @@
 
 ---
 
-## Current Week (February 10-16, 2026)
+## Current Week (February 24-28, 2026)
+
+### HubSpot Contact Sync on Campaign Import
+- **Completed**: 2026-02-25
+- **Category**: Integration
+- **Client Impact**: Contacts imported into campaigns are now automatically synced to HubSpot as non-marketing contacts, keeping your CRM up to date without increasing HubSpot billing costs.
+- **Details**: When importing contacts via CSV upload, copying from another campaign, or importing from Apollo, a "HubSpot Sync" toggle (enabled by default) pushes contacts to HubSpot using the batch CRM API. Contacts are created as non-marketing contacts to avoid marketing-seat charges. Existing contacts are updated rather than duplicated (email-based dedup). Toast notifications confirm sync results after each import. A manual sync endpoint also allows retroactive sync of existing campaign contacts.
+- **Status**: ✅ Deployed
+
+---
+
+## Previous Week (February 10-16, 2026)
 
 ### Master Intelligence Layer (MIL) - AI Content Generation Overhaul
 - **Completed**: 2026-02-11

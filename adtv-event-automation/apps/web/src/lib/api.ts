@@ -65,6 +65,7 @@ export const apiCampaigns = {
   contactsBulk: (id: string, contacts: any[], syncToHubSpot?: boolean) =>
     sendJson('POST', `/api/campaigns/${id}/contacts/bulk`, { contacts, syncToHubSpot }),
   contactAdd: (id: string, contact: any) => sendJson('POST', `/api/campaigns/${id}/contacts`, contact),
+  delete: (id: string) => sendJson('DELETE', `/api/campaigns/${id}`),
   graph: (id: string) => getJson(`/api/campaigns/${id}/graph`),
   stats: (id: string) => getJson(`/api/campaigns/${id}/stats`),
   hubspotSync: (id: string) => sendJson('POST', `/api/campaigns/${id}/contacts/hubspot-sync`),

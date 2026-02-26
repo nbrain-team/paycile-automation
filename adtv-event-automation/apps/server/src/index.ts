@@ -922,19 +922,25 @@ app.patch('/api/campaigns/:id', async (req, res) => {
 app.delete('/api/campaigns/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    
-    // Delete in order: messages → conversations → contacts → campaign nodes/edges → campaign
+
+    // Detach template versions so they aren't orphaned by FK constraint
+    await prisma.templateVersion.updateMany({ where: { campaignId: id }, data: { campaignId: null } });
+
+    // Delete in order: dependent records first, then the campaign itself
     await prisma.$transaction([
+      prisma.personalizedEmail.deleteMany({ where: { campaignId: id } }),
+      prisma.emailQueue.deleteMany({ where: { campaignId: id } }),
       prisma.message.deleteMany({ where: { convo: { contact: { campaignId: id } } } }),
       prisma.conversation.deleteMany({ where: { contact: { campaignId: id } } }),
       prisma.contact.deleteMany({ where: { campaignId: id } }),
       prisma.campaignNode.deleteMany({ where: { campaignId: id } }),
       prisma.campaignEdge.deleteMany({ where: { campaignId: id } }),
-      prisma.campaign.delete({ where: { id } })
+      prisma.campaign.delete({ where: { id } }),
     ]);
-    
+
     res.json({ ok: true });
   } catch (e: any) {
+    console.error('Campaign delete error:', e);
     res.status(400).json({ error: e?.message || 'delete error' });
   }
 });
