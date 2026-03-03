@@ -87,6 +87,11 @@ const LANDING_PAGE_TEMPLATES = [
     persona: 'property_finance',
     industry: 'property_management'
   },
+  { 
+    value: 'other', 
+    label: 'Other (Custom URL)', 
+    description: 'Use any landing page URL' 
+  },
 ];
 
 interface GeneratedCampaign {
@@ -122,6 +127,7 @@ export function AICampaignBuilder() {
   const [industry, setIndustry] = useState('insurance');
   const [targetPersona, setTargetPersona] = useState('cfo');
   const [landingPageTemplate, setLandingPageTemplate] = useState('none');
+  const [customLandingPageUrl, setCustomLandingPageUrl] = useState('');
   
   // Fetch logged-in user's calendar link
   const [userCalendarLink, setUserCalendarLink] = useState('');
@@ -173,9 +179,11 @@ export function AICampaignBuilder() {
           tone,
           industry: industry || undefined,
           targetPersona: targetPersona || undefined,
-          landingPageUrl: landingPageTemplate !== 'none' 
-            ? LANDING_PAGE_TEMPLATES.find(t => t.value === landingPageTemplate)?.url 
-            : undefined,
+          landingPageUrl: landingPageTemplate === 'other'
+            ? (customLandingPageUrl.trim() || undefined)
+            : landingPageTemplate !== 'none' 
+              ? LANDING_PAGE_TEMPLATES.find(t => t.value === landingPageTemplate)?.url 
+              : undefined,
           calendarLink: userCalendarLink || undefined,
           includeExistingTemplates: true,
         }),
@@ -438,7 +446,16 @@ export function AICampaignBuilder() {
                       </option>
                     ))}
                   </select>
-                  {landingPageTemplate !== 'none' && (
+                  {landingPageTemplate === 'other' && (
+                    <input
+                      type="url"
+                      className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://example.com/your-landing-page"
+                      value={customLandingPageUrl}
+                      onChange={(e) => setCustomLandingPageUrl(e.target.value)}
+                    />
+                  )}
+                  {landingPageTemplate !== 'none' && landingPageTemplate !== 'other' && (
                     <p className="text-xs text-gray-500 mt-1">
                       📄 {LANDING_PAGE_TEMPLATES.find(t => t.value === landingPageTemplate)?.description}
                     </p>
