@@ -4,7 +4,18 @@
 
 ---
 
-## Current Week (February 24-28, 2026)
+## Current Week (March 2-6, 2026)
+
+### CSV Column Mapping for Contact Imports
+- **Completed**: 2026-03-03
+- **Category**: Feature
+- **Client Impact**: Importing contact lists into campaigns now correctly captures all data fields, eliminating missing information caused by mismatched column headers.
+- **Details**: Added an interactive column mapping step when importing CSV files. The system auto-detects common column names, displays a live data preview, and lets users manually adjust mappings before confirming. Unmapped columns are preserved in contact raw data for reference.
+- **Status**: ✅ Deployed
+
+---
+
+## Previous Week (February 24-28, 2026)
 
 ### HubSpot Contact Sync on Campaign Import
 - **Completed**: 2026-02-25
