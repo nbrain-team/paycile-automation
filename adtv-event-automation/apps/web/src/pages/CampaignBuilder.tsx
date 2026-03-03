@@ -546,6 +546,95 @@ function ContactsTab({ contacts }: ContactsTabProps) {
   const [availableCampaigns, setAvailableCampaigns] = useState<any[]>([]);
   const [syncToHubSpot, setSyncToHubSpot] = useState(true);
   const [hubSpotSyncing, setHubSpotSyncing] = useState(false);
+
+  // CSV mapping modal state
+  const [showCsvMapping, setShowCsvMapping] = useState(false);
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [csvPreviewRows, setCsvPreviewRows] = useState<Record<string, string>[]>([]);
+  const [csvAllRows, setCsvAllRows] = useState<Record<string, string>[]>([]);
+  const [csvMapping, setCsvMapping] = useState<Record<string, string>>({
+    firstName: '', lastName: '', company: '', email: '', phone: '', city: '', state: '', url: '',
+  });
+
+  const PLATFORM_FIELDS = [
+    { key: 'firstName', label: 'First Name' },
+    { key: 'lastName', label: 'Last Name' },
+    { key: 'company', label: 'Company' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'city', label: 'City' },
+    { key: 'state', label: 'State' },
+    { key: 'url', label: 'Website / URL' },
+  ];
+
+  const autoDetectMapping = (headers: string[]): Record<string, string> => {
+    const mapping: Record<string, string> = {
+      firstName: '', lastName: '', company: '', email: '', phone: '', city: '', state: '', url: '',
+    };
+    const lower = headers.map(h => h.toLowerCase().trim());
+
+    const match = (patterns: string[]) =>
+      headers[lower.findIndex(h => patterns.some(p => h === p || h.includes(p)))] || '';
+
+    mapping.firstName = match(['first name', 'firstname', 'first_name', 'fname']);
+    mapping.lastName = match(['last name', 'lastname', 'last_name', 'lname']);
+    if (!mapping.firstName && !mapping.lastName) {
+      mapping.firstName = match(['name', 'full name', 'fullname', 'contact name']);
+    }
+    mapping.company = match(['company', 'company name', 'organization', 'org']);
+    mapping.email = match(['email', 'e-mail', 'email address', 'work email', 'personal email']);
+    mapping.phone = match(['phone', 'phone number', 'mobile', 'mobile phone', 'work phone', 'work direct phone', 'corporate phone', 'telephone']);
+    mapping.city = match(['city', 'location city']);
+    mapping.state = match(['state', 'state/province', 'province', 'region']);
+    mapping.url = match(['url', 'website', 'web', 'linkedin', 'person linkedin url', 'linkedin url']);
+
+    return mapping;
+  };
+
+  const confirmCsvImport = async () => {
+    const cid = window.location.pathname.split('/').pop() || '';
+    const mapped = csvAllRows.map((r) => {
+      const firstName = (csvMapping.firstName ? r[csvMapping.firstName] : '') || '';
+      const lastName = (csvMapping.lastName ? r[csvMapping.lastName] : '') || '';
+      const name = `${firstName} ${lastName}`.trim();
+      return {
+        id: Math.random().toString(36).slice(2),
+        name,
+        company: (csvMapping.company ? r[csvMapping.company] : '') || '',
+        email: (csvMapping.email ? r[csvMapping.email] : '') || '',
+        phone: (csvMapping.phone ? r[csvMapping.phone] : '') || '',
+        city: (csvMapping.city ? r[csvMapping.city] : '') || '',
+        state: (csvMapping.state ? r[csvMapping.state] : '') || '',
+        url: (csvMapping.url ? r[csvMapping.url] : '') || '',
+        status: 'No Activity' as const,
+        stageId: '',
+        raw: r,
+      };
+    }).slice(0, 1000);
+
+    setContactsForCampaign(cid, mapped as any);
+    setShowCsvMapping(false);
+
+    try {
+      const res = await fetch(`${getApiUrl()}/api/campaigns/${cid}/contacts/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contacts: mapped, syncToHubSpot }),
+      });
+      const result = await res.json();
+      addToast({ title: 'Contacts imported', description: `${mapped.length} records`, variant: 'success' });
+      if (syncToHubSpot && result.hubspot) {
+        const hs = result.hubspot;
+        if (hs.failed > 0) {
+          addToast({ title: 'HubSpot sync partial', description: `${hs.created} created, ${hs.updated} updated, ${hs.failed} failed (non-marketing)`, variant: 'warning' });
+        } else {
+          addToast({ title: 'HubSpot synced', description: `${hs.created} created, ${hs.updated} updated as non-marketing contacts`, variant: 'success' });
+        }
+      }
+    } catch {
+      addToast({ title: 'Contacts imported', description: `${mapped.length} records (HubSpot sync may have failed)`, variant: 'success' });
+    }
+  };
   
   // Load all campaigns when import modal opens
   useEffect(() => {
@@ -782,48 +871,25 @@ function ContactsTab({ contacts }: ContactsTabProps) {
             <input type="file" accept=".csv" className="hidden" onChange={(ev)=> {
               const file = ev.target.files?.[0]; if (!file) return;
               const reader = new FileReader();
-              reader.onload = async () => {
+              reader.onload = () => {
                 const text = String(reader.result || '');
-                const parsed = Papa.parse(text, { header: true });
-                const rows = (parsed.data as any[]).filter(Boolean);
-                const cid = window.location.pathname.split('/').pop() || '';
-                const mapped = rows.map((r) => ({
-                  id: Math.random().toString(36).slice(2),
-                  name: (r.firstName || r['First Name'] || r.Name || r.name || '') + ' ' + (r.lastName || r['Last Name'] || ''),
-                  company: r.company || r.Company || '',
-                  email: r.Email || r.email || '',
-                  phone: r.Phone || r.phone || '',
-                  city: r.city || r.City || '',
-                  state: r.state || r.State || '',
-                  url: r.url,
-                  status: 'No Activity' as const,
-                  stageId: '',
-                  raw: r,
-                })).slice(0, 1000);
-                setContactsForCampaign(cid, mapped as any);
-                try {
-                  const res = await fetch(`${getApiUrl()}/api/campaigns/${cid}/contacts/bulk`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contacts: mapped, syncToHubSpot }),
-                  });
-                  const result = await res.json();
-                  addToast({ title: 'Contacts imported', description: `${mapped.length} records`, variant: 'success' });
-                  if (syncToHubSpot && result.hubspot) {
-                    const hs = result.hubspot;
-                    if (hs.failed > 0) {
-                      addToast({ title: 'HubSpot sync partial', description: `${hs.created} created, ${hs.updated} updated, ${hs.failed} failed (non-marketing)`, variant: 'warning' });
-                    } else {
-                      addToast({ title: 'HubSpot synced', description: `${hs.created} created, ${hs.updated} updated as non-marketing contacts`, variant: 'success' });
-                    }
-                  }
-                } catch {
-                  addToast({ title: 'Contacts imported', description: `${mapped.length} records (HubSpot sync may have failed)`, variant: 'success' });
+                const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+                const rows = (parsed.data as Record<string, string>[]).filter(Boolean);
+                const headers = parsed.meta.fields || [];
+                if (!headers.length || !rows.length) {
+                  addToast({ title: 'CSV is empty', description: 'No columns or rows detected in the file.', variant: 'warning' });
+                  return;
                 }
+                setCsvHeaders(headers);
+                setCsvAllRows(rows);
+                setCsvPreviewRows(rows.slice(0, 5));
+                setCsvMapping(autoDetectMapping(headers));
+                setShowCsvMapping(true);
               };
               reader.readAsText(file);
+              ev.target.value = '';
             }} />
-            📤 Import CSV
+            Import CSV
           </label>
           <button className="btn-outline btn-sm" onClick={() => setShowImportFromCampaign(true)}>
             📋 Copy from Campaign
@@ -1013,6 +1079,135 @@ function ContactsTab({ contacts }: ContactsTabProps) {
             >
               Import Contacts
             </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {showCsvMapping && (
+      <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50" onClick={(e) => { if (e.target === e.currentTarget) setShowCsvMapping(false); }}>
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-4 overflow-hidden max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="px-6 py-4 border-b bg-gray-50 flex items-center justify-between shrink-0">
+            <div>
+              <h3 className="text-lg font-semibold">Map CSV Columns</h3>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {csvAllRows.length.toLocaleString()} row{csvAllRows.length !== 1 ? 's' : ''} detected
+                {csvAllRows.length > 1000 && <span className="text-amber-600 font-medium"> (first 1,000 will be imported)</span>}
+              </p>
+            </div>
+            <button className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => setShowCsvMapping(false)}>&times;</button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Field Mapping</h4>
+              <p className="text-xs text-gray-500 mb-4">
+                Map each platform field to a column from your CSV. Fields left as "Skip" will be left blank.
+              </p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {PLATFORM_FIELDS.map((field) => (
+                  <div key={field.key} className="space-y-1">
+                    <label className="text-xs font-medium text-gray-600">{field.label}</label>
+                    <select
+                      className="input text-sm"
+                      value={csvMapping[field.key] || ''}
+                      onChange={(e) => setCsvMapping((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                    >
+                      <option value="">-- Skip --</option>
+                      {csvHeaders.map((h) => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                    {csvMapping[field.key] && csvPreviewRows[0] && (
+                      <p className="text-[10px] text-green-600 truncate" title={csvPreviewRows[0][csvMapping[field.key] as string] || ''}>
+                        e.g. "{csvPreviewRows[0][csvMapping[field.key] as string] || '(empty)'}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Preview (first {Math.min(csvPreviewRows.length, 5)} rows as mapped)</h4>
+              <div className="border rounded-lg overflow-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b">
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">Name</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">Company</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">Email</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">Phone</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">City</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">State</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">URL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvPreviewRows.map((row, i) => {
+                      const fn = csvMapping.firstName ? (row[csvMapping.firstName] || '') : '';
+                      const ln = csvMapping.lastName ? (row[csvMapping.lastName] || '') : '';
+                      const name = `${fn} ${ln}`.trim();
+                      return (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                          <td className="px-3 py-1.5 max-w-[140px] truncate">{name || <span className="text-gray-300 italic">empty</span>}</td>
+                          <td className="px-3 py-1.5 max-w-[140px] truncate">{(csvMapping.company && row[csvMapping.company]) || <span className="text-gray-300 italic">empty</span>}</td>
+                          <td className="px-3 py-1.5 max-w-[180px] truncate">{(csvMapping.email && row[csvMapping.email]) || <span className="text-gray-300 italic">empty</span>}</td>
+                          <td className="px-3 py-1.5 max-w-[120px] truncate">{(csvMapping.phone && row[csvMapping.phone]) || <span className="text-gray-300 italic">empty</span>}</td>
+                          <td className="px-3 py-1.5 max-w-[100px] truncate">{(csvMapping.city && row[csvMapping.city]) || <span className="text-gray-300 italic">empty</span>}</td>
+                          <td className="px-3 py-1.5 max-w-[80px] truncate">{(csvMapping.state && row[csvMapping.state]) || <span className="text-gray-300 italic">empty</span>}</td>
+                          <td className="px-3 py-1.5 max-w-[160px] truncate">{(csvMapping.url && row[csvMapping.url]) || <span className="text-gray-300 italic">empty</span>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">All CSV Columns Detected</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {csvHeaders.map((h) => {
+                  const isMapped = Object.values(csvMapping).includes(h);
+                  return (
+                    <span key={h} className={`text-[11px] px-2 py-0.5 rounded-full border ${isMapped ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                      {h} {isMapped && '✓'}
+                    </span>
+                  );
+                })}
+              </div>
+              {csvHeaders.filter(h => !Object.values(csvMapping).includes(h)).length > 0 && (
+                <p className="text-[11px] text-gray-400 mt-2">
+                  Unmapped columns are preserved in each contact's raw data and can be viewed in the contact detail.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between shrink-0">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={syncToHubSpot}
+                onChange={(e) => setSyncToHubSpot(e.target.checked)}
+                className="rounded border-gray-300 text-orange-500 focus:ring-orange-500 h-4 w-4"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-700">Sync to HubSpot</span>
+                <p className="text-xs text-gray-500">Added as non-marketing contacts</p>
+              </div>
+            </label>
+            <div className="flex gap-3">
+              <button className="btn-outline btn-sm" onClick={() => setShowCsvMapping(false)}>Cancel</button>
+              <button
+                className="btn-primary btn-sm"
+                onClick={confirmCsvImport}
+                disabled={!csvMapping.email && !csvMapping.firstName}
+              >
+                Import {Math.min(csvAllRows.length, 1000).toLocaleString()} Contacts
+              </button>
+            </div>
           </div>
         </div>
       </div>
