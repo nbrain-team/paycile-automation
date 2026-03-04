@@ -6,6 +6,13 @@
 
 ## Current Week (March 2-6, 2026)
 
+### Custom Landing Page URL Option in AI Campaign Builder
+- **Completed**: 2026-03-03
+- **Category**: Feature
+- **Client Impact**: When building AI-generated campaigns, users can now select "Other" from the landing page template dropdown and enter any custom URL, enabling campaigns to link to external pages, partner sites, or custom-built landing pages beyond the built-in templates.
+- **Details**: Added an "Other (Custom URL)" option to the landing page template selector in the AI Campaign Builder. When selected, a text input appears where users can paste any URL. The custom URL is passed through to the AI generation engine and included in generated campaign content just like the built-in template URLs.
+- **Status**: ✅ Deployed
+
 ### CSV Column Mapping for Contact Imports
 - **Completed**: 2026-03-03
 - **Category**: Feature
@@ -17,12 +24,74 @@
 
 ## Previous Week (February 24-28, 2026)
 
+### Campaign Card Contact Count Fix
+- **Completed**: 2026-02-26
+- **Category**: Bug Fix
+- **Client Impact**: Campaign cards on the main campaigns page now display the correct number of contacts instead of showing "0," giving sales managers accurate visibility into campaign size at a glance without needing to open each campaign.
+- **Details**: Fixed the campaign list view where contact counts were not being fetched or displayed correctly. Updated the frontend to pull actual contact counts from the backend API stats endpoint and render them on each campaign card.
+- **Status**: ✅ Deployed
+
+### Campaign Deletion Persistence Fix
+- **Completed**: 2026-02-26
+- **Category**: Bug Fix
+- **Client Impact**: Deleting a campaign now permanently removes it from the system. Previously, deleted campaigns would reappear after a page refresh, causing confusion and cluttering the campaign list.
+- **Details**: Fixed campaign deletion to call the backend API DELETE endpoint so the removal persists in the database. Previously, deletion was only happening in the frontend state and not being sent to the server.
+- **Status**: ✅ Deployed
+
+### HubSpot Batch Update Duplicate ID Fix
+- **Completed**: 2026-02-25
+- **Category**: Bug Fix
+- **Client Impact**: HubSpot contact syncs now process without errors when importing large contact lists, ensuring all contacts are reliably pushed to HubSpot CRM without failures caused by duplicate records in the batch.
+- **Details**: Fixed an issue where the HubSpot batch update API was receiving duplicate contact IDs in the same request, causing API errors and failed syncs. Added deduplication logic before sending batch update requests.
+- **Status**: ✅ Deployed
+
 ### HubSpot Contact Sync on Campaign Import
 - **Completed**: 2026-02-25
 - **Category**: Integration
 - **Client Impact**: Contacts imported into campaigns are now automatically synced to HubSpot as non-marketing contacts, keeping your CRM up to date without increasing HubSpot billing costs.
 - **Details**: When importing contacts via CSV upload, copying from another campaign, or importing from Apollo, a "HubSpot Sync" toggle (enabled by default) pushes contacts to HubSpot using the batch CRM API. Contacts are created as non-marketing contacts to avoid marketing-seat charges. Existing contacts are updated rather than duplicated (email-based dedup). Toast notifications confirm sync results after each import. A manual sync endpoint also allows retroactive sync of existing campaign contacts.
 - **Status**: ✅ Deployed
+
+### Calendar Link Integration & Auto-Population in Emails
+- **Completed**: 2026-02-24
+- **Category**: Feature
+- **Client Impact**: Users can now set their personal scheduling link (Calendly, HubSpot Meetings, etc.) in their profile, and it automatically populates in campaign emails via merge tags — eliminating the need to manually paste calendar links into every template and ensuring prospects always get the right booking URL.
+- **Details**: Added a calendar link field to user profiles stored in the database. The calendar link is accessible via the Settings > Integrations card and is always visible. Campaign emails can reference the calendar link through dynamic merge tags, so each sender's unique booking URL is automatically inserted at send time.
+- **Status**: ✅ Deployed
+
+### Email Formatting Fix — Literal Newline Sequences
+- **Completed**: 2026-02-24
+- **Category**: Bug Fix
+- **Client Impact**: Campaign emails now display with proper paragraph breaks and formatting instead of showing raw `\n` characters or running all text together in a single block — ensuring recipients see professionally formatted messages.
+- **Details**: Fixed an issue where literal `\n` character sequences in email content were not being converted to HTML line breaks before sending. Added normalization logic that converts escaped newline sequences to proper `<br>` tags during HTML email generation.
+- **Status**: ✅ Deployed
+
+### Google-Connected Users in Sender Dropdown
+- **Completed**: 2026-02-24
+- **Category**: Feature
+- **Client Impact**: Users who have connected their Google account via OAuth now appear as available senders in the campaign creation dropdown, expanding the pool of verified sending addresses and enabling multi-sender campaigns with Google-authenticated email accounts.
+- **Details**: Updated the sender-emails endpoint to include Google OAuth-connected users alongside SMTP-configured accounts and Microsoft Graph accounts. Also updated the unsubscribe footer address to reflect the correct business address.
+- **Status**: ✅ Deployed
+
+### Sender Identity Fix for Campaign Emails
+- **Completed**: 2026-02-24
+- **Category**: Bug Fix
+- **Client Impact**: Campaign emails now send from the correct person selected during campaign creation, rather than defaulting to the system account — ensuring recipients see the intended sender name and email address for proper personalization and reply routing.
+- **Details**: Fixed an issue where the `senderUserId` was not being passed to the backend when creating campaigns. Updated the campaign creation form to include the selected sender's user ID so the email queue processes messages using the correct sender's OAuth tokens and SMTP credentials.
+- **Status**: ✅ Deployed
+
+### LinkedIn Connect Channel Added to AI Campaign Builder
+- **Completed**: 2026-02-23
+- **Category**: Feature
+- **Client Impact**: AI-generated campaign funnels can now include LinkedIn connection request steps alongside email, SMS, and voicemail — enabling true multi-channel outreach sequences that meet B2B prospects where they're most active professionally.
+- **Details**: Added "LinkedIn Connect" as a selectable channel in the AI Campaign Builder. When selected, the AI generates LinkedIn connection request messages with appropriate character limits and professional networking tone. The LinkedIn Connect nodes appear in the generated campaign workflow alongside other channel types.
+- **Status**: ✅ Deployed
+
+### Campaign Email Triple Fix — Sender, Formatting & Duplicates
+- **Completed**: 2026-02-23
+- **Category**: Bug Fix
+- **Client Impact**: Resolved three critical issues that were undermining campaign email quality: emails were sending from the wrong account, message formatting was broken with blended lines, and some contacts were receiving duplicate emails — all now fixed to ensure professional, reliable email delivery.
+- **Details**: Fixed the email sending pipeline to use the correct sender's OAuth credentials based on the campaign's assigned sender user. Resolved HTML formatting issues where line breaks were not rendering correctly. Added deduplication checks in the email queue to prevent the same contact from being emailed multiple times within the same campaign execution.
 
 ---
 
