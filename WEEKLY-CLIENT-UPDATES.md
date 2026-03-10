@@ -13,6 +13,13 @@
 - **Details**: Replaced sequential processing loop with a concurrent worker pool (10 parallel OpenAI requests). Removed unnecessary 150ms rate-limiting delays. Each worker independently handles AI personalization and database writes. Progress tracking remains accurate for the UI status bar.
 - **Status**: Deployed
 
+### Fix: Email Line Breaks Missing
+- **Completed**: 2026-03-10
+- **Category**: Bug Fix
+- **Client Impact**: Emails (both test and live) were rendering as a single wall of text with no line breaks. Now all emails display with proper paragraph spacing and line breaks as intended.
+- **Details**: Plain-text-to-HTML conversion was being skipped when HTML merge tags (like signatures) were present in the body. Fixed by converting plain text to HTML before merge tag rendering, and added mixed-content fallback handling in the email queue processor.
+- **Status**: Deployed
+
 ### Send Test Emails Button
 - **Completed**: 2026-03-10
 - **Category**: Feature
