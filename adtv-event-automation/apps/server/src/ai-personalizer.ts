@@ -188,6 +188,44 @@ export async function batchPersonalize(
 }
 
 /**
+ * Concurrent batch personalization using a worker pool.
+ * Runs up to `concurrency` OpenAI requests in parallel for significant speed gains.
+ * gpt-4o-mini supports high concurrency — default 10 workers is safe and fast.
+ */
+export async function concurrentBatchPersonalize(
+  contacts: PersonalizationContact[],
+  template: PersonalizationTemplate,
+  campaign?: PersonalizationCampaign,
+  onProgress?: (completed: number, total: number, result: PersonalizedContent) => void,
+  concurrency: number = 10
+): Promise<(PersonalizedContent & { index: number })[]> {
+  const results: (PersonalizedContent & { index: number })[] = [];
+  let completedCount = 0;
+  const queue = contacts.map((contact, index) => ({ contact, index }));
+  let queueIndex = 0;
+
+  async function worker() {
+    while (true) {
+      const idx = queueIndex++;
+      if (idx >= queue.length) break;
+      const item = queue[idx];
+
+      const personalized = await personalizeContent(item.contact, template, campaign);
+      results.push({ ...personalized, index: item.index });
+      completedCount++;
+
+      if (onProgress) onProgress(completedCount, contacts.length, personalized);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, contacts.length);
+  const workers = Array.from({ length: workerCount }, () => worker());
+  await Promise.all(workers);
+
+  return results;
+}
+
+/**
  * Test function to verify OpenAI connection
  */
 export async function testAIConnection(): Promise<boolean> {

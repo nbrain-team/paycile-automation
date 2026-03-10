@@ -3122,87 +3122,100 @@ app.post('/api/campaigns/:id/personalize', async (req, res) => {
     // Background processing
     const campaignCtx = { name: campaign.name, ownerName: campaign.ownerName, eventType: campaign.eventType };
 
+    const CONCURRENCY = 10;
+
     for (const node of emailNodes) {
       let cfg: any = {};
       try { cfg = node.configJson ? JSON.parse(node.configJson) : {}; } catch {}
       const { subject: origSubject, body: origBody } = await resolveEmailFromConfig(cfg);
 
       if (!origSubject && !origBody) {
-        // Skip nodes with no content
         personalizationJobs[campaignId].completed += contacts.length;
         continue;
       }
 
-      for (const ct of contacts) {
-        try {
-          // Parse rawJson for extra contact data
-          let rawData: any = {};
-          try { rawData = ct.rawJson ? JSON.parse(ct.rawJson) : {}; } catch {}
+      // Pre-build contact data and rendered templates for all contacts
+      const contactItems = contacts.map(ct => {
+        let rawData: any = {};
+        try { rawData = ct.rawJson ? JSON.parse(ct.rawJson) : {}; } catch {}
 
-          const np = splitName(ct.name || '');
-          const contactData: PersonalizationContact = {
-            first_name: np.first_name,
-            last_name: np.last_name,
-            company: ct.company || rawData.company || '',
-            title: rawData.title || '',
-            industry: rawData.industry || rawData.organization_industry || '',
-            city: ct.city || '',
-            state: ct.state || '',
-            email: ct.email || '',
-            revenue: rawData.revenue || rawData.firm_revenue || '',
-            employees: rawData.employees || rawData.estimated_employees || '',
-            technologies: rawData.technologies || '',
-          };
+        const np = splitName(ct.name || '');
+        const contactData: PersonalizationContact = {
+          first_name: np.first_name,
+          last_name: np.last_name,
+          company: ct.company || rawData.company || '',
+          title: rawData.title || '',
+          industry: rawData.industry || rawData.organization_industry || '',
+          city: ct.city || '',
+          state: ct.state || '',
+          email: ct.email || '',
+          revenue: rawData.revenue || rawData.firm_revenue || '',
+          employees: rawData.employees || rawData.estimated_employees || '',
+          technologies: rawData.technologies || '',
+        };
 
-          // Apply merge tags to get the "original" rendered version for this contact
-          const mergeCtx = { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: { name: campaign.name, owner_name: campaign.ownerName } };
-          const renderedSubject = renderMergeTags(origSubject || '', mergeCtx);
-          const renderedBody = renderMergeTags(origBody || '', mergeCtx);
+        const mergeCtx = { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: { name: campaign.name, owner_name: campaign.ownerName } };
+        const renderedSubject = renderMergeTags(origSubject || '', mergeCtx);
+        const renderedBody = renderMergeTags(origBody || '', mergeCtx);
 
-          const result = await personalizeContent(
-            contactData,
-            { type: 'email', subject: renderedSubject, body: renderedBody },
-            campaignCtx
-          );
+        return { ct, contactData, renderedSubject, renderedBody };
+      });
 
-          // Upsert the personalized email record
-          await prisma.personalizedEmail.upsert({
-            where: {
-              campaignId_contactId_nodeKey: { campaignId, contactId: ct.id, nodeKey: node.key },
-            },
-            create: {
-              campaignId,
-              contactId: ct.id,
-              nodeKey: node.key,
-              originalSubject: renderedSubject,
-              originalBody: renderedBody,
-              subject: result.subject || renderedSubject,
-              body: result.body || renderedBody,
-              rationale: result.rationale || '',
-              status: 'pending',
-            },
-            update: {
-              originalSubject: renderedSubject,
-              originalBody: renderedBody,
-              subject: result.subject || renderedSubject,
-              body: result.body || renderedBody,
-              rationale: result.rationale || '',
-              status: 'pending',
-              editedSubject: null,
-              editedBody: null,
-            },
-          });
+      // Concurrent worker pool: each worker picks items from the queue,
+      // calls OpenAI, and writes the result to the DB
+      let queueIndex = 0;
 
-          personalizationJobs[campaignId].completed++;
-        } catch (err) {
-          console.error(`[personalize] Failed for contact ${ct.id}, node ${node.key}:`, err);
-          personalizationJobs[campaignId].failed++;
-          personalizationJobs[campaignId].completed++;
+      async function personalizationWorker() {
+        while (true) {
+          const idx = queueIndex++;
+          if (idx >= contactItems.length) break;
+          const item = contactItems[idx];
+
+          try {
+            const result = await personalizeContent(
+              item.contactData,
+              { type: 'email', subject: item.renderedSubject, body: item.renderedBody },
+              campaignCtx
+            );
+
+            await prisma.personalizedEmail.upsert({
+              where: {
+                campaignId_contactId_nodeKey: { campaignId, contactId: item.ct.id, nodeKey: node.key },
+              },
+              create: {
+                campaignId,
+                contactId: item.ct.id,
+                nodeKey: node.key,
+                originalSubject: item.renderedSubject,
+                originalBody: item.renderedBody,
+                subject: result.subject || item.renderedSubject,
+                body: result.body || item.renderedBody,
+                rationale: result.rationale || '',
+                status: 'pending',
+              },
+              update: {
+                originalSubject: item.renderedSubject,
+                originalBody: item.renderedBody,
+                subject: result.subject || item.renderedSubject,
+                body: result.body || item.renderedBody,
+                rationale: result.rationale || '',
+                status: 'pending',
+                editedSubject: null,
+                editedBody: null,
+              },
+            });
+
+            personalizationJobs[campaignId].completed++;
+          } catch (err) {
+            console.error(`[personalize] Failed for contact ${item.ct.id}, node ${node.key}:`, err);
+            personalizationJobs[campaignId].failed++;
+            personalizationJobs[campaignId].completed++;
+          }
         }
-
-        // Rate limiting between contacts
-        await new Promise(resolve => setTimeout(resolve, 150));
       }
+
+      const workerCount = Math.min(CONCURRENCY, contactItems.length);
+      await Promise.all(Array.from({ length: workerCount }, () => personalizationWorker()));
     }
 
     personalizationJobs[campaignId].running = false;
