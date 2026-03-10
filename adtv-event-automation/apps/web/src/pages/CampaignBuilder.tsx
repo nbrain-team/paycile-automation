@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '@store/useStore';
 import Papa from 'papaparse';
 import { seedCampaigns } from '@seed/campaignSeed';
-import { apiCampaigns, apiInbox, apiEmail, apiSms, apiTemplates, apiPersonalization, getApiUrl } from '@lib/api';
+import { apiCampaigns, apiInbox, apiEmail, apiSms, apiTemplates, apiPersonalization, apiAuth, getApiUrl } from '@lib/api';
 
 const ALL_TABS = ['Overview','Contacts','Funnel','Personalized Emails','Analytics','Map View'] as const;
 type TabName = (typeof ALL_TABS)[number];
@@ -321,13 +321,24 @@ export function CampaignBuilder() {
                   className="btn-outline btn-md flex items-center justify-center gap-2"
                   disabled={sendingTest}
                   onClick={async () => {
+                    let testEmail = '';
+                    try {
+                      const me = await apiAuth.me();
+                      testEmail = me?.email || '';
+                    } catch {}
+
+                    if (!testEmail) {
+                      testEmail = window.prompt('Enter the email address to send test emails to:') || '';
+                      if (!testEmail.trim()) return;
+                    }
+
                     const ok = window.confirm(
-                      'This will send ALL email steps from the funnel to your logged-in email address so you can review formatting and messaging. Continue?'
+                      `This will send ALL email steps from the funnel to ${testEmail} so you can review formatting and messaging. Continue?`
                     );
                     if (!ok) return;
                     setSendingTest(true);
                     try {
-                      const result = await apiCampaigns.sendTest(campaign.id);
+                      const result = await apiCampaigns.sendTest(campaign.id, testEmail);
                       if (result.errors?.length) {
                         addToast({ title: `Test sent (${result.sent}/${result.total})`, description: `Some steps failed: ${result.errors.join('; ')}`, variant: 'warning' });
                       } else {

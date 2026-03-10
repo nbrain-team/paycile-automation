@@ -1169,13 +1169,28 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
 // Send Test: delivers all email nodes in the funnel to the logged-in user
 app.post('/api/campaigns/:id/send-test', async (req, res) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ error: 'Not authenticated' });
-
     const campaignId = req.params.id;
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    if (!user?.email) return res.status(400).json({ error: 'No email on your account' });
+    const bodyEmail = req.body?.email;
 
-    const testRecipient = user.email;
+    // Resolve test recipient: explicit body param > logged-in user > campaign owner
+    let testRecipient: string | undefined;
+
+    if (bodyEmail && typeof bodyEmail === 'string') {
+      testRecipient = bodyEmail.trim();
+    } else if (req.user?.id) {
+      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+      testRecipient = user?.email || undefined;
+    }
+
+    // Fallback: use the campaign's sender email
+    if (!testRecipient) {
+      const c = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { ownerEmail: true, senderUser: { select: { email: true } } } });
+      testRecipient = c?.senderUser?.email || c?.ownerEmail || undefined;
+    }
+
+    if (!testRecipient) {
+      return res.status(400).json({ error: 'Could not determine test recipient. Pass an email in the request body or log in.' });
+    }
 
     const [campaignNodes, campaignEdges, campaign] = await Promise.all([
       prisma.campaignNode.findMany({ where: { campaignId } }),
