@@ -188,7 +188,7 @@ export const apiPersonalization = {
 
 // Sender Emails (for campaign creation)
 export const apiSenderEmails = {
-  list: () => getJson('/api/sender-emails') as Promise<Array<{ email: string; name: string; source: string; userId?: string }>>,
+  list: () => getJson('/api/sender-emails') as Promise<Array<{ email: string; name: string; source: string; userId?: string; phone?: string; calendlyLink?: string }>>,
 };
 
 export { API_URL, getApiUrl };
