@@ -66,21 +66,19 @@ function addUnsubscribeLink(emailBody: string, contactId: string, companyAddress
   const address = companyAddress || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
   
   const footer = `
-    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
-      <p style="margin: 5px 0;">${address}</p>
-      <p style="margin: 5px 0;">
-        <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Unsubscribe</a> from this list
+    <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+      <p style="margin: 4px 0;">${address}</p>
+      <p style="margin: 4px 0;">
+        <a href="${unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">Unsubscribe</a> from future emails
       </p>
     </div>
   `;
   
-  // If email already has closing body/html tags, insert before them
   if (emailBody.includes('</body>')) {
     return emailBody.replace('</body>', `${footer}</body>`);
   } else if (emailBody.includes('</html>')) {
     return emailBody.replace('</html>', `${footer}</html>`);
   } else {
-    // Otherwise just append
     return emailBody + footer;
   }
 }
@@ -3827,19 +3825,20 @@ app.post('/api/admin/run-migration', async (req, res) => {
 
 app.get('/api/sender-emails', async (_req, res) => {
   try {
-    const emails: Array<{ email: string; name: string; source: string; userId?: string }> = [];
+    const emails: Array<{ email: string; name: string; source: string; userId?: string; phone?: string; calendlyLink?: string }> = [];
     const seen = new Set<string>();
 
     // Build a lookup from email -> userId so every entry can carry its user ID
     const allUsers = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, smtpUser: true, microsoftEmail: true, googleEmail: true },
+      select: { id: true, name: true, email: true, phone: true, calendlyLink: true, smtpUser: true, microsoftEmail: true, googleEmail: true },
     });
-    const emailToUser = new Map<string, { id: string; name: string }>();
+    const emailToUser = new Map<string, { id: string; name: string; phone: string | null; calendlyLink: string | null }>();
     for (const u of allUsers) {
-      if (u.email) emailToUser.set(u.email.toLowerCase(), { id: u.id, name: u.name });
-      if (u.smtpUser) emailToUser.set(u.smtpUser.toLowerCase(), { id: u.id, name: u.name });
-      if (u.microsoftEmail) emailToUser.set(u.microsoftEmail.toLowerCase(), { id: u.id, name: u.name });
-      if (u.googleEmail) emailToUser.set(u.googleEmail.toLowerCase(), { id: u.id, name: u.name });
+      const userData = { id: u.id, name: u.name, phone: u.phone, calendlyLink: u.calendlyLink };
+      if (u.email) emailToUser.set(u.email.toLowerCase(), userData);
+      if (u.smtpUser) emailToUser.set(u.smtpUser.toLowerCase(), userData);
+      if (u.microsoftEmail) emailToUser.set(u.microsoftEmail.toLowerCase(), userData);
+      if (u.googleEmail) emailToUser.set(u.googleEmail.toLowerCase(), userData);
     }
 
     // 1. Primary SMTP from environment variables
@@ -3849,12 +3848,12 @@ app.get('/api/sender-emails', async (_req, res) => {
     if (envSmtpUser) {
       seen.add(envSmtpUser.toLowerCase());
       const match = emailToUser.get(envSmtpUser.toLowerCase());
-      emails.push({ email: envSmtpUser, name: match?.name || envSmtpUser, source: 'env', userId: match?.id });
+      emails.push({ email: envSmtpUser, name: match?.name || envSmtpUser, source: 'env', userId: match?.id, phone: match?.phone || undefined, calendlyLink: match?.calendlyLink || undefined });
     }
     if (envSmtpFrom && !seen.has(envSmtpFrom.toLowerCase())) {
       seen.add(envSmtpFrom.toLowerCase());
       const match = emailToUser.get(envSmtpFrom.toLowerCase());
-      emails.push({ email: envSmtpFrom, name: match?.name || envSmtpFrom, source: 'env', userId: match?.id });
+      emails.push({ email: envSmtpFrom, name: match?.name || envSmtpFrom, source: 'env', userId: match?.id, phone: match?.phone || undefined, calendlyLink: match?.calendlyLink || undefined });
     }
 
     // 2. SmtpConfig entries (rotation/additional sender addresses)
@@ -3867,7 +3866,7 @@ app.get('/api/sender-emails', async (_req, res) => {
         if (c.email && !seen.has(c.email.toLowerCase())) {
           seen.add(c.email.toLowerCase());
           const match = emailToUser.get(c.email.toLowerCase());
-          emails.push({ email: c.email, name: match?.name || c.email, source: 'smtp', userId: match?.id });
+          emails.push({ email: c.email, name: match?.name || c.email, source: 'smtp', userId: match?.id, phone: match?.phone || undefined, calendlyLink: match?.calendlyLink || undefined });
         }
       }
     } catch (err: any) {
@@ -3879,7 +3878,7 @@ app.get('/api/sender-emails', async (_req, res) => {
       const addr = u.smtpUser || u.email;
       if (addr && !seen.has(addr.toLowerCase())) {
         seen.add(addr.toLowerCase());
-        emails.push({ email: addr, name: u.name || addr, source: 'user', userId: u.id });
+        emails.push({ email: addr, name: u.name || addr, source: 'user', userId: u.id, phone: u.phone || undefined, calendlyLink: u.calendlyLink || undefined });
       }
     }
 
@@ -3887,7 +3886,7 @@ app.get('/api/sender-emails', async (_req, res) => {
     for (const u of allUsers) {
       if (u.microsoftEmail && !seen.has(u.microsoftEmail.toLowerCase())) {
         seen.add(u.microsoftEmail.toLowerCase());
-        emails.push({ email: u.microsoftEmail, name: u.name || u.microsoftEmail, source: 'microsoft', userId: u.id });
+        emails.push({ email: u.microsoftEmail, name: u.name || u.microsoftEmail, source: 'microsoft', userId: u.id, phone: u.phone || undefined, calendlyLink: u.calendlyLink || undefined });
       }
     }
 
@@ -3895,7 +3894,7 @@ app.get('/api/sender-emails', async (_req, res) => {
     for (const u of allUsers) {
       if (u.googleEmail && !seen.has(u.googleEmail.toLowerCase())) {
         seen.add(u.googleEmail.toLowerCase());
-        emails.push({ email: u.googleEmail, name: u.name || u.googleEmail, source: 'google', userId: u.id });
+        emails.push({ email: u.googleEmail, name: u.name || u.googleEmail, source: 'google', userId: u.id, phone: u.phone || undefined, calendlyLink: u.calendlyLink || undefined });
       }
     }
 

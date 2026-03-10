@@ -4,7 +4,39 @@
 
 ---
 
-## Current Week (March 2-6, 2026)
+## Current Week (March 9-13, 2026)
+
+### Profile-Level Calendar Link Auto-Selection
+- **Completed**: 2026-03-10
+- **Category**: Enhancement
+- **Client Impact**: When creating a campaign and selecting a "Send From" email, the system now automatically populates that sender's Calendly link and phone number from their profile. This ensures every campaign uses the correct sender's scheduling link, eliminating the risk of campaigns pointing to the wrong person's calendar.
+- **Details**: The sender-emails API now returns phone and calendlyLink for each user. The campaign creation modal auto-fills these fields when a sender is selected, and the campaign executor already resolves the sender's calendar link at send time.
+- **Status**: ✅ Deployed
+
+### Enhanced Apollo CSV Contact Import Mapping
+- **Completed**: 2026-03-10
+- **Category**: Enhancement
+- **Client Impact**: CSV imports from Apollo now automatically detect and map more fields including Corporate Phone, Work Direct Phone, Title/Job Title, Person LinkedIn URL, and Company. Previously, these fields were missed during import, causing blank data in the campaign contacts.
+- **Details**: Expanded auto-detection patterns to match Apollo-specific column headers. Added Title/Job Title as a new mappable field. Reordered phone detection to prioritize "Corporate Phone" (Apollo's default) over generic "Phone".
+- **Status**: ✅ Deployed
+
+### Two-Variant Email Signature System
+- **Completed**: 2026-03-10
+- **Category**: Feature
+- **Client Impact**: Outbound campaign emails now include a professional, branded signature that adapts based on position in the sequence. First-touch emails use a minimal signature (name + phone only) to reduce spam risk, while follow-up emails include the full branded Paycile HTML signature with logo, contact info, LinkedIn, website, and scheduling link.
+- **Details**: Built a `buildEmailSignature()` function with two variants (minimal/full). The email queue processor automatically detects whether a contact has received prior emails in the campaign and selects the appropriate signature. All emails include a visible unsubscribe link and company address in the footer.
+- **Status**: ✅ Deployed
+
+### Property Management Landing Page Refinements
+- **Completed**: 2026-03-10
+- **Category**: Enhancement
+- **Client Impact**: The property management landing page now uses the professional Inter font family for brand consistency, broadens the messaging beyond Yardi-specific language to appeal to all property management finance teams (while still mentioning Yardi, AppFolio, and Entrata as integrations), and includes an updated copyright year.
+- **Details**: Replaced system font stack with Inter via Google Fonts. Updated hero headline from "Native Yardi Integration" to "Automated Payment Reconciliation for Property Management." Changed feature list and benefits cards to be platform-inclusive. Updated calendar embed section copy.
+- **Status**: ✅ Deployed
+
+---
+
+## Previous Week (March 2-6, 2026)
 
 ### Custom Landing Page URL Option in AI Campaign Builder
 - **Completed**: 2026-03-03

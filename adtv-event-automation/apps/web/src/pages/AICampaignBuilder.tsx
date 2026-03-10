@@ -81,8 +81,8 @@ const LANDING_PAGE_TEMPLATES = [
   },
   { 
     value: 'property_mgmt', 
-    label: 'Property Management Yardi Landing', 
-    description: 'For property managers using Yardi',
+    label: 'Property Management Landing', 
+    description: 'For property management finance teams',
     url: '/landing/property-management',
     persona: 'property_finance',
     industry: 'property_management'
@@ -447,17 +447,22 @@ export function AICampaignBuilder() {
                     ))}
                   </select>
                   {landingPageTemplate === 'other' && (
-                    <input
-                      type="url"
-                      className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="https://example.com/your-landing-page"
-                      value={customLandingPageUrl}
-                      onChange={(e) => setCustomLandingPageUrl(e.target.value)}
-                    />
+                    <div className="mt-2">
+                      <input
+                        type="url"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="https://paycile.com/your-landing-page"
+                        value={customLandingPageUrl}
+                        onChange={(e) => setCustomLandingPageUrl(e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter any URL. You can generate the campaign now and update this later in the funnel editor.
+                      </p>
+                    </div>
                   )}
                   {landingPageTemplate !== 'none' && landingPageTemplate !== 'other' && (
                     <p className="text-xs text-gray-500 mt-1">
-                      📄 {LANDING_PAGE_TEMPLATES.find(t => t.value === landingPageTemplate)?.description}
+                      {LANDING_PAGE_TEMPLATES.find(t => t.value === landingPageTemplate)?.description}
                     </p>
                   )}
                 </div>

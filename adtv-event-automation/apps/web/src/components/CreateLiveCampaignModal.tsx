@@ -15,7 +15,7 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
   const [demoPageLink, setDemoPageLink] = useState('');
   const [templates, setTemplates] = useState<any[]>([]);
   const [templateId, setTemplateId] = useState('');
-  const [senderEmails, setSenderEmails] = useState<Array<{ email: string; name: string; source: string; userId?: string }>>([]);
+  const [senderEmails, setSenderEmails] = useState<Array<{ email: string; name: string; source: string; userId?: string; phone?: string; calendlyLink?: string }>>([]);
 
   // Load templates and sender emails when modal opens
   useEffect(() => {
@@ -36,6 +36,8 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
       // Auto-select first if only one
       if (Array.isArray(list) && list.length === 1 && !senderEmail && list[0]) {
         setSenderEmail(list[0].email);
+        if (list[0].calendlyLink) setCalendlyLink(list[0].calendlyLink);
+        if (list[0].phone) setOwnerPhone(list[0].phone);
       }
     }).catch((err) => {
       console.error('[CreateCampaign] Failed to load sender emails:', err);
@@ -146,7 +148,13 @@ export function CreateLiveCampaignModal({ open, onClose }: Props) {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="label">Send From Email *</label>
-              <select className="input" value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)}>
+              <select className="input" value={senderEmail} onChange={(e) => {
+                const email = e.target.value;
+                setSenderEmail(email);
+                const sender = senderEmails.find((s) => s.email === email);
+                if (sender?.calendlyLink) setCalendlyLink(sender.calendlyLink);
+                if (sender?.phone) setOwnerPhone(sender.phone);
+              }}>
                 <option value="">Select sender email</option>
                 {senderEmails.map((s) => (
                   <option key={s.email} value={s.email}>

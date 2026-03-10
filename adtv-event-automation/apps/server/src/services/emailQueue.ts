@@ -5,6 +5,51 @@ import { sendGraphEmail, sendGraphEmailAsUser, isGraphConfigured, refreshUserMic
 
 const prisma = new PrismaClient();
 
+/**
+ * Build an HTML email signature.
+ * @param variant 'minimal' for first-touch emails (name + phone + unsubscribe only),
+ *                'full' for follow-ups (branded Paycile signature with logo and links)
+ */
+export function buildEmailSignature(
+  senderName: string,
+  senderEmail: string,
+  senderPhone: string,
+  variant: 'minimal' | 'full' = 'full',
+  calendlyLink?: string,
+): string {
+  if (variant === 'minimal') {
+    return `
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid #e5e7eb; font-size:13px; color:#374151; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+        <p style="margin:0 0 2px 0; font-weight:600;">${senderName}</p>
+        ${senderPhone ? `<p style="margin:0; color:#6b7280;">${senderPhone}</p>` : ''}
+      </div>
+    `;
+  }
+
+  return `
+    <div style="margin-top:32px; padding-top:20px; border-top:2px solid #10b981; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+      <table cellpadding="0" cellspacing="0" border="0" style="font-size:13px; color:#374151;">
+        <tr>
+          <td style="padding-right:16px; vertical-align:top;">
+            <img src="https://paycile-automation.onrender.com/paycile-logo.svg" alt="Paycile" width="100" style="display:block;" />
+          </td>
+          <td style="border-left:2px solid #10b981; padding-left:16px; vertical-align:top;">
+            <p style="margin:0 0 2px 0; font-weight:700; font-size:14px; color:#111827;">${senderName}</p>
+            <p style="margin:0 0 6px 0; color:#6b7280; font-size:12px;">Paycile</p>
+            ${senderPhone ? `<p style="margin:0 0 2px 0; color:#374151; font-size:12px;">${senderPhone}</p>` : ''}
+            <p style="margin:0 0 2px 0;"><a href="mailto:${senderEmail}" style="color:#10b981; text-decoration:none; font-size:12px;">${senderEmail}</a></p>
+            ${calendlyLink ? `<p style="margin:4px 0 0 0;"><a href="${calendlyLink}" style="color:#10b981; text-decoration:none; font-size:12px;">Schedule a Meeting</a></p>` : ''}
+            <p style="margin:8px 0 0 0;">
+              <a href="https://www.linkedin.com/company/paycile" style="color:#6b7280; text-decoration:none; font-size:11px; margin-right:12px;">LinkedIn</a>
+              <a href="https://paycile.com" style="color:#6b7280; text-decoration:none; font-size:11px;">paycile.com</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+}
+
 // Track if worker is running
 let workerRunning = false;
 let workerInterval: NodeJS.Timeout | null = null;
@@ -194,16 +239,45 @@ async function processQueue() {
           data: { status: 'processing' },
         });
         
-        // Add unsubscribe link to email body
+        let messageId: string | undefined;
+        let provider = 'unknown';
+
+        // Load sender user if specified on the queue item
+        let senderUser: any = null;
+        if (email.userId) {
+          senderUser = await prisma.user.findUnique({ where: { id: email.userId } });
+        }
+
+        // Determine if this is a first-touch email (no prior sent emails to this contact in this campaign)
+        const priorSentCount = await prisma.emailQueue.count({
+          where: {
+            campaignId: email.campaignId,
+            contactId: email.contactId,
+            status: 'sent',
+            id: { not: email.id },
+          },
+        });
+        const isFirstTouch = priorSentCount === 0;
+
+        // Build sender signature (minimal for first email, full branded for follow-ups)
+        const senderName = senderUser?.name || '';
+        const senderEmailAddr = senderUser?.microsoftEmail || senderUser?.email || '';
+        const senderPhone = senderUser?.phone || '';
+        const senderCalendly = senderUser?.calendlyLink || '';
+        const signatureVariant = isFirstTouch ? 'minimal' : 'full';
+        const signatureHtml = buildEmailSignature(senderName, senderEmailAddr, senderPhone, signatureVariant, senderCalendly);
+
+        // Add unsubscribe link and company address footer
         const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
         const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${email.contactId}`;
         const companyAddress = process.env.COMPANY_ADDRESS || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
         
         const footer = `
-          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
-            <p style="margin: 5px 0;">${companyAddress}</p>
-            <p style="margin: 5px 0;">
-              <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Unsubscribe</a> from this list
+          ${signatureHtml}
+          <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            <p style="margin: 4px 0;">${companyAddress}</p>
+            <p style="margin: 4px 0;">
+              <a href="${unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">Unsubscribe</a> from future emails
             </p>
           </div>
         `;
@@ -211,7 +285,6 @@ async function processQueue() {
         // Convert plain-text body to HTML before appending footer
         let emailBodyWithFooter = email.body;
         if (!/<[a-z][\s\S]*>/i.test(emailBodyWithFooter)) {
-          // Normalize literal \n sequences (from AI/JSON) to real newlines
           emailBodyWithFooter = emailBodyWithFooter.replace(/\\n/g, '\n');
           emailBodyWithFooter = emailBodyWithFooter
             .split('\n\n').map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
@@ -223,15 +296,6 @@ async function processQueue() {
           emailBodyWithFooter = emailBodyWithFooter.replace('</html>', `${footer}</html>`);
         } else {
           emailBodyWithFooter = emailBodyWithFooter + footer;
-        }
-
-        let messageId: string | undefined;
-        let provider = 'unknown';
-
-        // Load sender user if specified on the queue item
-        let senderUser: any = null;
-        if (email.userId) {
-          senderUser = await prisma.user.findUnique({ where: { id: email.userId } });
         }
 
         // Try sending via the sender user's delegated Microsoft token first

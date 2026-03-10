@@ -553,7 +553,7 @@ function ContactsTab({ contacts }: ContactsTabProps) {
   const [csvPreviewRows, setCsvPreviewRows] = useState<Record<string, string>[]>([]);
   const [csvAllRows, setCsvAllRows] = useState<Record<string, string>[]>([]);
   const [csvMapping, setCsvMapping] = useState<Record<string, string>>({
-    firstName: '', lastName: '', company: '', email: '', phone: '', city: '', state: '', url: '',
+    firstName: '', lastName: '', company: '', email: '', phone: '', title: '', city: '', state: '', url: '',
   });
 
   const PLATFORM_FIELDS = [
@@ -562,14 +562,15 @@ function ContactsTab({ contacts }: ContactsTabProps) {
     { key: 'company', label: 'Company' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Phone' },
+    { key: 'title', label: 'Title / Job Title' },
     { key: 'city', label: 'City' },
     { key: 'state', label: 'State' },
-    { key: 'url', label: 'Website / URL' },
+    { key: 'url', label: 'Website / LinkedIn URL' },
   ];
 
   const autoDetectMapping = (headers: string[]): Record<string, string> => {
     const mapping: Record<string, string> = {
-      firstName: '', lastName: '', company: '', email: '', phone: '', city: '', state: '', url: '',
+      firstName: '', lastName: '', company: '', email: '', phone: '', title: '', city: '', state: '', url: '',
     };
     const lower = headers.map(h => h.toLowerCase().trim());
 
@@ -581,12 +582,13 @@ function ContactsTab({ contacts }: ContactsTabProps) {
     if (!mapping.firstName && !mapping.lastName) {
       mapping.firstName = match(['name', 'full name', 'fullname', 'contact name']);
     }
-    mapping.company = match(['company', 'company name', 'organization', 'org']);
+    mapping.company = match(['company', 'company name', 'organization', 'org', 'account name']);
     mapping.email = match(['email', 'e-mail', 'email address', 'work email', 'personal email']);
-    mapping.phone = match(['phone', 'phone number', 'mobile', 'mobile phone', 'work phone', 'work direct phone', 'corporate phone', 'telephone']);
-    mapping.city = match(['city', 'location city']);
-    mapping.state = match(['state', 'state/province', 'province', 'region']);
-    mapping.url = match(['url', 'website', 'web', 'linkedin', 'person linkedin url', 'linkedin url']);
+    mapping.phone = match(['corporate phone', 'work direct phone', 'direct phone', 'phone', 'phone number', 'mobile phone', 'mobile', 'work phone', 'telephone', 'home phone']);
+    mapping.title = match(['title', 'job title', 'position', 'role', 'designation']);
+    mapping.city = match(['city', 'location city', 'person city', 'contact city']);
+    mapping.state = match(['state', 'state/province', 'province', 'region', 'person state', 'location state']);
+    mapping.url = match(['person linkedin url', 'linkedin url', 'linkedin', 'website url', 'company website', 'url', 'website', 'web']);
 
     return mapping;
   };
@@ -1136,11 +1138,12 @@ function ContactsTab({ contacts }: ContactsTabProps) {
                     <tr className="bg-gray-50 border-b">
                       <th className="px-3 py-2 text-left font-semibold text-gray-600">Name</th>
                       <th className="px-3 py-2 text-left font-semibold text-gray-600">Company</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">Title</th>
                       <th className="px-3 py-2 text-left font-semibold text-gray-600">Email</th>
                       <th className="px-3 py-2 text-left font-semibold text-gray-600">Phone</th>
                       <th className="px-3 py-2 text-left font-semibold text-gray-600">City</th>
                       <th className="px-3 py-2 text-left font-semibold text-gray-600">State</th>
-                      <th className="px-3 py-2 text-left font-semibold text-gray-600">URL</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">LinkedIn / URL</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1152,6 +1155,7 @@ function ContactsTab({ contacts }: ContactsTabProps) {
                         <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                           <td className="px-3 py-1.5 max-w-[140px] truncate">{name || <span className="text-gray-300 italic">empty</span>}</td>
                           <td className="px-3 py-1.5 max-w-[140px] truncate">{(csvMapping.company && row[csvMapping.company]) || <span className="text-gray-300 italic">empty</span>}</td>
+                          <td className="px-3 py-1.5 max-w-[120px] truncate">{(csvMapping.title && row[csvMapping.title]) || <span className="text-gray-300 italic">empty</span>}</td>
                           <td className="px-3 py-1.5 max-w-[180px] truncate">{(csvMapping.email && row[csvMapping.email]) || <span className="text-gray-300 italic">empty</span>}</td>
                           <td className="px-3 py-1.5 max-w-[120px] truncate">{(csvMapping.phone && row[csvMapping.phone]) || <span className="text-gray-300 italic">empty</span>}</td>
                           <td className="px-3 py-1.5 max-w-[100px] truncate">{(csvMapping.city && row[csvMapping.city]) || <span className="text-gray-300 italic">empty</span>}</td>

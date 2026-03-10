@@ -8,8 +8,10 @@ export function PropMgmtLanding() {
           overflow-x: hidden;
         }
 
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
         .landing-page {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
           line-height: 1.6;
           color: #1a1a1a;
           margin: 0;
@@ -491,19 +493,19 @@ export function PropMgmtLanding() {
       <section className="hero-section">
         <div className="hero-content">
           <div className="hero-subtitle">For Property Management Finance Teams</div>
-          <h1>Native Yardi Integration for Payment Reconciliation</h1>
+          <h1>Automated Payment Reconciliation for Property Management</h1>
           <p>
-            Reconcile payments across your entire portfolio without leaving Yardi. Automate rent payments, deposits, and multi-property reconciliation.
+            Reconcile payments across your entire portfolio in minutes, not days. Automate rent payments, deposits, and multi-property reconciliation with seamless integrations.
           </p>
           <div className="feature-list">
-            <div className="feature-item">Native Yardi Voyager integration</div>
             <div className="feature-item">Auto-reconcile rent & deposit payments</div>
             <div className="feature-item">Multi-property portfolio management</div>
             <div className="feature-item">Real-time cash position by property</div>
+            <div className="feature-item">Integrates with Yardi, AppFolio, Entrata & more</div>
           </div>
           <div className="button-group">
             <a href="#demo" className="btn btn-primary">
-              See the Yardi Integration
+              Schedule a Demo
             </a>
             <a href="#benefits" className="btn btn-secondary">
               Learn More
@@ -520,8 +522,8 @@ export function PropMgmtLanding() {
             <span className="stat-label">Time Saved on Reconciliation</span>
           </div>
           <div className="stat-card">
-            <span className="stat-number">100%</span>
-            <span className="stat-label">Yardi-Native</span>
+            <span className="stat-number">Seamless</span>
+            <span className="stat-label">Property Software Integrations</span>
           </div>
           <div className="stat-card">
             <span className="stat-number">Real-Time</span>
@@ -532,13 +534,13 @@ export function PropMgmtLanding() {
 
       {/* Benefits Section */}
       <section className="benefits-section" id="benefits">
-        <h2>Built for Yardi Users</h2>
+        <h2>Built for Property Management Teams</h2>
         <div className="benefits-grid">
           <div className="benefit-card">
             <div className="benefit-number">1</div>
-            <h3>Native Yardi Voyager Integration</h3>
+            <h3>Works With Your Existing Software</h3>
             <p>
-              Work directly within Yardi—no exports, imports, or switching between systems. Paycile integrates seamlessly with your existing Yardi Voyager environment, preserving your workflows and data integrity.
+              Paycile integrates seamlessly with Yardi Voyager, AppFolio, Entrata, and other leading property management platforms. No exports, no imports, no switching between systems—just connect and go.
             </p>
           </div>
           <div className="benefit-card">
@@ -568,8 +570,8 @@ export function PropMgmtLanding() {
       {/* Demo Section */}
       <section className="demo-section" id="demo">
         <div className="section-content">
-          <h2>See the Yardi Integration Live</h2>
-          <p>Watch how property management teams are automating reconciliation without leaving Yardi.</p>
+          <h2>See It in Action</h2>
+          <p>Watch how property management teams are automating reconciliation across their entire portfolio.</p>
           <div className="calendar-container">
             <div className="calendar-placeholder">
               <iframe
@@ -580,7 +582,7 @@ export function PropMgmtLanding() {
             </div>
           </div>
           <div className="demo-features">
-            <span>Live Yardi integration demo</span>
+            <span>Live platform demo</span>
             <span>Multi-property use cases</span>
             <span>Implementation timeline</span>
           </div>
@@ -590,7 +592,7 @@ export function PropMgmtLanding() {
       {/* CTA Section */}
       <section className="cta-section">
         <div className="cta-content">
-          <h2>Ready to automate reconciliation in Yardi?</h2>
+          <h2>Ready to automate your reconciliation?</h2>
           <p>Join property management teams who've eliminated manual reconciliation across their entire portfolio.</p>
           <a href="#demo" className="btn btn-primary">
             Schedule Your Demo
@@ -634,7 +636,7 @@ export function PropMgmtLanding() {
           </div>
         </div>
         <div className="footer-text">
-          <p>© 2025 Paycile. All rights reserved.</p>
+          <p>© 2026 Paycile. All rights reserved.</p>
           <p>Paycile Inc is a registered ISO of Fifth Third Bank, N.A., Cincinnati, OH.</p>
         </div>
       </footer>
