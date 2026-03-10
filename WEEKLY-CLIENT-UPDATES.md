@@ -30,8 +30,8 @@
 ### Fix: Email Line Breaks Missing
 - **Completed**: 2026-03-10
 - **Category**: Bug Fix
-- **Client Impact**: Emails (both test and live) were rendering as a single wall of text with no line breaks. Now all emails display with proper paragraph spacing and line breaks as intended.
-- **Details**: Plain-text-to-HTML conversion was being skipped when HTML merge tags (like signatures) were present in the body. Fixed by converting plain text to HTML before merge tag rendering, and added mixed-content fallback handling in the email queue processor.
+- **Client Impact**: Emails were rendering as a wall of text with no line breaks. Now all emails display with proper paragraph spacing and line breaks — including templates with inline HTML like Calendly links and bold text.
+- **Details**: The HTML detection was too aggressive — any HTML tag (even inline `<a>` or `<strong>`) caused the system to skip newline-to-line-break conversion. Fixed by distinguishing between structured HTML documents (with block-level tags like `<p>`, `<div>`, `<br>`) and plain text that happens to contain inline HTML. Added shared `plainTextToHtml()` helper used across all email paths (test, campaign execution, and email queue).
 - **Status**: Deployed
 
 ### Send Test Emails Button
