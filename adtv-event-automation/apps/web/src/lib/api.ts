@@ -69,6 +69,7 @@ export const apiCampaigns = {
   graph: (id: string) => getJson(`/api/campaigns/${id}/graph`),
   stats: (id: string) => getJson(`/api/campaigns/${id}/stats`),
   hubspotSync: (id: string) => sendJson('POST', `/api/campaigns/${id}/contacts/hubspot-sync`),
+  sendTest: (id: string) => sendJson('POST', `/api/campaigns/${id}/send-test`) as Promise<{ ok: boolean; sent: number; total: number; recipient: string; errors?: string[] }>,
 };
 
 // HubSpot

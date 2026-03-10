@@ -1166,6 +1166,163 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
   }
 });
 
+// Send Test: delivers all email nodes in the funnel to the logged-in user
+app.post('/api/campaigns/:id/send-test', async (req, res) => {
+  try {
+    if (!req.user?.id) return res.status(401).json({ error: 'Not authenticated' });
+
+    const campaignId = req.params.id;
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user?.email) return res.status(400).json({ error: 'No email on your account' });
+
+    const testRecipient = user.email;
+
+    const [campaignNodes, campaignEdges, campaign] = await Promise.all([
+      prisma.campaignNode.findMany({ where: { campaignId } }),
+      prisma.campaignEdge.findMany({ where: { campaignId } }),
+      prisma.campaign.findUnique({ where: { id: campaignId }, include: { senderUser: true } }),
+    ]);
+
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+
+    // Order nodes by following the edge graph from start
+    const edgeMap = new Map<string, string>();
+    for (const e of campaignEdges) edgeMap.set(e.fromKey, e.toKey);
+    const orderedNodes: typeof campaignNodes = [];
+    const startNode = campaignNodes.find((n) => n.type === 'start');
+    if (startNode) {
+      let curKey: string | undefined = startNode.key;
+      const visited = new Set<string>();
+      while (curKey && !visited.has(curKey)) {
+        const node = campaignNodes.find((n) => n.key === curKey);
+        if (node) orderedNodes.push(node);
+        visited.add(curKey);
+        curKey = edgeMap.get(curKey);
+      }
+    }
+    const allNodes = orderedNodes.length > 0 ? orderedNodes : campaignNodes;
+    const emailNodes = allNodes.filter((n) => n.type === 'email_send');
+    if (emailNodes.length === 0) {
+      return res.status(400).json({ error: 'No email steps found in this campaign funnel. Attach a funnel template first.' });
+    }
+
+    const senderUser = (campaign as any)?.senderUser;
+    const sName = senderUser?.name || campaign?.ownerName || '';
+    const sEmailAddr = senderUser?.microsoftEmail || senderUser?.email || campaign?.ownerEmail || '';
+    const sPhone = senderUser?.phone || campaign?.ownerPhone || '';
+    const sCalendly = senderUser?.calendlyLink || campaign?.calendlyLink || '';
+
+    const campaignCtx = {
+      name: campaign.name, owner_name: campaign.ownerName, owner_email: campaign.ownerEmail,
+      owner_phone: campaign.ownerPhone, event_type: campaign.eventType,
+      calendly_link: sCalendly, sender_name: sName, sender_email: sEmailAddr, sender_phone: sPhone,
+    } as any;
+    const senderCtx = {
+      name: sName, email: sEmailAddr, phone: sPhone, calendly_link: sCalendly,
+      signature: buildEmailSignature(sName, sEmailAddr, sPhone, 'full', sCalendly),
+      signature_minimal: buildEmailSignature(sName, sEmailAddr, sPhone, 'minimal', sCalendly),
+      signature_full: buildEmailSignature(sName, sEmailAddr, sPhone, 'full', sCalendly),
+    };
+
+    // Use a sample contact for merge-tag rendering
+    const sampleContact = await prisma.contact.findFirst({ where: { campaignId } });
+    const contactName = sampleContact?.name || 'Jane Smith';
+    const np = splitName(contactName);
+    const contactCtx = {
+      name: contactName,
+      first_name: np.first_name,
+      last_name: np.last_name,
+      email: sampleContact?.email || 'jane.smith@example.com',
+      phone: sampleContact?.phone || '(555) 000-0000',
+    };
+
+    const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+    const companyAddress = process.env.COMPANY_ADDRESS || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
+    const mergeCtx = { contact: contactCtx, campaign: campaignCtx, sender: senderCtx };
+
+    let sent = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < emailNodes.length; i++) {
+      const node = emailNodes[i];
+      let cfg: any = {};
+      try { cfg = node.configJson ? JSON.parse(node.configJson) : {}; } catch {}
+      const { subject: rawSubject, body: rawBody } = await resolveEmailFromConfig(cfg);
+
+      let sub = renderMergeTags(rawSubject || '', mergeCtx).trim();
+      let bod = renderMergeTags(rawBody || '', mergeCtx).trim();
+
+      // Prepend test label with step number
+      sub = `[TEST ${i + 1}/${emailNodes.length}] ${sub || '(no subject)'}`;
+
+      // Add a test banner at the top of the body
+      const testBanner = `
+        <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:6px; padding:12px 16px; margin-bottom:20px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-size:13px; color:#92400e;">
+          <strong>TEST EMAIL</strong> — Step ${i + 1} of ${emailNodes.length} &middot; Node: <em>${node.name || node.key}</em><br>
+          <span style="font-size:11px; color:#b45309;">This is a preview sent to ${testRecipient}. Merge tags rendered using sample contact data.</span>
+        </div>
+      `;
+
+      // Convert plain text to HTML
+      if (!/<[a-z][\s\S]*>/i.test(bod)) {
+        bod = bod.replace(/\\n/g, '\n');
+        bod = bod.split('\n\n').map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+      }
+
+      // Determine signature variant based on step position
+      const isFirst = i === 0;
+      const hasSignatureFromMergeTag = bod.includes('<!-- paycile-sig -->');
+      let sigBlock = '';
+      if (!hasSignatureFromMergeTag) {
+        sigBlock = buildEmailSignature(sName, sEmailAddr, sPhone, isFirst ? 'minimal' : 'full', sCalendly);
+      }
+
+      const footer = `
+        ${sigBlock}
+        <div style="margin-top:20px; padding-top:12px; border-top:1px solid #e5e7eb; font-size:11px; color:#9ca3af; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+          <p style="margin:4px 0;">${companyAddress}</p>
+          <p style="margin:4px 0;"><a href="#" style="color:#9ca3af; text-decoration:underline;">Unsubscribe</a> from future emails</p>
+        </div>
+      `;
+
+      const fullHtml = testBanner + bod + footer;
+
+      try {
+        // Send via Graph or SMTP (re-use existing infra)
+        let msgSent = false;
+        if (isGraphConfigured()) {
+          const result = await sendGraphEmail({ to: testRecipient, subject: sub, body: fullHtml, from: sEmailAddr || undefined });
+          if (result.sent) msgSent = true;
+        }
+        if (!msgSent) {
+          const smtpHost = process.env.SMTP_HOST;
+          const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+          const smtpUser = process.env.SMTP_USER;
+          const smtpPass = process.env.SMTP_PASS;
+          if (smtpHost && smtpPort && smtpUser && smtpPass) {
+            const transporter = nodemailer.createTransport({
+              host: smtpHost, port: smtpPort,
+              secure: (process.env.SMTP_SECURE === 'true') || (smtpPort === 465),
+              auth: { user: smtpUser, pass: smtpPass },
+            });
+            await transporter.sendMail({ from: smtpUser, to: testRecipient, subject: sub, html: fullHtml });
+            msgSent = true;
+          }
+        }
+        if (msgSent) sent++;
+        else errors.push(`Step ${i + 1}: No email provider configured`);
+      } catch (err: any) {
+        errors.push(`Step ${i + 1}: ${err.message}`);
+      }
+    }
+
+    console.log(`[send-test] Sent ${sent}/${emailNodes.length} test emails to ${testRecipient}`);
+    res.json({ ok: true, sent, total: emailNodes.length, recipient: testRecipient, errors: errors.length ? errors : undefined });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'send-test error' });
+  }
+});
+
 app.patch('/api/campaigns/:id', async (req, res) => {
   try {
     const body = z.object({

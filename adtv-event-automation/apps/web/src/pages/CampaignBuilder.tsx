@@ -23,6 +23,9 @@ export function CampaignBuilder() {
   const [showVersionSelector, setShowVersionSelector] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>(undefined);
 
+  // Send Test state
+  const [sendingTest, setSendingTest] = useState(false);
+
   // AI Personalization state
   const [aiPersonalization, setAiPersonalization] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -314,6 +317,35 @@ export function CampaignBuilder() {
                 <span className="badge-primary text-xs">{campaign.status}</span>
               </div>
               <div className="grid grid-cols-1 gap-2">
+                <button
+                  className="btn-outline btn-md flex items-center justify-center gap-2"
+                  disabled={sendingTest}
+                  onClick={async () => {
+                    const ok = window.confirm(
+                      'This will send ALL email steps from the funnel to your logged-in email address so you can review formatting and messaging. Continue?'
+                    );
+                    if (!ok) return;
+                    setSendingTest(true);
+                    try {
+                      const result = await apiCampaigns.sendTest(campaign.id);
+                      if (result.errors?.length) {
+                        addToast({ title: `Test sent (${result.sent}/${result.total})`, description: `Some steps failed: ${result.errors.join('; ')}`, variant: 'warning' });
+                      } else {
+                        addToast({ title: `Test emails sent`, description: `${result.sent} email(s) delivered to ${result.recipient}`, variant: 'success' });
+                      }
+                    } catch (err: any) {
+                      addToast({ title: 'Send test failed', description: err?.message || 'Error', variant: 'error' });
+                    } finally {
+                      setSendingTest(false);
+                    }
+                  }}
+                >
+                  {sendingTest ? (
+                    <><span className="animate-spin text-sm">&#9696;</span> Sending Test...</>
+                  ) : (
+                    <>&#9993; Send Test Emails</>
+                  )}
+                </button>
                 {campaign.status !== 'active' && (
                   <button className="btn-primary btn-md" onClick={async ()=> {
                     // Warn if AI personalization is on but emails are not all approved
@@ -340,9 +372,10 @@ export function CampaignBuilder() {
                 {campaign.status !== 'stopped' && (
                   <button className="btn-outline btn-md" onClick={()=> setStatus('stopped')}>Stop Campaign</button>
                 )}
-                {/* Removed SMS-only button; unified activation triggers combined executor */}
               </div>
-              <p className="text-xs text-gray-500">Activation begins executing the attached funnel for all contacts on schedule. Pause will temporarily halt sends. Stop ends the campaign.</p>
+              <p className="text-xs text-gray-500">
+                <strong>Send Test</strong> delivers all email steps to your inbox for review. <strong>Activate</strong> begins executing the funnel for all contacts on schedule.
+              </p>
             </div>
 
             {/* AI Personalization Section */}
