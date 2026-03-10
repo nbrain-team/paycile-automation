@@ -6,6 +6,13 @@
 
 ## Current Week (March 9-13, 2026)
 
+### Funnel Template Content & Profile Data Cleanup
+- **Completed**: 2026-03-10
+- **Category**: Data Fix / Enhancement
+- **Client Impact**: The "Financial Truth for Property Management CFOs" funnel template now sends emails with correct formatting, proper Calendly booking links, and appropriate sender signatures. Derek Stewart's profile is updated with his phone number (610-207-4324) and Calendly link. Emails will now render with proper line spacing and the right sender information.
+- **Details**: Updated Email 1 to use minimal signature (first-touch), Email 2 to use full branded signature (follow-up). Replaced placeholder `[here]` text with clickable Calendly merge-tag links. Converted markdown bold to HTML. Updated both the template nodes and all associated campaign nodes. Set Derek's phone and Calendly in user profile so signatures and merge tags render correctly.
+- **Status**: Deployed
+
 ### AI Campaign Builder — Full Profile Integration
 - **Completed**: 2026-03-10
 - **Category**: Enhancement
