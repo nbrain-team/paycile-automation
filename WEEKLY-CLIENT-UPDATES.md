@@ -6,6 +6,13 @@
 
 ## Current Week (March 9-13, 2026)
 
+### AI Campaign Builder — Full Profile Integration
+- **Completed**: 2026-03-10
+- **Category**: Enhancement
+- **Client Impact**: The AI Campaign Builder now automatically creates a ready-to-use campaign (not just a template) with the sender's profile information pre-populated — sender email, phone number, and Calendly link are all attached to the campaign. A sender email selector is shown before saving, so the correct sender profile is used from the start. Previously, after the AI generated a campaign, users had to manually create a separate campaign and re-enter sender details.
+- **Details**: AI builder now fetches user profile and sender emails on load. On save, it creates a funnel template AND a campaign with senderUserId, ownerPhone, and calendlyLink pre-set. Backend now also forwards targetPersona and landingPageUrl to the AI, improving content relevance for the selected persona.
+- **Status**: Deployed
+
 ### Concurrent Email Personalization (10x Speed Improvement)
 - **Completed**: 2026-03-10
 - **Category**: Performance Enhancement

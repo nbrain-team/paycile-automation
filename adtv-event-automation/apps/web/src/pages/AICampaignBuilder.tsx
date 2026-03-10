@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getApiUrl, apiAuth } from '@lib/api';
+import { getApiUrl, apiAuth, apiCampaigns, apiSenderEmails } from '@lib/api';
 import { useStore } from '@store/useStore';
 
 const AVAILABLE_CHANNELS = [
@@ -129,10 +129,26 @@ export function AICampaignBuilder() {
   const [landingPageTemplate, setLandingPageTemplate] = useState('none');
   const [customLandingPageUrl, setCustomLandingPageUrl] = useState('');
   
-  // Fetch logged-in user's calendar link
+  // Fetch logged-in user's profile (name, email, phone, Calendly) and sender emails
+  const [userProfile, setUserProfile] = useState<{ id?: string; name?: string; email?: string; phone?: string; calendlyLink?: string; microsoftEmail?: string }>({});
   const [userCalendarLink, setUserCalendarLink] = useState('');
+  const [senderEmails, setSenderEmails] = useState<Array<{ email: string; name: string; source: string; userId?: string; phone?: string; calendlyLink?: string }>>([]);
+  const [selectedSenderEmail, setSelectedSenderEmail] = useState('');
+
   useEffect(() => {
-    apiAuth.me().then((u: any) => { if (u?.calendlyLink) setUserCalendarLink(u.calendlyLink); }).catch(() => {});
+    apiAuth.me().then((u: any) => {
+      if (u) {
+        setUserProfile(u);
+        if (u.calendlyLink) setUserCalendarLink(u.calendlyLink);
+      }
+    }).catch(() => {});
+
+    apiSenderEmails.list().then((list) => {
+      if (Array.isArray(list) && list.length) {
+        setSenderEmails(list);
+        setSelectedSenderEmail(list[0].email);
+      }
+    }).catch(() => {});
   }, []);
 
   // Generation state
@@ -275,22 +291,43 @@ export function AICampaignBuilder() {
         })),
       };
 
-      // Use dedicated AI campaign save endpoint (avoids CORS issues)
+      // Save as funnel template
       const response = await fetch(`${getApiUrl()}/api/ai/campaign/save-as-template`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(templateData),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        addToast({ title: 'Campaign saved as template! 🎉', variant: 'success' });
-        navigate(`/templates/${data.id}`);
-      } else {
+      if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
         console.error('Backend error:', errorData);
         throw new Error(errorData.error || 'Failed to save template');
       }
+
+      const savedTemplate = await response.json();
+
+      // Also create a campaign from the template with the user's profile data
+      const senderData = senderEmails.find((s) => s.email === selectedSenderEmail);
+      const senderName = senderData?.name || userProfile.name || '';
+      const senderEmail = selectedSenderEmail || userProfile.microsoftEmail || userProfile.email || '';
+      const phone = senderData?.phone || userProfile.phone || '';
+      const calendly = senderData?.calendlyLink || userCalendarLink || '';
+
+      const campaign = await apiCampaigns.create({
+        name: generatedCampaign.name,
+        ownerName: senderName,
+        ownerEmail: senderEmail,
+        ownerPhone: phone || undefined,
+        eventType: 'outreach',
+        eventDate: new Date().toISOString().split('T')[0],
+        calendlyLink: calendly || undefined,
+        templateId: savedTemplate.id,
+        senderUserId: senderData?.userId || userProfile.id || undefined,
+        status: 'draft',
+      });
+
+      addToast({ title: 'Campaign created successfully!', variant: 'success' });
+      navigate(`/campaigns/${campaign.id}`);
     } catch (error: any) {
       console.error('Save error:', error);
       addToast({ title: error.message || 'Failed to save campaign', variant: 'error' });
@@ -567,7 +604,20 @@ export function AICampaignBuilder() {
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                {senderEmails.length > 0 && (
+                  <select
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                    value={selectedSenderEmail}
+                    onChange={(e) => setSelectedSenderEmail(e.target.value)}
+                  >
+                    {senderEmails.map((s) => (
+                      <option key={s.email} value={s.email}>
+                        {s.name && s.name !== s.email ? `${s.name} (${s.email})` : s.email}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <button
                   onClick={() => setGeneratedCampaign(null)}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -578,7 +628,7 @@ export function AICampaignBuilder() {
                   onClick={handleSaveAsTemplate}
                   className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all shadow-md"
                 >
-                  💾 Save as Template
+                  Save & Create Campaign
                 </button>
               </div>
             </div>

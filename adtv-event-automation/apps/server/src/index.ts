@@ -2819,6 +2819,8 @@ app.post('/api/ai/campaign/generate', async (req, res) => {
       industry,
       includeExistingTemplates,
       calendarLink,
+      targetPersona,
+      landingPageUrl,
     } = req.body;
 
     // Validate inputs
@@ -2866,6 +2868,8 @@ app.post('/api/ai/campaign/generate', async (req, res) => {
       tone,
       industry,
       calendarLink,
+      targetPersona,
+      landingPageUrl,
     }, existingTemplates);
 
     console.log('✅ AI Campaign Generated:', campaign.name);
