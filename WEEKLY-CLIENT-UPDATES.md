@@ -6,6 +6,20 @@
 
 ## Current Week (March 9-13, 2026)
 
+### Send Test Emails Button
+- **Completed**: 2026-03-10
+- **Category**: Feature
+- **Client Impact**: Before launching a campaign, users can now click "Send Test Emails" to receive every email step from the funnel directly to their own inbox. This lets the team review exact formatting, signatures, merge tag rendering, and messaging before sending to real contacts.
+- **Details**: New backend endpoint renders all email nodes using sample contact data, applies the correct signature variant per step, adds a yellow test banner with step numbering, and delivers all emails immediately to the logged-in user. Includes confirmation dialog and success/error feedback.
+- **Status**: Deployed
+
+### Signature Merge Tags
+- **Completed**: 2026-03-10
+- **Category**: Feature
+- **Client Impact**: Funnel template editors can now place signature blocks exactly where they want using merge tags: `{{sender.signature_minimal}}` for first-touch emails (name + phone only) and `{{sender.signature_full}}` for follow-ups (branded HTML with logo, Calendly, LinkedIn). Additional sender merge tags (`{{sender.name}}`, `{{sender.email}}`, `{{sender.phone}}`, `{{sender.calendly_link}}`) are also available for custom signature layouts.
+- **Details**: Wired sender context into all renderMergeTags calls. Email queue auto-detects if a merge tag already rendered a signature and skips auto-injection to prevent duplicates. Updated the funnel template merge tag palette with all new options.
+- **Status**: Deployed
+
 ### Profile-Level Calendar Link Auto-Selection
 - **Completed**: 2026-03-10
 - **Category**: Enhancement
