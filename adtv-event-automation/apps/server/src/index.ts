@@ -1067,6 +1067,15 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       const { subject, body: emailBody } = await resolveEmailFromConfig(cfg);
       const emailsToQueue = [];
 
+      // Convert plain text body to HTML before merge tag rendering
+      let htmlEmailBody = (emailBody || '').replace(/\\n/g, '\n');
+      if (!/<[a-z][\s\S]*>/i.test(htmlEmailBody)) {
+        htmlEmailBody = htmlEmailBody
+          .split('\n\n')
+          .map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`)
+          .join('');
+      }
+
       // If AI personalization is enabled, pre-load all personalized emails for this node
       let personalizedMap: Record<string, { subject: string; body: string }> = {};
       if (campaign?.aiPersonalization) {
@@ -1092,10 +1101,10 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
           sub = personalizedMap[ct.id].subject;
           bod = personalizedMap[ct.id].body;
         } else {
-          // Fall back to standard mail-merge
+          // Fall back to standard mail-merge (using pre-converted HTML body)
           const np = splitName(ct.name || '');
           sub = renderMergeTags(subject || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx, sender: senderCtx }).trim();
-          bod = renderMergeTags(emailBody || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx, sender: senderCtx }).trim();
+          bod = renderMergeTags(htmlEmailBody, { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx, sender: senderCtx }).trim();
         }
         
         emailsToQueue.push({
@@ -1264,8 +1273,19 @@ app.post('/api/campaigns/:id/send-test', async (req, res) => {
       try { cfg = node.configJson ? JSON.parse(node.configJson) : {}; } catch {}
       const { subject: rawSubject, body: rawBody } = await resolveEmailFromConfig(cfg);
 
+      // Convert plain text body to HTML BEFORE merge tag rendering so that
+      // signature / other HTML merge tags don't trip the "already HTML" check
+      // and cause line-break conversion to be skipped entirely.
+      let processedBody = (rawBody || '').replace(/\\n/g, '\n');
+      if (!/<[a-z][\s\S]*>/i.test(processedBody)) {
+        processedBody = processedBody
+          .split('\n\n')
+          .map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`)
+          .join('');
+      }
+
       let sub = renderMergeTags(rawSubject || '', mergeCtx).trim();
-      let bod = renderMergeTags(rawBody || '', mergeCtx).trim();
+      let bod = renderMergeTags(processedBody, mergeCtx).trim();
 
       // Prepend test label with step number
       sub = `[TEST ${i + 1}/${emailNodes.length}] ${sub || '(no subject)'}`;
@@ -1277,12 +1297,6 @@ app.post('/api/campaigns/:id/send-test', async (req, res) => {
           <span style="font-size:11px; color:#b45309;">This is a preview sent to ${testRecipient}. Merge tags rendered using sample contact data.</span>
         </div>
       `;
-
-      // Convert plain text to HTML
-      if (!/<[a-z][\s\S]*>/i.test(bod)) {
-        bod = bod.replace(/\\n/g, '\n');
-        bod = bod.split('\n\n').map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
-      }
 
       // Determine signature variant based on step position
       const isFirst = i === 0;

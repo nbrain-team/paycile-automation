@@ -289,11 +289,15 @@ async function processQueue() {
         `;
         
         // Convert plain-text body to HTML before appending footer
-        let emailBodyWithFooter = email.body;
+        let emailBodyWithFooter = email.body.replace(/\\n/g, '\n');
         if (!/<[a-z][\s\S]*>/i.test(emailBodyWithFooter)) {
-          emailBodyWithFooter = emailBodyWithFooter.replace(/\\n/g, '\n');
+          // Pure plain text: wrap in paragraph tags
           emailBodyWithFooter = emailBodyWithFooter
             .split('\n\n').map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+        } else if (/\n/.test(emailBodyWithFooter)) {
+          // Mixed HTML + plain text (e.g. AI-personalized content with some HTML):
+          // convert remaining newlines to <br> so line breaks aren't swallowed
+          emailBodyWithFooter = emailBodyWithFooter.replace(/([^>])\n/g, '$1<br>\n');
         }
 
         if (emailBodyWithFooter.includes('</body>')) {
