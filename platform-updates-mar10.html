@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paycile Platform Updates — March 10, 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: #000;
+      color: #fff;
+      padding: 48px 32px 56px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 200px;
+      background: linear-gradient(90deg, rgba(16,185,129,.35), rgba(59,130,246,.35), rgba(139,92,246,.25), rgba(16,185,129,.35));
+      filter: blur(50px);
+      opacity: .7;
+    }
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .header-label {
+      display: inline-block;
+      background: rgba(16,185,129,.15);
+      color: #10b981;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .header p {
+      font-size: 16px;
+      color: #94a3b8;
+      max-width: 600px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: -32px auto 64px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .icon-green  { background: #ecfdf5; }
+    .icon-blue   { background: #eff6ff; }
+    .icon-purple { background: #f5f3ff; }
+    .icon-amber  { background: #fffbeb; }
+    .icon-cyan   { background: #ecfeff; }
+    .icon-rose   { background: #fff1f2; }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .card-subtitle {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .card p {
+      color: #475569;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .detail-list {
+      list-style: none;
+      padding: 0;
+    }
+    .detail-list li {
+      position: relative;
+      padding-left: 24px;
+      font-size: 14px;
+      color: #475569;
+      margin-bottom: 8px;
+      line-height: 1.55;
+    }
+    .detail-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 7px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-top: 12px;
+    }
+    .badge-feature  { background: #dbeafe; color: #1d4ed8; }
+    .badge-enhance  { background: #d1fae5; color: #047857; }
+    .badge-fix      { background: #fef3c7; color: #92400e; }
+
+    .files-changed {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .files-changed summary {
+      font-size: 12px;
+      color: #94a3b8;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .files-changed code {
+      display: block;
+      font-size: 12px;
+      color: #64748b;
+      background: #f8fafc;
+      padding: 2px 0;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .signature-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 16px 0 8px;
+    }
+    @media (max-width: 640px) {
+      .signature-demo { grid-template-columns: 1fr; }
+      .header h1 { font-size: 28px; }
+    }
+
+    .sig-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 13px;
+    }
+    .sig-box-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 8px;
+      color: #64748b;
+    }
+    .sig-minimal .sig-name { font-weight: 600; color: #374151; }
+    .sig-minimal .sig-phone { color: #6b7280; font-size: 13px; }
+
+    .sig-full { border-left: 3px solid #10b981; }
+    .sig-full .sig-name { font-weight: 700; font-size: 14px; color: #111827; }
+    .sig-full .sig-company { color: #6b7280; font-size: 12px; margin-bottom: 4px; }
+    .sig-full .sig-link { color: #10b981; text-decoration: none; font-size: 12px; }
+
+    .footer {
+      text-align: center;
+      padding: 32px 24px 48px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .footer a { color: #10b981; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-label">Platform Release</div>
+      <h1>Platform Updates — March 10, 2026</h1>
+      <p>Enhancements from the Paycile/nBrain weekly touchpoint. 6 files changed, 185 additions, 71 deletions.</p>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- 1. Calendar Link -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-green">📅</div>
+        <div>
+          <div class="card-title">Profile-Level Calendar Link Auto-Selection</div>
+          <div class="card-subtitle">Campaign Creation &bull; Backend API</div>
+        </div>
+      </div>
+      <p>
+        When creating a campaign and selecting a "Send From" email, the system now automatically populates that sender's <strong>Calendly link</strong> and <strong>phone number</strong> from their user profile. This ensures every campaign uses the correct sender's scheduling link instead of requiring manual entry.
+      </p>
+      <ul class="detail-list">
+        <li>The <code>/api/sender-emails</code> endpoint now returns <code>phone</code> and <code>calendlyLink</code> for each sender</li>
+        <li>Campaign creation modal auto-fills Calendly and phone fields on sender selection</li>
+        <li>The campaign executor already resolves the sender's calendar link at send time via <code>senderUser.calendlyLink</code></li>
+      </ul>
+      <span class="badge badge-enhance">Enhancement</span>
+      <details class="files-changed">
+        <summary>Files changed (2)</summary>
+        <code>apps/server/src/index.ts</code>
+        <code>apps/web/src/components/CreateLiveCampaignModal.tsx</code>
+      </details>
+    </div>
+
+    <!-- 2. CSV Mapping -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-blue">📋</div>
+        <div>
+          <div class="card-title">Enhanced Apollo CSV Contact Import Mapping</div>
+          <div class="card-subtitle">Contact Import &bull; Column Auto-Detection</div>
+        </div>
+      </div>
+      <p>
+        CSV imports from Apollo now automatically detect and correctly map more fields. Previously, fields like Corporate Phone, Company, and LinkedIn URL were missed during import, causing blank data in campaign contacts.
+      </p>
+      <ul class="detail-list">
+        <li><strong>Phone:</strong> Now prioritizes "Corporate Phone" and "Work Direct Phone" (Apollo's default export fields) ahead of generic "Phone"</li>
+        <li><strong>Company:</strong> Added "Account Name" pattern matching</li>
+        <li><strong>LinkedIn:</strong> Added "Person Linkedin Url" (Apollo's exact header)</li>
+        <li><strong>Title / Job Title:</strong> New mappable field with auto-detection for "Title", "Job Title", "Position", "Role", "Designation"</li>
+        <li><strong>City / State:</strong> Added "Person City", "Person State", "Location City/State" patterns</li>
+        <li>Preview table in mapping modal updated with Title and LinkedIn columns</li>
+      </ul>
+      <span class="badge badge-enhance">Enhancement</span>
+      <details class="files-changed">
+        <summary>Files changed (1)</summary>
+        <code>apps/web/src/pages/CampaignBuilder.tsx</code>
+      </details>
+    </div>
+
+    <!-- 3. Signatures -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-purple">✍️</div>
+        <div>
+          <div class="card-title">Two-Variant Email Signature System</div>
+          <div class="card-subtitle">Email Queue &bull; Spam Prevention &bull; Branding</div>
+        </div>
+      </div>
+      <p>
+        Outbound campaign emails now include a professional, branded signature that <strong>adapts based on position in the sequence</strong>. First-touch emails use a minimal signature to reduce spam risk, while follow-up emails include the full branded Paycile HTML signature.
+      </p>
+
+      <div class="signature-demo">
+        <div class="sig-box">
+          <div class="sig-box-label">First-Touch Email (Minimal)</div>
+          <div class="sig-minimal">
+            <div class="sig-name">Derek Stewart</div>
+            <div class="sig-phone">(555) 123-4567</div>
+          </div>
+        </div>
+        <div class="sig-box sig-full">
+          <div class="sig-box-label">Follow-Up Emails (Full Branded)</div>
+          <div>
+            <div class="sig-name">Derek Stewart</div>
+            <div class="sig-company">Paycile</div>
+            <div class="sig-phone">(555) 123-4567</div>
+            <a href="#" class="sig-link">derek@paycile.com</a><br>
+            <a href="#" class="sig-link">Schedule a Meeting</a><br>
+            <span style="font-size:11px;color:#6b7280;">LinkedIn &nbsp;&bull;&nbsp; paycile.com</span>
+          </div>
+        </div>
+      </div>
+
+      <ul class="detail-list">
+        <li>Built <code>buildEmailSignature()</code> with two variants: <code>'minimal'</code> and <code>'full'</code></li>
+        <li>Email queue processor auto-detects first-touch vs. follow-up by checking prior sent emails to the same contact</li>
+        <li>Full signature includes Paycile logo, sender contact info, Calendly scheduling link, LinkedIn, and website</li>
+        <li>Every email includes a visible <strong>unsubscribe link</strong> and company address in a clean footer</li>
+      </ul>
+      <span class="badge badge-feature">New Feature</span>
+      <details class="files-changed">
+        <summary>Files changed (2)</summary>
+        <code>apps/server/src/services/emailQueue.ts</code>
+        <code>apps/server/src/index.ts</code>
+      </details>
+    </div>
+
+    <!-- 4. Unsubscribe -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-amber">🔗</div>
+        <div>
+          <div class="card-title">Unsubscribe Link — Verified Across All Paths</div>
+          <div class="card-subtitle">Compliance &bull; Email Footer</div>
+        </div>
+      </div>
+      <p>
+        Confirmed and improved that every outbound email — whether sent via the email queue, direct SMTP, or Microsoft Graph — includes a visible unsubscribe link and company mailing address in the footer. Styling refined for a cleaner, more modern look.
+      </p>
+      <ul class="detail-list">
+        <li>Email queue path: unsubscribe included as part of the new combined signature + footer block</li>
+        <li>Direct send path (<code>addUnsubscribeLink</code>): updated with matching modern styling</li>
+        <li>Footer now reads "Unsubscribe from future emails" with subtle, non-intrusive design</li>
+      </ul>
+      <span class="badge badge-fix">Verification &amp; Fix</span>
+      <details class="files-changed">
+        <summary>Files changed (2)</summary>
+        <code>apps/server/src/services/emailQueue.ts</code>
+        <code>apps/server/src/index.ts</code>
+      </details>
+    </div>
+
+    <!-- 5. Landing Page -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-cyan">🏢</div>
+        <div>
+          <div class="card-title">Property Management Landing Page Refinements</div>
+          <div class="card-subtitle">Landing Page &bull; Fonts &bull; Copy &bull; Branding</div>
+        </div>
+      </div>
+      <p>
+        The property management landing page has been updated for brand consistency and broader appeal. The Yardi-specific messaging has been softened to appeal to all property management finance teams while still mentioning key integrations.
+      </p>
+      <ul class="detail-list">
+        <li><strong>Font:</strong> Replaced system font stack with <strong>Inter</strong> via Google Fonts for consistent brand typography</li>
+        <li><strong>Headline:</strong> Changed from "Native Yardi Integration for Payment Reconciliation" → "Automated Payment Reconciliation for Property Management"</li>
+        <li><strong>Features:</strong> Updated to "Integrates with Yardi, AppFolio, Entrata & more" instead of Yardi-only</li>
+        <li><strong>Benefits section:</strong> Renamed from "Built for Yardi Users" → "Built for Property Management Teams"</li>
+        <li><strong>Integration card:</strong> Now reads "Works With Your Existing Software" highlighting multiple platforms</li>
+        <li><strong>Demo section:</strong> Updated to "See It in Action" with broader copy</li>
+        <li><strong>Footer:</strong> Copyright updated to 2026</li>
+      </ul>
+      <span class="badge badge-enhance">Enhancement</span>
+      <details class="files-changed">
+        <summary>Files changed (1)</summary>
+        <code>apps/web/src/pages/PropMgmtLanding.tsx</code>
+      </details>
+    </div>
+
+    <!-- 6. Other URL -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-rose">🔗</div>
+        <div>
+          <div class="card-title">"Other" Custom Landing Page URL — UX Improvement</div>
+          <div class="card-subtitle">AI Campaign Builder &bull; Landing Page Selector</div>
+        </div>
+      </div>
+      <p>
+        Enhanced the "Other (Custom URL)" option in the AI Campaign Builder's landing page dropdown with improved helper text, making it clear that users can generate the campaign now and update the URL later in the funnel editor.
+      </p>
+      <ul class="detail-list">
+        <li>Added descriptive helper text: "Enter any URL. You can generate the campaign now and update this later in the funnel editor."</li>
+        <li>Updated the Property Management landing page label from "Property Management Yardi Landing" → "Property Management Landing"</li>
+      </ul>
+      <span class="badge badge-enhance">Enhancement</span>
+      <details class="files-changed">
+        <summary>Files changed (1)</summary>
+        <code>apps/web/src/pages/AICampaignBuilder.tsx</code>
+      </details>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <p>Paycile Platform &bull; Built by <a href="#">nBrain</a> &bull; Commit <code>c65ed75</code> &bull; Pushed to GitHub</p>
+  </div>
+
+</body>
+</html>

@@ -26,7 +26,12 @@ export function TemplatesFunnel() {
   const smsRef = useRef<HTMLTextAreaElement | null>(null);
   const vmRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const mergeTags = ['{{contact.first_name}}','{{contact.last_name}}','{{contact.email}}','{{contact.phone}}','{{contact.event_date}}','{{campaign.name}}','{{campaign.event_type}}','{{sender.signature}}'];
+  const mergeTags = [
+    '{{contact.first_name}}','{{contact.last_name}}','{{contact.email}}','{{contact.phone}}','{{contact.event_date}}',
+    '{{campaign.name}}','{{campaign.event_type}}','{{campaign.calendly_link}}',
+    '{{sender.name}}','{{sender.email}}','{{sender.phone}}','{{sender.calendly_link}}',
+    '{{sender.signature}}','{{sender.signature_minimal}}','{{sender.signature_full}}',
+  ];
 
   const insertAtCursor = <T extends HTMLInputElement | HTMLTextAreaElement>(
     ref: React.RefObject<T>,

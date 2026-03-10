@@ -10,6 +10,8 @@ const prisma = new PrismaClient();
  * @param variant 'minimal' for first-touch emails (name + phone + unsubscribe only),
  *                'full' for follow-ups (branded Paycile signature with logo and links)
  */
+const SIGNATURE_MARKER = '<!-- paycile-sig -->';
+
 export function buildEmailSignature(
   senderName: string,
   senderEmail: string,
@@ -18,7 +20,7 @@ export function buildEmailSignature(
   calendlyLink?: string,
 ): string {
   if (variant === 'minimal') {
-    return `
+    return `${SIGNATURE_MARKER}
       <div style="margin-top:24px; padding-top:16px; border-top:1px solid #e5e7eb; font-size:13px; color:#374151; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
         <p style="margin:0 0 2px 0; font-weight:600;">${senderName}</p>
         ${senderPhone ? `<p style="margin:0; color:#6b7280;">${senderPhone}</p>` : ''}
@@ -26,7 +28,7 @@ export function buildEmailSignature(
     `;
   }
 
-  return `
+  return `${SIGNATURE_MARKER}
     <div style="margin-top:32px; padding-top:20px; border-top:2px solid #10b981; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <table cellpadding="0" cellspacing="0" border="0" style="font-size:13px; color:#374151;">
         <tr>
@@ -259,21 +261,25 @@ async function processQueue() {
         });
         const isFirstTouch = priorSentCount === 0;
 
-        // Build sender signature (minimal for first email, full branded for follow-ups)
-        const senderName = senderUser?.name || '';
-        const senderEmailAddr = senderUser?.microsoftEmail || senderUser?.email || '';
-        const senderPhone = senderUser?.phone || '';
-        const senderCalendly = senderUser?.calendlyLink || '';
-        const signatureVariant = isFirstTouch ? 'minimal' : 'full';
-        const signatureHtml = buildEmailSignature(senderName, senderEmailAddr, senderPhone, signatureVariant, senderCalendly);
-
         // Add unsubscribe link and company address footer
         const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
         const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${email.contactId}`;
         const companyAddress = process.env.COMPANY_ADDRESS || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
+
+        // Only auto-inject signature if no merge tag already rendered one
+        const hasSignatureFromMergeTag = email.body.includes(SIGNATURE_MARKER);
+        let signatureBlock = '';
+        if (!hasSignatureFromMergeTag) {
+          const senderName = senderUser?.name || '';
+          const senderEmailAddr = senderUser?.microsoftEmail || senderUser?.email || '';
+          const senderPhone = senderUser?.phone || '';
+          const senderCalendly = senderUser?.calendlyLink || '';
+          const signatureVariant = isFirstTouch ? 'minimal' : 'full';
+          signatureBlock = buildEmailSignature(senderName, senderEmailAddr, senderPhone, signatureVariant, senderCalendly);
+        }
         
         const footer = `
-          ${signatureHtml}
+          ${signatureBlock}
           <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
             <p style="margin: 4px 0;">${companyAddress}</p>
             <p style="margin: 4px 0;">

@@ -15,7 +15,7 @@ import { sendVoicemailDrop } from './services/voicemailProvider';
 import { generateInboxResponse, generateResponseOptions } from './inbox-ai-generator';
 import { searchPeople, searchOrganizations } from './services/apolloApi';
 import { sendGraphEmail, isGraphConfigured } from './services/graphEmailProvider';
-import { startEmailQueueWorker, queueBulkEmails, getQueueStats } from './services/emailQueue';
+import { startEmailQueueWorker, queueBulkEmails, getQueueStats, buildEmailSignature } from './services/emailQueue';
 import { generateCampaign, refineContent, generateVariations } from './ai-campaign-builder';
 import { personalizeContent, PersonalizationContact } from './ai-personalizer';
 import { syncContactsToHubSpot, testHubSpotConnection } from './services/hubspotService';
@@ -1010,6 +1010,11 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
     let emailSent = 0;
     let vmQueued = 0;
     const senderUser = (campaign as any)?.senderUser;
+    const sName = senderUser?.name || campaign?.ownerName || '';
+    const sEmail = senderUser?.microsoftEmail || senderUser?.email || campaign?.ownerEmail || '';
+    const sPhone = senderUser?.phone || campaign?.ownerPhone || '';
+    const sCalendly = senderUser?.calendlyLink || campaign?.calendlyLink || '';
+
     const campaignCtx = {
       name: campaign?.name,
       owner_name: campaign?.ownerName,
@@ -1024,11 +1029,21 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       event_link: campaign?.eventLink,
       hotel_name: campaign?.hotelName,
       hotel_address: campaign?.hotelAddress,
-      calendly_link: senderUser?.calendlyLink || campaign?.calendlyLink || '',
-      sender_name: senderUser?.name || campaign?.ownerName || '',
-      sender_email: senderUser?.microsoftEmail || senderUser?.email || campaign?.ownerEmail || '',
-      sender_phone: senderUser?.phone || campaign?.ownerPhone || '',
+      calendly_link: sCalendly,
+      sender_name: sName,
+      sender_email: sEmail,
+      sender_phone: sPhone,
     } as any;
+
+    const senderCtx = {
+      name: sName,
+      email: sEmail,
+      phone: sPhone,
+      calendly_link: sCalendly,
+      signature: buildEmailSignature(sName, sEmail, sPhone, 'full', sCalendly),
+      signature_minimal: buildEmailSignature(sName, sEmail, sPhone, 'minimal', sCalendly),
+      signature_full: buildEmailSignature(sName, sEmail, sPhone, 'full', sCalendly),
+    };
 
     if (firstSms) {
       let cfg: any = {};
@@ -1037,7 +1052,7 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       for (const ct of contacts) {
         if (!ct.phone) continue;
         const np = splitName(ct.name || '');
-        const text = renderMergeTags(baseText, { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
+        const text = renderMergeTags(baseText, { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx, sender: senderCtx }).trim();
         const resSms = await sendSms({ to: ct.phone, text, fromNumber: (campaign as any)?.senderUser?.smsFromNumber || undefined });
         let convo = await prisma.conversation.findFirst({ where: { contactId: ct.id, channel: 'sms' } });
         if (!convo) convo = await prisma.conversation.create({ data: { contactId: ct.id, channel: 'sms' } });
@@ -1079,8 +1094,8 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
         } else {
           // Fall back to standard mail-merge
           const np = splitName(ct.name || '');
-          sub = renderMergeTags(subject || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
-          bod = renderMergeTags(emailBody || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx }).trim();
+          sub = renderMergeTags(subject || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx, sender: senderCtx }).trim();
+          bod = renderMergeTags(emailBody || '', { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx, sender: senderCtx }).trim();
         }
         
         emailsToQueue.push({
@@ -1107,7 +1122,7 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       for (const ct of contacts) {
         if (!ct.phone) continue;
         const np = splitName(ct.name || '');
-        const script = renderMergeTags(baseScript, { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx });
+        const script = renderMergeTags(baseScript, { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx, sender: senderCtx });
         
         // Generate audio with ElevenLabs
         let audioUrl = '';
