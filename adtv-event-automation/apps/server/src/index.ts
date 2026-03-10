@@ -58,6 +58,29 @@ function requireEnv(name: string): string {
   return v as string;
 }
 
+/**
+ * Check if an email body is a structured HTML document (with block-level tags)
+ * vs plain text that may contain inline HTML like <a>, <strong>, <em>.
+ * Plain text with inline HTML still needs \n → <br> conversion.
+ */
+function isStructuredHtml(body: string): boolean {
+  return /<(p|div|table|tr|td|br|h[1-6]|ul|ol|li|html|body|head|!doctype)\b/i.test(body);
+}
+
+/**
+ * Convert a plain-text email body (possibly containing inline HTML) to HTML
+ * with proper paragraph/line-break tags. Skips bodies that are already
+ * structured HTML documents.
+ */
+function plainTextToHtml(body: string): string {
+  let text = body.replace(/\\n/g, '\n');
+  if (isStructuredHtml(text)) return text;
+  return text
+    .split('\n\n')
+    .map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
 // Add unsubscribe link to email body
 function addUnsubscribeLink(emailBody: string, contactId: string, companyAddress?: string): string {
   const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
@@ -1068,13 +1091,7 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
       const emailsToQueue = [];
 
       // Convert plain text body to HTML before merge tag rendering
-      let htmlEmailBody = (emailBody || '').replace(/\\n/g, '\n');
-      if (!/<[a-z][\s\S]*>/i.test(htmlEmailBody)) {
-        htmlEmailBody = htmlEmailBody
-          .split('\n\n')
-          .map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`)
-          .join('');
-      }
+      let htmlEmailBody = plainTextToHtml(emailBody || '');
 
       // If AI personalization is enabled, pre-load all personalized emails for this node
       let personalizedMap: Record<string, { subject: string; body: string }> = {};
@@ -1274,15 +1291,8 @@ app.post('/api/campaigns/:id/send-test', async (req, res) => {
       const { subject: rawSubject, body: rawBody } = await resolveEmailFromConfig(cfg);
 
       // Convert plain text body to HTML BEFORE merge tag rendering so that
-      // signature / other HTML merge tags don't trip the "already HTML" check
-      // and cause line-break conversion to be skipped entirely.
-      let processedBody = (rawBody || '').replace(/\\n/g, '\n');
-      if (!/<[a-z][\s\S]*>/i.test(processedBody)) {
-        processedBody = processedBody
-          .split('\n\n')
-          .map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`)
-          .join('');
-      }
+      // signature / other HTML merge tags don't cause line-break loss.
+      let processedBody = plainTextToHtml(rawBody || '');
 
       let sub = renderMergeTags(rawSubject || '', mergeCtx).trim();
       let bod = renderMergeTags(processedBody, mergeCtx).trim();

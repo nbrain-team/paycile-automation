@@ -288,16 +288,13 @@ async function processQueue() {
           </div>
         `;
         
-        // Convert plain-text body to HTML before appending footer
+        // Convert plain-text body to HTML before appending footer.
+        // Only skip conversion for structured HTML (block-level tags like <p>, <div>, <br>).
+        // Inline HTML (<a>, <strong>) in otherwise plain text still needs \n → <br>.
         let emailBodyWithFooter = email.body.replace(/\\n/g, '\n');
-        if (!/<[a-z][\s\S]*>/i.test(emailBodyWithFooter)) {
-          // Pure plain text: wrap in paragraph tags
+        if (!/<(p|div|table|tr|td|br|h[1-6]|ul|ol|li|html|body|head|!doctype)\b/i.test(emailBodyWithFooter)) {
           emailBodyWithFooter = emailBodyWithFooter
             .split('\n\n').map(p => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
-        } else if (/\n/.test(emailBodyWithFooter)) {
-          // Mixed HTML + plain text (e.g. AI-personalized content with some HTML):
-          // convert remaining newlines to <br> so line breaks aren't swallowed
-          emailBodyWithFooter = emailBodyWithFooter.replace(/([^>])\n/g, '$1<br>\n');
         }
 
         if (emailBodyWithFooter.includes('</body>')) {
