@@ -144,9 +144,10 @@ export function AICampaignBuilder() {
     }).catch(() => {});
 
     apiSenderEmails.list().then((list) => {
-      if (Array.isArray(list) && list.length) {
+      if (Array.isArray(list) && list.length > 0) {
         setSenderEmails(list);
-        setSelectedSenderEmail(list[0].email);
+        const first = list[0];
+        if (first) setSelectedSenderEmail(first.email);
       }
     }).catch(() => {});
   }, []);
