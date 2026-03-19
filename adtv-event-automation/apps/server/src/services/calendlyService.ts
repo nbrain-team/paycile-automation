@@ -39,7 +39,28 @@ function calendlyRequest(method: string, path: string, body?: any): Promise<any>
   });
 }
 
+/**
+ * Extract user UUID from the Calendly PAT JWT payload (avoids needing users:read scope).
+ */
+function extractUserUuidFromPat(): string | null {
+  try {
+    const token = PAT();
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    return payload.user_uuid || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getCurrentUser(): Promise<{ uri: string; name: string; email: string }> {
+  // Try extracting from JWT first (no API call needed)
+  const uuid = extractUserUuidFromPat();
+  if (uuid) {
+    return { uri: `https://api.calendly.com/users/${uuid}`, name: '', email: '' };
+  }
   const res = await calendlyRequest('GET', '/users/me');
   return {
     uri: res.resource?.uri || '',
@@ -49,9 +70,16 @@ export async function getCurrentUser(): Promise<{ uri: string; name: string; ema
 }
 
 export async function getOrganization(): Promise<string> {
-  const user = await getCurrentUser();
-  const res = await calendlyRequest('GET', '/users/me');
-  return res.resource?.current_organization || '';
+  const uuid = extractUserUuidFromPat();
+  if (!uuid) throw new Error('Could not extract user UUID from Calendly PAT');
+
+  // Get organization memberships for this user
+  const res = await calendlyRequest('GET', `/organization_memberships?user=https://api.calendly.com/users/${uuid}`);
+  const memberships = res.collection || [];
+  if (memberships.length > 0) {
+    return memberships[0].organization || '';
+  }
+  throw new Error('No Calendly organization found for user');
 }
 
 export async function subscribeWebhook(callbackUrl: string): Promise<any> {
