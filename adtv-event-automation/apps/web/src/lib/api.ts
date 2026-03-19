@@ -191,6 +191,11 @@ export const apiSenderEmails = {
   list: () => getJson('/api/sender-emails') as Promise<Array<{ email: string; name: string; source: string; userId?: string; phone?: string; calendlyLink?: string }>>,
 };
 
+// Campaign Analytics
+export const apiAnalytics = {
+  campaign: (id: string) => getJson(`/api/campaigns/${id}/analytics`),
+};
+
 export { API_URL, getApiUrl };
 
 

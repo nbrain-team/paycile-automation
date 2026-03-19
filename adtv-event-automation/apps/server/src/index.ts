@@ -18,7 +18,8 @@ import { sendGraphEmail, isGraphConfigured } from './services/graphEmailProvider
 import { startEmailQueueWorker, queueBulkEmails, getQueueStats, buildEmailSignature } from './services/emailQueue';
 import { generateCampaign, refineContent, generateVariations } from './ai-campaign-builder';
 import { personalizeContent, PersonalizationContact } from './ai-personalizer';
-import { syncContactsToHubSpot, testHubSpotConnection } from './services/hubspotService';
+import { syncContactsToHubSpot, testHubSpotConnection, getLeadsByEmails } from './services/hubspotService';
+import { subscribeWebhook as calendlySubscribeWebhook, listWebhookSubscriptions as calendlyListWebhooks, isCalendlyConfigured } from './services/calendlyService';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -1131,6 +1132,7 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
           subject: sub,
           body: bod,
           userId: campaign?.senderUserId || undefined,
+          nodeKey: firstEmail.key,
         });
       }
       
@@ -1189,6 +1191,140 @@ app.post('/api/campaigns/:id/execute', async (req, res) => {
     res.json({ ok: true, smsSent, emailQueued: emailSent, vmQueued });
   } catch (e: any) {
     res.status(400).json({ error: e?.message || 'execute error' });
+  }
+});
+
+/**
+ * Advance contacts through the funnel: for each contact, find the next unsent
+ * email node and queue it. Follows edge graph ordering from the start node.
+ * Wait nodes are respected — their waitDuration delays the next email.
+ * Already-sent nodes (tracked via EmailQueue nodeKey) are skipped.
+ */
+app.post('/api/campaigns/:id/advance', async (req, res) => {
+  try {
+    const campaignId = req.params.id;
+    const [campaignNodes, campaignEdges, contacts, campaign] = await Promise.all([
+      prisma.campaignNode.findMany({ where: { campaignId } }),
+      prisma.campaignEdge.findMany({ where: { campaignId } }),
+      prisma.contact.findMany({ where: { campaignId, email: { not: null }, unsubscribed: false } }),
+      prisma.campaign.findUnique({ where: { id: campaignId }, include: { senderUser: true } }),
+    ]);
+
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+
+    // Build ordered node list following edges from start
+    const edgeMap = new Map<string, string>();
+    for (const e of campaignEdges) edgeMap.set(e.fromKey, e.toKey);
+    const orderedKeys: string[] = [];
+    const startNode = campaignNodes.find(n => n.type === 'start');
+    if (startNode) {
+      let curKey: string | undefined = startNode.key;
+      const visited = new Set<string>();
+      while (curKey && !visited.has(curKey)) {
+        orderedKeys.push(curKey);
+        visited.add(curKey);
+        curKey = edgeMap.get(curKey);
+      }
+    }
+
+    // Get all existing email queue entries for this campaign to know what's been sent
+    const existingQueue = await prisma.emailQueue.findMany({
+      where: { campaignId, status: { in: ['pending', 'processing', 'sent'] } },
+      select: { contactId: true, nodeKey: true, status: true },
+    });
+    const sentNodesByContact = new Map<string, Set<string>>();
+    for (const eq of existingQueue) {
+      if (!sentNodesByContact.has(eq.contactId)) sentNodesByContact.set(eq.contactId, new Set());
+      if (eq.nodeKey) sentNodesByContact.get(eq.contactId)!.add(eq.nodeKey);
+    }
+
+    // Build node lookup and compute cumulative wait times
+    const nodeByKey = new Map(campaignNodes.map(n => [n.key, n]));
+    const waitBeforeNode = new Map<string, number>(); // nodeKey → cumulative ms of waits before it
+    let cumulativeWaitMs = 0;
+    for (const key of orderedKeys) {
+      const node = nodeByKey.get(key);
+      if (!node) continue;
+      if (node.type === 'wait') {
+        let cfg: any = {};
+        try { cfg = node.configJson ? JSON.parse(node.configJson) : {}; } catch {}
+        const duration = cfg.waitDuration || cfg.duration || 1;
+        const unit = cfg.waitUnit || cfg.unit || 'days';
+        const multiplier = unit === 'hours' ? 3600000 : 86400000;
+        cumulativeWaitMs += duration * multiplier;
+      }
+      waitBeforeNode.set(key, cumulativeWaitMs);
+    }
+
+    // Sender context for merge tags
+    const senderUser = (campaign as any)?.senderUser;
+    const sName = senderUser?.name || campaign.ownerName || '';
+    const sEmail = senderUser?.microsoftEmail || senderUser?.email || campaign.ownerEmail || '';
+    const sPhone = senderUser?.phone || campaign.ownerPhone || '';
+    const sCalendly = senderUser?.calendlyLink || campaign.calendlyLink || '';
+    const campaignCtx = {
+      name: campaign.name, owner_name: campaign.ownerName, owner_email: campaign.ownerEmail,
+      owner_phone: campaign.ownerPhone, event_type: campaign.eventType,
+      calendly_link: sCalendly, sender_name: sName, sender_email: sEmail, sender_phone: sPhone,
+    } as any;
+    const senderCtx = {
+      name: sName, email: sEmail, phone: sPhone, calendly_link: sCalendly,
+      signature: buildEmailSignature(sName, sEmail, sPhone, 'full', sCalendly),
+      signature_minimal: buildEmailSignature(sName, sEmail, sPhone, 'minimal', sCalendly),
+      signature_full: buildEmailSignature(sName, sEmail, sPhone, 'full', sCalendly),
+    };
+
+    let queued = 0;
+    let skipped = 0;
+    const emailNodes = orderedKeys
+      .map(k => nodeByKey.get(k))
+      .filter((n): n is NonNullable<typeof n> => !!n && n.type === 'email_send');
+
+    for (const ct of contacts) {
+      if (!ct.email) continue;
+      const sentNodes = sentNodesByContact.get(ct.id) || new Set();
+
+      // Find the first email node that hasn't been sent to this contact
+      const nextNode = emailNodes.find(n => !sentNodes.has(n.key));
+      if (!nextNode) { skipped++; continue; }
+
+      // Resolve email content
+      let cfg: any = {};
+      try { cfg = nextNode.configJson ? JSON.parse(nextNode.configJson) : {}; } catch {}
+      const { subject: rawSubject, body: rawBody } = await resolveEmailFromConfig(cfg);
+      if (!rawSubject && !rawBody) { skipped++; continue; }
+
+      const htmlBody = plainTextToHtml(rawBody || '');
+      const np = splitName(ct.name || '');
+      const mergeCtx = { contact: { name: ct.name, first_name: np.first_name, last_name: np.last_name, email: ct.email, phone: ct.phone }, campaign: campaignCtx, sender: senderCtx };
+      const sub = renderMergeTags(rawSubject || '', mergeCtx).trim();
+      const bod = renderMergeTags(htmlBody, mergeCtx).trim();
+
+      // Schedule with the appropriate delay based on wait nodes
+      const waitMs = waitBeforeNode.get(nextNode.key) || 0;
+      const scheduledFor = new Date(Date.now() + waitMs + (Math.random() * 90000));
+
+      await prisma.emailQueue.create({
+        data: {
+          campaignId,
+          contactId: ct.id,
+          to: ct.email,
+          subject: sub,
+          body: bod,
+          userId: campaign.senderUserId || null,
+          nodeKey: nextNode.key,
+          status: 'pending',
+          scheduledFor,
+        },
+      });
+      queued++;
+    }
+
+    console.log(`[advance] Campaign ${campaignId}: queued ${queued}, skipped ${skipped} (already complete or no content)`);
+    res.json({ ok: true, queued, skipped, totalContacts: contacts.length });
+  } catch (e: any) {
+    console.error('[advance] Error:', e);
+    res.status(400).json({ error: e?.message || 'advance error' });
   }
 });
 
@@ -1809,6 +1945,164 @@ app.get('/api/campaigns/:id/stats', async (req, res) => {
     funnel: { rsvpConfirmed, attended, esignSent, signed, demosBooked, assessments },
     recentMessages: msgs.slice(0, 20).map((m)=> ({ id: m.id, direction: m.direction, text: m.text, time: m.createdAt }))
   });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CAMPAIGN ANALYTICS (email tracking, Calendly, engagement)
+// ═══════════════════════════════════════════════════════════════
+
+app.get('/api/campaigns/:id/analytics', async (req, res) => {
+  const campaignId = req.params.id;
+  try {
+    const [emailQueue, contacts, campaignNodes, calendlyEvents] = await Promise.all([
+      prisma.emailQueue.findMany({ where: { campaignId } }),
+      prisma.contact.findMany({ where: { campaignId } }),
+      prisma.campaignNode.findMany({ where: { campaignId, type: 'email_send' } }),
+      prisma.calendlyEvent.findMany({ where: { campaignId } }),
+    ]);
+
+    // Email metrics
+    const sent = emailQueue.filter(e => e.status === 'sent');
+    const failed = emailQueue.filter(e => e.status === 'failed');
+    const delivered = sent.length;
+    const failedCount = failed.length;
+    const opened = sent.filter(e => e.openedAt);
+    const clicked = sent.filter(e => e.clickedAt);
+    const openRate = delivered > 0 ? Math.round((opened.length / delivered) * 100) : 0;
+    const clickRate = delivered > 0 ? Math.round((clicked.length / delivered) * 100) : 0;
+
+    // Per-node breakdown
+    const nodeMap = new Map(campaignNodes.map(n => [n.key, n.name]));
+    const byNodeMap = new Map<string, { sent: number; delivered: number; opened: number; clicked: number }>();
+    for (const e of emailQueue) {
+      const nk = e.nodeKey || 'unknown';
+      if (!byNodeMap.has(nk)) byNodeMap.set(nk, { sent: 0, delivered: 0, opened: 0, clicked: 0 });
+      const entry = byNodeMap.get(nk)!;
+      if (e.status === 'sent') {
+        entry.sent++;
+        entry.delivered++;
+        if (e.openedAt) entry.opened++;
+        if (e.clickedAt) entry.clicked++;
+      } else if (e.status === 'failed') {
+        entry.sent++;
+      }
+    }
+    const byNode = Array.from(byNodeMap.entries()).map(([nodeKey, data]) => ({
+      nodeKey,
+      nodeName: nodeMap.get(nodeKey) || nodeKey,
+      ...data,
+    }));
+
+    // Calendly metrics
+    const schedulingCompleted = calendlyEvents.filter(e => e.eventType === 'invitee.created').length;
+    const schedulingCanceled = calendlyEvents.filter(e => e.eventType === 'invitee.canceled').length;
+    // Count clicks to calendly links from click tracking
+    const calendlyClicks = clicked.filter(e => {
+      // Check if any of their clicks went to a calendly URL (tracked in clickCount)
+      return true; // All clicks counted; Calendly-specific filtering would need click log
+    });
+
+    const calendlyEventList = calendlyEvents
+      .filter(e => e.eventType === 'invitee.created')
+      .map(e => ({
+        name: e.inviteeName,
+        email: e.inviteeEmail,
+        scheduledAt: e.scheduledAt,
+        eventType: e.eventTypeName,
+        status: 'booked',
+      }));
+
+    // Contact engagement
+    const contactEmailMap = new Map<string, typeof emailQueue>();
+    for (const e of emailQueue) {
+      if (!contactEmailMap.has(e.contactId)) contactEmailMap.set(e.contactId, []);
+      contactEmailMap.get(e.contactId)!.push(e);
+    }
+    const calendlyByContact = new Map<string, boolean>();
+    for (const ce of calendlyEvents) {
+      if (ce.contactId && ce.eventType === 'invitee.created') calendlyByContact.set(ce.contactId, true);
+    }
+
+    const engagement = contacts.map(ct => {
+      const emails = contactEmailMap.get(ct.id) || [];
+      const sentEmails = emails.filter(e => e.status === 'sent');
+      const hasOpened = sentEmails.some(e => e.openedAt);
+      const hasClicked = sentEmails.some(e => e.clickedAt);
+      const lastSent = sentEmails.sort((a, b) => (b.sentAt?.getTime() || 0) - (a.sentAt?.getTime() || 0))[0];
+      const currentNodeKey = lastSent?.nodeKey || null;
+      return {
+        contactId: ct.id,
+        name: ct.name,
+        email: ct.email,
+        company: ct.company,
+        status: ct.status,
+        currentStep: currentNodeKey ? (nodeMap.get(currentNodeKey) || currentNodeKey) : 'Not started',
+        emailsSent: sentEmails.length,
+        opened: hasOpened,
+        clicked: hasClicked,
+        scheduled: calendlyByContact.has(ct.id),
+        lastActivity: lastSent?.sentAt || ct.createdAt,
+      };
+    });
+
+    // Status counts
+    const byStatus: Record<string, number> = {};
+    for (const ct of contacts) {
+      byStatus[ct.status] = (byStatus[ct.status] || 0) + 1;
+    }
+
+    // Timeline (last 30 days)
+    const timeline: Record<string, { sent: number; opened: number; clicked: number }> = {};
+    const now = new Date();
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      timeline[d.toISOString().slice(0, 10)] = { sent: 0, opened: 0, clicked: 0 };
+    }
+    for (const e of sent) {
+      const day = e.sentAt?.toISOString().slice(0, 10);
+      if (day && timeline[day]) timeline[day].sent++;
+    }
+    for (const e of opened) {
+      const day = e.openedAt?.toISOString().slice(0, 10);
+      if (day && timeline[day]) timeline[day].opened++;
+    }
+    for (const e of clicked) {
+      const day = e.clickedAt?.toISOString().slice(0, 10);
+      if (day && timeline[day]) timeline[day].clicked++;
+    }
+    const timelineArr = Object.entries(timeline)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, v]) => ({ date, ...v }));
+
+    res.json({
+      email: {
+        total: emailQueue.length,
+        sent: sent.length + failed.length,
+        delivered,
+        failed: failedCount,
+        opened: opened.length,
+        openRate,
+        clicked: clicked.length,
+        clickRate,
+        byNode,
+      },
+      calendly: {
+        schedulingCompleted,
+        schedulingCanceled,
+        events: calendlyEventList,
+      },
+      contacts: {
+        total: contacts.length,
+        byStatus,
+        engagement,
+      },
+      timeline: timelineArr,
+    });
+  } catch (e: any) {
+    console.error('[Analytics]', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Dev email test endpoint (uses SMTP creds from env)
@@ -4221,6 +4515,143 @@ app.delete('/api/smtp/configs/:id', async (req, res) => {
     res.json({ ok: true });
   } catch (e: any) {
     res.status(400).json({ error: e?.message || 'delete error' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CALENDLY WEBHOOK
+// ═══════════════════════════════════════════════════════════════
+
+app.post('/api/webhooks/calendly', async (req, res) => {
+  try {
+    const payload = req.body;
+    const event = payload?.event;
+    const invitee = payload?.payload?.invitee || {};
+    const scheduledEvent = payload?.payload?.scheduled_event || payload?.payload?.event || {};
+
+    if (!event || !invitee.email) {
+      return res.status(200).json({ ok: true, skipped: true });
+    }
+
+    console.log(`[Calendly] Received ${event} for ${invitee.email}`);
+
+    // Try to match invitee email to a contact
+    const contacts = await prisma.contact.findMany({
+      where: { email: invitee.email },
+      include: { campaign: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const contact = contacts[0];
+
+    await prisma.calendlyEvent.create({
+      data: {
+        campaignId: contact?.campaignId || null,
+        contactId: contact?.id || null,
+        inviteeEmail: invitee.email,
+        inviteeName: invitee.name || null,
+        eventType: event,
+        eventUri: scheduledEvent.uri || null,
+        eventTypeName: scheduledEvent.name || scheduledEvent.event_type?.name || null,
+        scheduledAt: scheduledEvent.start_time ? new Date(scheduledEvent.start_time) : null,
+        canceledAt: event === 'invitee.canceled' ? new Date() : null,
+        calendlyPayload: JSON.stringify(payload).substring(0, 10000),
+      },
+    });
+
+    // Update contact status if matched
+    if (contact && event === 'invitee.created') {
+      await prisma.contact.update({
+        where: { id: contact.id },
+        data: { status: 'Demo Booked' },
+      });
+      console.log(`[Calendly] Updated contact ${contact.id} to Demo Booked`);
+    }
+
+    res.json({ ok: true, matched: !!contact });
+  } catch (e: any) {
+    console.error('[Calendly webhook] Error:', e.message);
+    res.status(200).json({ ok: true, error: e.message });
+  }
+});
+
+app.post('/api/admin/calendly/subscribe', async (req: any, res) => {
+  try {
+    if (!isCalendlyConfigured()) {
+      return res.status(400).json({ error: 'CALENDLY_PAT not configured' });
+    }
+    const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+    const callbackUrl = `${baseUrl}/api/webhooks/calendly`;
+
+    // Check existing subscriptions
+    const existing = await calendlyListWebhooks();
+    const alreadySubscribed = existing.find((w: any) => w.callback_url === callbackUrl);
+    if (alreadySubscribed) {
+      return res.json({ ok: true, message: 'Already subscribed', webhook: alreadySubscribed });
+    }
+
+    const webhook = await calendlySubscribeWebhook(callbackUrl);
+    console.log('[Calendly] Webhook subscribed:', webhook);
+    res.json({ ok: true, webhook });
+  } catch (e: any) {
+    console.error('[Calendly subscribe] Error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/admin/calendly/status', async (_req, res) => {
+  try {
+    if (!isCalendlyConfigured()) {
+      return res.json({ configured: false });
+    }
+    const subscriptions = await calendlyListWebhooks();
+    res.json({ configured: true, subscriptions });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// EMAIL TRACKING (open pixel + click redirect)
+// ═══════════════════════════════════════════════════════════════
+
+const TRACKING_PIXEL = Buffer.from(
+  'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+  'base64'
+);
+
+app.get('/api/t/o/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    // Fire-and-forget DB update so the pixel returns instantly
+    prisma.emailQueue.update({
+      where: { id },
+      data: {
+        openedAt: (await prisma.emailQueue.findUnique({ where: { id }, select: { openedAt: true } }))?.openedAt || new Date(),
+        openCount: { increment: 1 },
+      },
+    }).catch(() => {});
+  } catch {}
+  res.set({ 'Content-Type': 'image/gif', 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' });
+  res.end(TRACKING_PIXEL);
+});
+
+app.get('/api/t/c/:id', async (req, res) => {
+  const id = req.params.id;
+  const url = req.query.url as string;
+  try {
+    prisma.emailQueue.update({
+      where: { id },
+      data: {
+        clickedAt: (await prisma.emailQueue.findUnique({ where: { id }, select: { clickedAt: true } }))?.clickedAt || new Date(),
+        clickCount: { increment: 1 },
+      },
+    }).catch(() => {});
+  } catch {}
+  if (url) {
+    res.redirect(302, url);
+  } else {
+    res.redirect(302, process.env.BASE_URL || 'https://paycile.com');
   }
 });
 

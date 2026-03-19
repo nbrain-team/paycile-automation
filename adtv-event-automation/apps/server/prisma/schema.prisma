@@ -220,15 +220,21 @@ model EmailQueue {
   subject     String
   body        String
   userId      String?
-  smtpConfigId String? // Reference to SmtpConfig for rotation
-  status      String   @default("pending") // pending | sent | failed
+  smtpConfigId String?
+  nodeKey     String?
+  status      String   @default("pending") // pending | processing | sent | failed
   scheduledFor DateTime
   sentAt      DateTime?
+  openedAt    DateTime?
+  openCount   Int      @default(0)
+  clickedAt   DateTime?
+  clickCount  Int      @default(0)
   error       String?
   createdAt   DateTime @default(now())
   
   @@index([status, scheduledFor])
   @@index([campaignId])
+  @@index([contactId])
 }
 
 model SmtpConfig {
@@ -269,4 +275,21 @@ model PersonalizedEmail {
   @@index([contactId])
 }
 
+model CalendlyEvent {
+  id              String    @id @default(cuid())
+  campaignId      String?
+  contactId       String?
+  inviteeEmail    String
+  inviteeName     String?
+  eventType       String    // invitee.created | invitee.canceled
+  eventUri        String?
+  eventTypeName   String?
+  scheduledAt     DateTime?
+  canceledAt      DateTime?
+  calendlyPayload String?
+  createdAt       DateTime  @default(now())
 
+  @@index([inviteeEmail])
+  @@index([campaignId])
+  @@index([contactId])
+}

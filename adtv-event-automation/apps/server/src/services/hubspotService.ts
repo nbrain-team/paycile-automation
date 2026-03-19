@@ -346,6 +346,57 @@ export async function syncContactsToHubSpot(
 }
 
 /**
+ * Batch-search HubSpot contacts by email and return lifecycle stage + lead status.
+ * Used by the analytics endpoint to show HubSpot lead status per contact.
+ */
+export async function getLeadsByEmails(
+  emails: string[]
+): Promise<Map<string, { lifecyclestage: string; hs_lead_status: string; hubspotId: string }>> {
+  const result = new Map<string, { lifecyclestage: string; hs_lead_status: string; hubspotId: string }>();
+  const token = getAccessToken();
+  if (!token || emails.length === 0) return result;
+
+  const batchSize = 100;
+  for (let i = 0; i < emails.length; i += batchSize) {
+    const batch = emails.slice(i, i + batchSize).map(e => e.toLowerCase().trim()).filter(Boolean);
+    try {
+      const res = await hubspotFetch('/crm/v3/objects/contacts/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          filterGroups: [{
+            filters: [{
+              propertyName: 'email',
+              operator: 'IN',
+              values: batch,
+            }],
+          }],
+          properties: ['email', 'lifecyclestage', 'hs_lead_status'],
+          limit: 100,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        for (const contact of data.results || []) {
+          const email = contact.properties?.email?.toLowerCase();
+          if (email) {
+            result.set(email, {
+              lifecyclestage: contact.properties?.lifecyclestage || '',
+              hs_lead_status: contact.properties?.hs_lead_status || '',
+              hubspotId: contact.id,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[HubSpot] getLeadsByEmails batch failed:', err);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Test HubSpot API connection.
  */
 export async function testHubSpotConnection(): Promise<{ connected: boolean; portalId: string; error?: string }> {

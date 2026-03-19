@@ -5,6 +5,7 @@ import { useStore } from '@store/useStore';
 import Papa from 'papaparse';
 import { seedCampaigns } from '@seed/campaignSeed';
 import { apiCampaigns, apiInbox, apiEmail, apiSms, apiTemplates, apiPersonalization, apiAuth, getApiUrl } from '@lib/api';
+import { CampaignAnalytics } from '@components/CampaignAnalytics';
 
 const ALL_TABS = ['Overview','Contacts','Funnel','Personalized Emails','Analytics','Map View'] as const;
 type TabName = (typeof ALL_TABS)[number];
@@ -498,14 +499,8 @@ export function CampaignBuilder() {
         />
       )}
 
-      {tab==='Analytics' && (
-        <div className="card">
-          <div className="grid md:grid-cols-3 gap-4 text-sm">
-            <div className="card"><p className="font-semibold">Enrichment %</p><p className="text-3xl mt-2">62%</p></div>
-            <div className="card"><p className="font-semibold">Email Generation %</p><p className="text-3xl mt-2">78%</p></div>
-            <div className="card"><p className="font-semibold">Data Capture (Email/Phone)</p><p className="text-3xl mt-2">71% / 54%</p></div>
-          </div>
-        </div>
+      {tab==='Analytics' && campaign && (
+        <CampaignAnalytics campaignId={campaign.id} />
       )}
 
       {tab==='Map View' && (

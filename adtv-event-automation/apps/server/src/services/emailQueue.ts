@@ -6,6 +6,20 @@ import { sendGraphEmail, sendGraphEmailAsUser, isGraphConfigured, refreshUserMic
 const prisma = new PrismaClient();
 
 /**
+ * Wrap <a href="..."> links in an email body with click-tracking redirects.
+ * Skips unsubscribe links and mailto: links.
+ */
+function wrapLinksForTracking(html: string, emailQueueId: string, baseUrl: string, unsubscribeUrl?: string): string {
+  return html.replace(/<a\s([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi, (match, before, url, after) => {
+    if (url.startsWith('mailto:')) return match;
+    if (unsubscribeUrl && url.includes('/api/unsubscribe/')) return match;
+    if (url.includes('/api/t/')) return match;
+    const trackedUrl = `${baseUrl}/api/t/c/${emailQueueId}?url=${encodeURIComponent(url)}`;
+    return `<a ${before}href="${trackedUrl}"${after}>`;
+  });
+}
+
+/**
  * Build an HTML email signature.
  * @param variant 'minimal' for first-touch emails (name + phone + unsubscribe only),
  *                'full' for follow-ups (branded Paycile signature with logo and links)
@@ -92,21 +106,19 @@ export async function queueEmail(params: {
   subject: string;
   body: string;
   userId?: string;
-  immediateDelay?: boolean; // If true, schedule immediately (for first email)
+  nodeKey?: string;
+  immediateDelay?: boolean;
 }) {
   const now = new Date();
   let scheduledFor: Date;
   
   if (params.immediateDelay) {
-    // Schedule immediately for first email
     scheduledFor = now;
   } else {
-    // Random delay between 1-2.5 minutes (60000-150000 ms)
     const delayMs = 60000 + Math.random() * 90000;
     scheduledFor = new Date(now.getTime() + delayMs);
   }
   
-  // Get next SMTP config for rotation
   const smtpConfig = await getNextSmtpConfig();
   
   const queued = await prisma.emailQueue.create({
@@ -117,6 +129,7 @@ export async function queueEmail(params: {
       subject: params.subject,
       body: params.body,
       userId: params.userId || null,
+      nodeKey: params.nodeKey || null,
       smtpConfigId: smtpConfig?.id || null,
       status: 'pending',
       scheduledFor,
@@ -138,18 +151,18 @@ export async function queueBulkEmails(emails: Array<{
   subject: string;
   body: string;
   userId?: string;
+  nodeKey?: string;
 }>) {
   if (emails.length === 0) return [];
 
-  // Deduplicate input by contactId (keep first occurrence)
   const seen = new Set<string>();
   const unique = emails.filter(e => {
-    if (seen.has(e.contactId)) return false;
-    seen.add(e.contactId);
+    const key = `${e.contactId}:${e.nodeKey || ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
 
-  // Check for existing queue entries that are already pending/processing/sent
   const campaignId = unique[0].campaignId;
   const existingEntries = await prisma.emailQueue.findMany({
     where: {
@@ -157,11 +170,11 @@ export async function queueBulkEmails(emails: Array<{
       contactId: { in: unique.map(e => e.contactId) },
       status: { in: ['pending', 'processing', 'sent'] },
     },
-    select: { contactId: true },
+    select: { contactId: true, nodeKey: true },
   });
-  const alreadyQueued = new Set(existingEntries.map(e => e.contactId));
+  const alreadyQueued = new Set(existingEntries.map(e => `${e.contactId}:${e.nodeKey || ''}`));
 
-  const toQueue = unique.filter(e => !alreadyQueued.has(e.contactId));
+  const toQueue = unique.filter(e => !alreadyQueued.has(`${e.contactId}:${e.nodeKey || ''}`));
   if (toQueue.length < unique.length) {
     console.log(`[EmailQueue] Skipped ${unique.length - toQueue.length} duplicate(s)`);
   }
@@ -182,6 +195,7 @@ export async function queueBulkEmails(emails: Array<{
         subject: email.subject,
         body: email.body,
         userId: email.userId || null,
+        nodeKey: email.nodeKey || null,
         status: 'pending',
         scheduledFor,
       },
@@ -303,6 +317,16 @@ async function processQueue() {
           emailBodyWithFooter = emailBodyWithFooter.replace('</html>', `${footer}</html>`);
         } else {
           emailBodyWithFooter = emailBodyWithFooter + footer;
+        }
+
+        // Embed open-tracking pixel and wrap links for click tracking
+        const trackingBaseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+        const trackingPixel = `<img src="${trackingBaseUrl}/api/t/o/${email.id}" width="1" height="1" alt="" style="display:none;border:0;" />`;
+        emailBodyWithFooter = wrapLinksForTracking(emailBodyWithFooter, email.id, trackingBaseUrl, unsubscribeUrl);
+        if (emailBodyWithFooter.includes('</body>')) {
+          emailBodyWithFooter = emailBodyWithFooter.replace('</body>', `${trackingPixel}</body>`);
+        } else {
+          emailBodyWithFooter += trackingPixel;
         }
 
         // Try sending via the sender user's delegated Microsoft token first
