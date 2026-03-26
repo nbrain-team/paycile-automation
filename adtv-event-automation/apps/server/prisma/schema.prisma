@@ -222,7 +222,7 @@ model EmailQueue {
   userId      String?
   smtpConfigId String?
   nodeKey     String?
-  status      String   @default("pending") // pending | processing | sent | failed
+  status      String   @default("pending") // pending | processing | sent | failed | bounced
   scheduledFor DateTime
   sentAt      DateTime?
   openedAt    DateTime?

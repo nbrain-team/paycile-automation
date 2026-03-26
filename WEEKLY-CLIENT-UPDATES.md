@@ -4,7 +4,60 @@
 
 ---
 
-## Current Week (March 9-13, 2026)
+## Current Week (March 23-27, 2026)
+
+### Critical Fix: Email Open Tracking — Zero Opens Root Cause Found & Resolved
+- **Completed**: 2026-03-26
+- **Category**: Critical Bug Fix
+- **Client Impact**: The 3/10 campaign to 494 recipients showed zero opens because tracking pixels embedded in every email pointed to a decommissioned server URL (`adtv-events-server.onrender.com`, returns 404). When email clients tried to load the invisible tracking pixel, it failed silently — so opens happened but were never recorded. Fixed by updating all tracking URLs to point to the correct live backend (`opticwise-backend-uq3o.onrender.com`). All future campaigns will now track opens and clicks correctly. The 494 emails already sent cannot be retroactively fixed, but any new sends will work.
+- **Details**: Found three locations in the backend code where the wrong default URL was hardcoded as a fallback (`emailQueue.ts` lines 279 and 323, plus three instances in `index.ts`). Updated all to the correct Render backend URL. Also need to verify the `BASE_URL` environment variable is explicitly set on Render to prevent any future fallback-related issues.
+- **Status**: Code Fixed — Pending Deploy
+
+### Email Analytics Overhaul — Sent vs Delivered vs Bounced Clarity
+- **Completed**: 2026-03-26
+- **Category**: Enhancement
+- **Client Impact**: Analytics dashboard now clearly distinguishes between Sent (emails accepted by mail server), Delivered (sent minus bounced), Bounced (returned as undeliverable), and Failed (send errors). Previously, "Sent" and "Delivered" always showed the same number, which Derek flagged as incorrect — delivered should be less when emails bounce. The new dashboard also adds a dedicated Bounced KPI card and shows bounce rates in the email funnel visualization.
+- **Details**: Refactored the campaign analytics API endpoint to properly categorize email statuses. Added `bounced` status to EmailQueue model. Updated the frontend `CampaignAnalytics` component with new KPI cards and funnel breakdown. Analytics API now returns `email.bounced` count alongside existing metrics.
+- **Status**: Code Fixed — Pending Deploy
+
+### Bounce Management API — Mark Undeliverable Emails
+- **Completed**: 2026-03-26
+- **Category**: New Feature
+- **Client Impact**: Team can now report bounced/undeliverable emails back to the platform via API, so analytics accurately reflect delivery rates. When Derek gets 10-20 "undeliverable" bounce-back emails, those addresses can be marked as bounced and the campaign analytics will update to show correct delivery numbers.
+- **Details**: Added two new API endpoints: `POST /api/campaigns/:id/bounces` (accepts array of bounced email addresses and updates their status) and `GET /api/campaigns/:id/bounces` (lists all bounced emails for a campaign). Added `bounced` as a new EmailQueue status alongside pending/processing/sent/failed. Full documentation added to Platform-Buildout.md.
+- **Status**: Code Fixed — Pending Deploy
+
+### New Industry Options: Propane/LP Gas & Jewelry
+- **Completed**: 2026-03-26
+- **Category**: Feature
+- **Client Impact**: Paul's MSG Payments business can now use the AI Campaign Builder to create campaigns targeting propane marketers and jewelers. Previously, the industry dropdown only included Insurance, Property Management, Real Estate, Financial Services, Healthcare, and Technology. Now includes "Propane / LP Gas" and "Jewelry / Jewelers" as selectable industries.
+- **Details**: Added two new entries to the `INDUSTRY_OPTIONS` array in the AI Campaign Builder frontend component.
+- **Status**: Code Fixed — Pending Deploy
+
+### Database Schema Drift Fix — Missing Tracking Columns Migration
+- **Completed**: 2026-03-26
+- **Category**: Infrastructure
+- **Client Impact**: Ensures email open and click tracking data is reliably stored and never lost due to missing database columns. If the production database was created from tracked migrations alone, critical tracking columns (openedAt, openCount, clickedAt, clickCount, nodeKey) could be missing, which would silently prevent all engagement tracking.
+- **Details**: Created idempotent migration (`20260326000000_add_email_queue_tracking_columns`) that safely adds missing columns and indexes only if they don't already exist. Covers: nodeKey, openedAt, openCount, clickedAt, clickCount, and contactId index.
+- **Status**: Migration Created — Pending Deploy
+
+### Email Architecture Documentation
+- **Completed**: 2026-03-26
+- **Category**: Documentation
+- **Client Impact**: Clear documentation now explains exactly how emails are sent (Microsoft Graph, not HubSpot), what HubSpot actually does (CRM contact sync only), and how tracking works. This resolves the confusion from the client call about whether emails route through HubSpot or the platform engine.
+- **Details**: Added comprehensive "Email Sending Architecture" section to Platform-Buildout.md covering: send priority order (Graph delegated > Graph app > SMTP rotation > SMTP legacy), HubSpot's actual role (CRM only), email queue statuses, bounce management endpoints, and critical BASE_URL configuration notes.
+- **Status**: Documented
+
+### Dead Code Cleanup — HubSpot getLeadsByEmails
+- **Completed**: 2026-03-26
+- **Category**: Code Quality
+- **Client Impact**: None visible — internal cleanup to prevent future confusion about what HubSpot features are active.
+- **Details**: Removed unused `getLeadsByEmails` import from the main server index. The function existed in hubspotService.ts but was never called anywhere in the application.
+- **Status**: Code Fixed — Pending Deploy
+
+---
+
+## Previous Week (March 9-13, 2026)
 
 ### Campaign Analytics Dashboard & Tracking Overhaul
 - **Completed**: 2026-03-10

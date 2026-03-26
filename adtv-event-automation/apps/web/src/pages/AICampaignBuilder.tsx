@@ -33,6 +33,8 @@ const INDUSTRY_OPTIONS = [
   { value: 'property_management', label: 'Property Management' },
   { value: 'real_estate', label: 'Real Estate' },
   { value: 'finance', label: 'Financial Services' },
+  { value: 'propane_lp_gas', label: 'Propane / LP Gas' },
+  { value: 'jewelry', label: 'Jewelry / Jewelers' },
   { value: 'healthcare', label: 'Healthcare' },
   { value: 'technology', label: 'Technology' },
   { value: 'other', label: 'Other' },

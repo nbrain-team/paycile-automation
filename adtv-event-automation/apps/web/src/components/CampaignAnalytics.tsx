@@ -20,6 +20,7 @@ interface AnalyticsData {
     sent: number;
     delivered: number;
     failed: number;
+    bounced: number;
     opened: number;
     openRate: number;
     clicked: number;
@@ -29,6 +30,7 @@ interface AnalyticsData {
       nodeName: string;
       sent: number;
       delivered: number;
+      bounced: number;
       opened: number;
       clicked: number;
     }>;
@@ -137,10 +139,11 @@ export function CampaignAnalytics({ campaignId }: { campaignId: string }) {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <KpiCard label="Emails Sent" value={email.sent} />
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <KpiCard label="Sent" value={email.sent} />
         <KpiCard label="Delivered" value={email.delivered} sub={email.sent > 0 ? `${Math.round((email.delivered / email.sent) * 100)}%` : ''} color="blue" />
-        <KpiCard label="Rejected" value={email.failed} sub={email.sent > 0 ? `${Math.round((email.failed / email.sent) * 100)}%` : ''} color="red" />
+        <KpiCard label="Bounced" value={email.bounced || 0} sub={email.sent > 0 ? `${Math.round(((email.bounced || 0) / email.sent) * 100)}%` : ''} color="red" />
+        <KpiCard label="Failed" value={email.failed} sub={email.sent > 0 ? `${Math.round((email.failed / email.sent) * 100)}%` : ''} color="red" />
         <KpiCard label="Opened" value={email.opened} sub={`${email.openRate}%`} color="green" />
         <KpiCard label="Clicked" value={email.clicked} sub={`${email.clickRate}%`} color="amber" />
         <KpiCard label="Booked" value={calendly.schedulingCompleted} color="purple" />
@@ -160,6 +163,11 @@ export function CampaignAnalytics({ campaignId }: { campaignId: string }) {
           <FunnelArrow />
           <FunnelStep label="Booked" value={calendly.schedulingCompleted} maxValue={email.sent} color="#8b5cf6" />
         </div>
+        {(email.bounced || 0) > 0 && (
+          <div className="mt-2 text-xs text-red-500 text-center">
+            {email.bounced} email{email.bounced === 1 ? '' : 's'} bounced ({email.sent > 0 ? Math.round((email.bounced / email.sent) * 100) : 0}%)
+          </div>
+        )}
       </div>
 
       {/* Charts Row */}

@@ -18,7 +18,7 @@ import { sendGraphEmail, isGraphConfigured } from './services/graphEmailProvider
 import { startEmailQueueWorker, queueBulkEmails, getQueueStats, buildEmailSignature } from './services/emailQueue';
 import { generateCampaign, refineContent, generateVariations } from './ai-campaign-builder';
 import { personalizeContent, PersonalizationContact } from './ai-personalizer';
-import { syncContactsToHubSpot, testHubSpotConnection, getLeadsByEmails } from './services/hubspotService';
+import { syncContactsToHubSpot, testHubSpotConnection } from './services/hubspotService';
 import { subscribeWebhook as calendlySubscribeWebhook, listWebhookSubscriptions as calendlyListWebhooks, isCalendlyConfigured } from './services/calendlyService';
 import dotenv from 'dotenv';
 import fs from 'fs';
@@ -84,7 +84,7 @@ function plainTextToHtml(body: string): string {
 
 // Add unsubscribe link to email body
 function addUnsubscribeLink(emailBody: string, contactId: string, companyAddress?: string): string {
-  const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+  const baseUrl = process.env.BASE_URL || 'https://opticwise-backend-uq3o.onrender.com';
   const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${contactId}`;
   
   const address = companyAddress || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
@@ -1413,7 +1413,7 @@ app.post('/api/campaigns/:id/send-test', async (req, res) => {
       phone: sampleContact?.phone || '(555) 000-0000',
     };
 
-    const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+    const baseUrl = process.env.BASE_URL || 'https://opticwise-backend-uq3o.onrender.com';
     const companyAddress = process.env.COMPANY_ADDRESS || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
     const mergeCtx = { contact: contactCtx, campaign: campaignCtx, sender: senderCtx };
 
@@ -1964,25 +1964,31 @@ app.get('/api/campaigns/:id/analytics', async (req, res) => {
     // Email metrics
     const sent = emailQueue.filter(e => e.status === 'sent');
     const failed = emailQueue.filter(e => e.status === 'failed');
-    const delivered = sent.length;
+    const bounced = emailQueue.filter(e => e.status === 'bounced');
+    const sentCount = sent.length;
     const failedCount = failed.length;
+    const bouncedCount = bounced.length;
+    const delivered = sentCount - bouncedCount;
     const opened = sent.filter(e => e.openedAt);
     const clicked = sent.filter(e => e.clickedAt);
-    const openRate = delivered > 0 ? Math.round((opened.length / delivered) * 100) : 0;
-    const clickRate = delivered > 0 ? Math.round((clicked.length / delivered) * 100) : 0;
+    const openRate = sentCount > 0 ? Math.round((opened.length / sentCount) * 100) : 0;
+    const clickRate = sentCount > 0 ? Math.round((clicked.length / sentCount) * 100) : 0;
 
     // Per-node breakdown
     const nodeMap = new Map(campaignNodes.map(n => [n.key, n.name]));
-    const byNodeMap = new Map<string, { sent: number; delivered: number; opened: number; clicked: number }>();
+    const byNodeMap = new Map<string, { sent: number; delivered: number; bounced: number; opened: number; clicked: number }>();
     for (const e of emailQueue) {
       const nk = e.nodeKey || 'unknown';
-      if (!byNodeMap.has(nk)) byNodeMap.set(nk, { sent: 0, delivered: 0, opened: 0, clicked: 0 });
+      if (!byNodeMap.has(nk)) byNodeMap.set(nk, { sent: 0, delivered: 0, bounced: 0, opened: 0, clicked: 0 });
       const entry = byNodeMap.get(nk)!;
       if (e.status === 'sent') {
         entry.sent++;
         entry.delivered++;
         if (e.openedAt) entry.opened++;
         if (e.clickedAt) entry.clicked++;
+      } else if (e.status === 'bounced') {
+        entry.sent++;
+        entry.bounced++;
       } else if (e.status === 'failed') {
         entry.sent++;
       }
@@ -2078,9 +2084,10 @@ app.get('/api/campaigns/:id/analytics', async (req, res) => {
     res.json({
       email: {
         total: emailQueue.length,
-        sent: sent.length + failed.length,
+        sent: sentCount,
         delivered,
         failed: failedCount,
+        bounced: bouncedCount,
         opened: opened.length,
         openRate,
         clicked: clicked.length,
@@ -4580,7 +4587,7 @@ app.post('/api/admin/calendly/subscribe', async (req: any, res) => {
     if (!isCalendlyConfigured()) {
       return res.status(400).json({ error: 'CALENDLY_PAT not configured' });
     }
-    const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+    const baseUrl = process.env.BASE_URL || 'https://opticwise-backend-uq3o.onrender.com';
     const callbackUrl = `${baseUrl}/api/webhooks/calendly`;
 
     // Check existing subscriptions
@@ -4652,6 +4659,50 @@ app.get('/api/t/c/:id', async (req, res) => {
     res.redirect(302, url);
   } else {
     res.redirect(302, process.env.BASE_URL || 'https://paycile.com');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// BOUNCE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
+app.post('/api/campaigns/:id/bounces', async (req: any, res) => {
+  try {
+    const campaignId = req.params.id;
+    const { emails } = req.body;
+
+    if (!Array.isArray(emails) || emails.length === 0) {
+      return res.status(400).json({ error: 'Provide an array of bounced email addresses' });
+    }
+
+    const normalised = emails.map((e: string) => e.toLowerCase().trim());
+    const updated = await prisma.emailQueue.updateMany({
+      where: {
+        campaignId,
+        to: { in: normalised },
+        status: 'sent',
+      },
+      data: { status: 'bounced' },
+    });
+
+    res.json({ updated: updated.count, emails: normalised });
+  } catch (e: any) {
+    console.error('[Bounces]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/campaigns/:id/bounces', async (req: any, res) => {
+  try {
+    const campaignId = req.params.id;
+    const bounced = await prisma.emailQueue.findMany({
+      where: { campaignId, status: 'bounced' },
+      select: { id: true, to: true, sentAt: true, nodeKey: true },
+      orderBy: { sentAt: 'desc' },
+    });
+    res.json({ bounced });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
   }
 });
 

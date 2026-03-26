@@ -276,7 +276,7 @@ async function processQueue() {
         const isFirstTouch = priorSentCount === 0;
 
         // Add unsubscribe link and company address footer
-        const baseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+        const baseUrl = process.env.BASE_URL || 'https://opticwise-backend-uq3o.onrender.com';
         const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${email.contactId}`;
         const companyAddress = process.env.COMPANY_ADDRESS || 'Paycile - 10555 New York Ave, Ste. 100, Urbandale, IA 50322';
 
@@ -320,7 +320,7 @@ async function processQueue() {
         }
 
         // Embed open-tracking pixel and wrap links for click tracking
-        const trackingBaseUrl = process.env.BASE_URL || 'https://adtv-events-server.onrender.com';
+        const trackingBaseUrl = process.env.BASE_URL || 'https://opticwise-backend-uq3o.onrender.com';
         const trackingPixel = `<img src="${trackingBaseUrl}/api/t/o/${email.id}" width="1" height="1" alt="" style="display:none;border:0;" />`;
         emailBodyWithFooter = wrapLinksForTracking(emailBodyWithFooter, email.id, trackingBaseUrl, unsubscribeUrl);
         if (emailBodyWithFooter.includes('</body>')) {
